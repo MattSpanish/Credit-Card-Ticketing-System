@@ -18,12 +18,12 @@ export function initCreditcardApp() {
     const collapseState = { months: {}, dates: {} };
     const STATUS_OPTIONS = ['RESOLVED', 'PENDING', 'OTHER TASK', 'UNSOLVED'];
     const CLOCK_TIMES = {
-      '9PM - 6AM': ['09:00 PM', '06:00 AM'],
-      '5AM - 2PM': ['05:00 AM', '02:00 PM'],
-      '2PM - 11PM': ['02:00 PM', '11:00 PM'],
+      '9PM - 8AM': ['09:00 PM', '06:00 AM'],
+      '730AM - 630PM': ['05:00 AM', '02:00 PM'],
+      '6PM - 5AM': ['02:00 PM', '11:00 PM'],
     };
     const GEMINI_API_KEY_STORAGE_KEY = 'creditcardGeminiApiKey';
-    const GEMINI_MODEL = 'gemini-1.5-flash';
+    const GEMINI_MODEL = 'gemini-2.5-flash'; // Changed from 'flash-3-pro'
 
     // ─── HELPERS ───
     function showNotification(msg) {
@@ -135,6 +135,21 @@ export function initCreditcardApp() {
       return `<p>${escapeHtml(normalized).replace(/\n/g, '<br>')}</p>`;
     }
 
+    function buildLocalTroubleshootingSummary(rawText) {
+      const normalized = (rawText || '').replace(/\s+/g, ' ').trim();
+      if (!normalized) return '';
+      const sentenceParts = normalized.match(/[^.!?]+[.!?]*/g) || [];
+      const picked = sentenceParts
+          .map(s => s.trim())
+          .filter(Boolean)
+          .slice(0, 2)
+          .join(' ')
+          .trim();
+      const shortText = picked || normalized;
+      const limited = shortText.length > 220 ? `${shortText.slice(0, 220).trim()}...` : shortText;
+      return plainTextToRemarkHtml(limited);
+    }
+
     function applyRemarksHtml(html) {
       const remarksHtml = html || '';
       const remarksField = document.getElementById('creditcard-remarks');
@@ -151,8 +166,25 @@ export function initCreditcardApp() {
     }
 
     function getGeminiApiKey() {
+      // 1) runtime-global override (fast testing without rebuild)
+      if (typeof window !== 'undefined' && window.GEMINI_API_KEY) {
+        return String(window.GEMINI_API_KEY).trim();
+      }
+
+      // 2) Vite env injection (import.meta.env.VITE_GEMINI_API_KEY)
+      try {
+        if (import.meta && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
+          return String(import.meta.env.VITE_GEMINI_API_KEY).trim();
+        }
+      } catch (e) {
+        // import.meta may be unavailable in some runtimes, continue
+      }
+
+      // 3) persisted key in localStorage
       const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
       if (storedKey && storedKey.trim()) return storedKey.trim();
+
+      // 4) interactive prompt fallback
       const enteredKey = window.prompt('Enter your Gemini API key to auto-generate remarks:');
       if (!enteredKey) return '';
       const trimmedKey = enteredKey.trim();
@@ -231,6 +263,42 @@ export function initCreditcardApp() {
       }
 
       return plainTextToRemarkHtml(buildFallbackResolutionSummary({ ...ticket, rawResolution }));
+    }
+
+    async function generateRemarksSummary(remarksHtml) {
+      const rawText = htmlToPlainText(remarksHtml || '');
+      if (!rawText.trim()) return '';
+      const prompt = [
+        'Summarize the troubleshooting/resolution notes below into one concise paragraph under three sentences. Return plain text only, no labels or extra commentary.',
+        '',
+        rawText,
+      ].join('\n');
+
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) {
+        return buildLocalTroubleshootingSummary(rawText);
+      }
+
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: 'You write brief customer-support troubleshooting summaries. Keep under three sentences and return plain text only.' }] },
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.2 },
+          }),
+        });
+
+        if (!response.ok) throw new Error(`Gemini request failed ${response.status}`);
+        const data = await response.json();
+        const summary = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim();
+        if (summary) return plainTextToRemarkHtml(summary);
+      } catch (err) {
+        console.error('Remarks summarization failed:', err);
+      }
+
+      return buildLocalTroubleshootingSummary(rawText);
     }
 
     // pushUndo removed
@@ -316,115 +384,109 @@ export function initCreditcardApp() {
 
     // ─── ADD / EDIT / DELETE ───
     window.addEntry = async function(prefix) {
-      if (prefix !== 'creditcard') return;
+  if (prefix !== 'creditcard') return;
 
-      const midEl = document.getElementById('creditcard-mid');
-      const storeEl = document.getElementById('creditcard-store');
-      let valid = true;
-      [midEl, storeEl].forEach(el => {
-        el.classList.remove('invalid');
-        if (!el.value.trim()) {
-          el.classList.add('invalid');
-          valid = false;
-        }
-      });
-      if (!valid) {
-        showNotification('Please fill MID and STORE NAME!');
-        return;
+  const midEl = document.getElementById('creditcard-mid');
+  const storeEl = document.getElementById('creditcard-store');
+  let valid = true;
+  [midEl, storeEl].forEach(el => {
+    el.classList.remove('invalid');
+    if (!el.value.trim()) {
+      el.classList.add('invalid');
+      valid = false;
+    }
+  });
+  if (!valid) {
+    showNotification('Please fill MID and STORE NAME!');
+    return;
+  }
+
+  const dateStr = document.getElementById('creditcard-date').value;
+  const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US') : storeGetFormattedDateMinusOne();
+  const shift = document.getElementById('creditcard-shift').value;
+  const support = document.getElementById('creditcard-support').value.toUpperCase() || 'AGENT';
+  const mid = midEl.value.trim();
+  const store = storeEl.value.trim();
+  const merchant = document.getElementById('creditcard-merchant').value.trim();
+  const contactNumber = document.getElementById('creditcard-contactNumber').value.trim();
+  const issue = document.getElementById('creditcard-issue').value.trim();
+  const escalated = document.getElementById('creditcard-escalated').value.trim();
+  const status = document.getElementById('creditcard-status').value.trim();
+  
+  // Gather the initial troubleshooting input text from Quill or the fallback text element
+  const remarksField = document.getElementById('creditcard-remarks');
+  let remarksHtml = quillEditor ? quillEditor.root.innerHTML : (remarksField ? remarksField.value : '');
+  
+  // ONLY run AI summarization when creating a fresh new ticket (not when updating an existing row)
+  if (!editId) {
+    showNotification('Generating AI summary...');
+    const summaryHtml = await generateRemarksSummary(remarksHtml);
+    if (summaryHtml) {
+      remarksHtml = summaryHtml; // Update local variable so it commits to the array state
+      applyRemarksHtml(summaryHtml); // Sync the UI Quill display with the summarized outcome
+    }
+  }
+
+  const newEntry = {
+    id: Date.now(),
+    date: formattedDate,
+    shift,
+    support,
+    mid,
+    store,
+    merchant,
+    contactNumber,
+    issue,
+    escalated,
+    status,
+    remarks: remarksHtml, // This now safely contains the finished summary string
+    source: 'creditcard',
+    deleted: false,
+    imported: false,
+  };
+
+  if (editId) {
+    const index = allEntries.findIndex(e => e.id === editId && e.source === 'creditcard');
+    if (index !== -1) {
+      allEntries[index] = { ...allEntries[index], ...newEntry, id: editId };
+      showNotification('Credit Card entry updated!');
+      localStorage.removeItem(EDIT_DRAFT_KEY + editId);
+      editId = null;
+      localStorage.removeItem(EDIT_STORAGE_KEY);
+      const addBtn = document.querySelector('#tab-creditcard .add');
+      if (addBtn) {
+        addBtn.textContent = 'ADD ENTRY';
+        addBtn.classList.remove('editing');
       }
-
-      // undo removed
-
-      const dateStr = document.getElementById('creditcard-date').value;
-      const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US') : storeGetFormattedDateMinusOne();
-      const shift = document.getElementById('creditcard-shift').value;
-      const support = document.getElementById('creditcard-support').value.toUpperCase() || 'AGENT';
-      const mid = midEl.value.trim();
-      const store = storeEl.value.trim();
-      const merchant = document.getElementById('creditcard-merchant').value.trim();
-      const contactNumber = document.getElementById('creditcard-contactNumber').value.trim();
-      const issue = document.getElementById('creditcard-issue').value.trim();
-      const escalated = document.getElementById('creditcard-escalated').value.trim();
-      const status = document.getElementById('creditcard-status').value.trim();
-      const remarksHtml = document.getElementById('creditcard-remarks').value;
-      let remarks = remarksHtml;
-      if (!editId) {
-        const summaryHtml = await generateResolutionSummary({
-          store,
-          mid,
-          merchant,
-          contactNumber,
-          issue,
-          escalated,
-          status,
-          remarksHtml,
-        });
-        applyRemarksHtml(summaryHtml);
-        remarks = document.getElementById('creditcard-remarks').value;
+    } else {
+      allEntries.unshift(newEntry);
+      showNotification('Credit Card entry added (edit target missing)!');
+      localStorage.removeItem(EDIT_DRAFT_KEY + editId);
+      editId = null;
+      localStorage.removeItem(EDIT_STORAGE_KEY);
+      const addBtn = document.querySelector('#tab-creditcard .add');
+      if (addBtn) {
+        addBtn.textContent = 'ADD ENTRY';
+        addBtn.classList.remove('editing');
       }
+    }
+  } else {
+    allEntries.unshift(newEntry);
+    showNotification('Credit Card entry added!');
+  }
 
-      const newEntry = {
-        id: Date.now(),
-        date: formattedDate,
-        shift,
-        support,
-        mid,
-        store,
-        merchant,
-        contactNumber,
-        issue,
-        escalated,
-        status,
-        remarks,
-        source: 'creditcard',
-        deleted: false,
-        imported: false,
-      };
+  // Clear every form element except the remarks block so the technician can instantly look over the result
+  ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status'].forEach(id => {
+    document.getElementById(`creditcard-${id}`).value = '';
+  });
 
-      if (editId) {
-        const index = allEntries.findIndex(e => e.id === editId && e.source === 'creditcard');
-        if (index !== -1) {
-          allEntries[index] = { ...allEntries[index], ...newEntry, id: editId };
-          showNotification('Credit Card entry updated!');
-          localStorage.removeItem(EDIT_DRAFT_KEY + editId);
-          editId = null;
-          localStorage.removeItem(EDIT_STORAGE_KEY);
-          const addBtn = document.querySelector('#tab-creditcard .add');
-          if (addBtn) {
-            addBtn.textContent = 'ADD ENTRY';
-            addBtn.classList.remove('editing');
-          }
-        } else {
-          allEntries.unshift(newEntry);
-          showNotification('Credit Card entry added (edit target missing)!');
-          localStorage.removeItem(EDIT_DRAFT_KEY + editId);
-          editId = null;
-          localStorage.removeItem(EDIT_STORAGE_KEY);
-          const addBtn = document.querySelector('#tab-creditcard .add');
-          if (addBtn) {
-            addBtn.textContent = 'ADD ENTRY';
-            addBtn.classList.remove('editing');
-          }
-        }
-      } else {
-        allEntries.unshift(newEntry);
-        showNotification('Credit Card entry added!');
-      }
-
-      ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status'].forEach(id => {
-        document.getElementById(`creditcard-${id}`).value = '';
-      });
-      if (quillEditor) {
-        quillEditor.root.innerHTML = '';
-        document.getElementById('creditcard-remarks').value = '';
-      }
-
-      saveAllEntries();
-      updateStatusCounters();
-      renderTable();
-      renderSidebar();
-      syncPreviewHeight();
-    };
+  saveAllEntries();
+  updateStatusCounters();
+  renderTable();
+  renderSidebar();
+  creditcardUpdatePreview();
+  syncPreviewHeight();
+};
 
     function clearFormFields(prefix) {
       if (prefix === 'creditcard') {
@@ -641,26 +703,26 @@ export function initCreditcardApp() {
         const row = document.createElement('tr');
         row.dataset.id = entry.id;
         row.innerHTML = `
-                        <td><input type="checkbox" class="row-checkbox" value="${entry.id}"></td>
-                        <td>${entry.date}</td>
-                        <td>${entry.shift}</td>
-                        <td>${entry.support}</td>
-                        <td>${entry.mid}</td>
-                        <td>${entry.store}</td>
-                        <td>${entry.merchant || ''}</td>
-                        <td>${entry.contactNumber}</td>
-                        <td style="white-space:pre-wrap;">${entry.issue || ''}</td>
-                        <td>${entry.escalated}</td>
-                        <td>${entry.status}</td>
-                        <td style="white-space:pre-wrap;">${entry.remarks || ''}</td>
-                        <td class="action-cell">
-                            <div class="action-container">
-                                <button class="icon-btn copy-btn" onclick="copyRow(this)" title="Copy"><i class="bi bi-clipboard-fill"></i></button>
-                                <button class="icon-btn edit-btn" onclick="editEntry(this)" title="Edit"><i class="bi bi-pencil-square"></i></button>
-                                <button class="icon-btn delete-btn" onclick="softDeleteEntry(this)" title="Remove"><i class="bi bi-trash3-fill"></i></button>
-                            </div>
-                        </td>
-                    `;
+            <td><input type="checkbox" class="row-checkbox" value="${entry.id}"></td>
+            <td>${entry.date}</td>
+            <td>${entry.shift || ''}</td>
+            <td>${entry.support || ''}</td>
+            <td>${entry.mid || ''}</td>
+            <td>${entry.store || ''}</td>
+            <td>${entry.merchant || ''}</td>
+            <td>${entry.contactNumber || ''}</td>
+            <td style="white-space:pre-wrap;">${entry.issue || ''}</td>
+            <td>${entry.escalated || ''}</td>
+            <td>${entry.status || ''}</td>
+            <td style="white-space:pre-wrap;">${entry.remarks || ''}</td>
+            <td class="action-cell">
+              <div class="action-container">
+                <button class="icon-btn copy-btn" onclick="copyRow(this)" title="Copy"><i class="bi bi-clipboard-fill" aria-hidden="true"></i></button>
+                <button class="icon-btn edit-btn" onclick="editEntry(this)" title="Edit"><i class="bi bi-pencil-square" aria-hidden="true"></i></button>
+                <button class="icon-btn delete-btn" onclick="softDeleteEntry(this)" title="Remove"><i class="bi bi-trash3-fill" aria-hidden="true"></i></button>
+              </div>
+            </td>
+            `;
         tbody.appendChild(row);
       });
       updateSelectAllCheckboxState();
@@ -683,9 +745,22 @@ export function initCreditcardApp() {
         else if (status === 'PENDING') pending++;
         else if (status === 'OTHER TASK') other++;
       });
+      const todayLabel = new Date(todayEST).toLocaleDateString('en-US')
+      const todayCount = baseEntries.filter(entry => entry.date === todayLabel).length;
+      const open = Math.max(baseEntries.length - resolved, 0);
       document.getElementById('counterResolved').innerText = resolved;
       document.getElementById('counterPending').innerText = pending;
       document.getElementById('counterOther').innerText = other;
+      const totalEl = document.getElementById('dashboardTotalTickets');
+      const openEl = document.getElementById('dashboardOpenTickets');
+      const resolvedEl = document.getElementById('dashboardResolvedTickets');
+      const pendingEl = document.getElementById('dashboardPendingTickets');
+      const todayEl = document.getElementById('dashboardTodayTickets');
+      if (totalEl) totalEl.textContent = baseEntries.length;
+      if (openEl) openEl.textContent = open;
+      if (resolvedEl) resolvedEl.textContent = resolved;
+      if (pendingEl) pendingEl.textContent = pending;
+      if (todayEl) todayEl.textContent = todayCount;
     }
 
     function updateSelectAllCheckboxState() {
@@ -928,6 +1003,48 @@ export function initCreditcardApp() {
           hardDeleteEntry(Number(id));
         });
       });
+    }
+
+    function attachGeminiKeyControls() {
+      try {
+        const input = document.getElementById('geminiApiKeyInput');
+        const saveBtn = document.getElementById('saveGeminiKeyBtn');
+        const clearBtn = document.getElementById('clearGeminiKeyBtn');
+        const stored = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY) || '';
+        if (input) input.value = stored;
+        if (saveBtn) {
+          saveBtn.addEventListener('click', () => {
+            const initialValue = input ? (input.value || stored) : stored;
+            const entered = window.prompt('Paste your Gemini API key:', initialValue || '');
+            if (entered === null) {
+              showNotification('Gemini API key not changed');
+              return;
+            }
+            const v = entered.trim();
+            if (v) {
+              localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, v);
+              if (input) input.value = v;
+              try { window.GEMINI_API_KEY = v; } catch (e) {}
+              showNotification('Gemini API key saved');
+            } else {
+              localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
+              if (input) input.value = '';
+              try { delete window.GEMINI_API_KEY; } catch (e) {}
+              showNotification('Gemini API key cleared');
+            }
+          });
+        }
+        if (clearBtn) {
+          clearBtn.addEventListener('click', () => {
+            input.value = '';
+            localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
+            try { delete window.GEMINI_API_KEY; } catch (e) {}
+            showNotification('Gemini API key cleared');
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
     }
 
     // ─── BULK OPERATIONS ───
@@ -1272,6 +1389,9 @@ export function initCreditcardApp() {
       loadFormData('creditcard');
       loadAllEntries();
 
+      // Wire the Gemini key controls in the sidebar
+      attachGeminiKeyControls();
+
       // Restore draft tabs from storage
       (function restoreDraftTabs() {
         const tabsContainer = document.querySelector('.top-tabs');
@@ -1418,7 +1538,7 @@ export function initCreditcardApp() {
         quillEditor.root.innerHTML = document.getElementById('creditcard-remarks').value;
       }
 
-      quillEditor.root.addEventListener('input', function() {
+      quillEditor.on('text-change', function() {
         const htmlContent = quillEditor.root.innerHTML;
         document.getElementById('creditcard-remarks').value = htmlContent;
         creditcardUpdatePreview();
