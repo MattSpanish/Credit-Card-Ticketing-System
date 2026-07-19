@@ -105,8 +105,8 @@ const bodyMarkup = `
                     <!-- Right Panel: Preview -->
                     <div class="right-panel" id="creditcard-previewPanel">
                         <h3>🔍 PREVIEW</h3>
-                        <div><strong>MID:</strong> <span id="creditcard-preview-mid"></span></div>
                         <div><strong>STORE:</strong> <span id="creditcard-preview-store"></span></div>
+                        <div><strong>MID:</strong> <span id="creditcard-preview-mid"></span></div>
                         <div><strong>MERCHANT:</strong> <span id="creditcard-preview-merchant"></span></div>
                         <div><strong>CONTACT #:</strong> <span id="creditcard-preview-contactNumber"></span></div>
                         <br />

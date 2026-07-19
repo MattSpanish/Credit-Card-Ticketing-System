@@ -22,6 +22,8 @@ export function initCreditcardApp() {
       '5AM - 2PM': ['05:00 AM', '02:00 PM'],
       '2PM - 11PM': ['02:00 PM', '11:00 PM'],
     };
+    const GEMINI_API_KEY_STORAGE_KEY = 'creditcardGeminiApiKey';
+    const GEMINI_MODEL = 'gemini-1.5-flash';
 
     // ─── HELPERS ───
     function showNotification(msg) {
@@ -120,6 +122,117 @@ export function initCreditcardApp() {
 
     function cloneEntries(entries) { return JSON.parse(JSON.stringify(entries)); }
 
+    function htmlToPlainText(html) {
+      if (!html) return '';
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function plainTextToRemarkHtml(text) {
+      const normalized = (text || '').trim();
+      if (!normalized) return '';
+      return `<p>${escapeHtml(normalized).replace(/\n/g, '<br>')}</p>`;
+    }
+
+    function applyRemarksHtml(html) {
+      const remarksHtml = html || '';
+      const remarksField = document.getElementById('creditcard-remarks');
+      if (quillEditor) {
+        if (quillEditor.clipboard && quillEditor.clipboard.dangerouslyPasteHTML) {
+          quillEditor.clipboard.dangerouslyPasteHTML(remarksHtml);
+        } else {
+          quillEditor.root.innerHTML = remarksHtml;
+        }
+      }
+      if (remarksField) remarksField.value = remarksHtml;
+      creditcardUpdatePreview();
+      saveFormData('creditcard');
+    }
+
+    function getGeminiApiKey() {
+      const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
+      if (storedKey && storedKey.trim()) return storedKey.trim();
+      const enteredKey = window.prompt('Enter your Gemini API key to auto-generate remarks:');
+      if (!enteredKey) return '';
+      const trimmedKey = enteredKey.trim();
+      if (!trimmedKey) return '';
+      localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, trimmedKey);
+      return trimmedKey;
+    }
+
+    function buildFallbackResolutionSummary(ticket) {
+      const parts = [];
+      if (ticket.issue) parts.push(`Issue: ${ticket.issue}`);
+      if (ticket.rawResolution) parts.push(`Resolution notes: ${ticket.rawResolution}`);
+      if (ticket.status) parts.push(`Status: ${ticket.status}`);
+      if (ticket.escalated) parts.push(`Escalated to ${ticket.escalated}`);
+      return parts.join('. ').replace(/\s+/g, ' ').trim();
+    }
+
+    async function generateResolutionSummary(ticket) {
+      const rawResolution = htmlToPlainText(ticket.remarksHtml);
+      const promptParts = [
+        `Store: ${ticket.store || ''}`,
+        `MID: ${ticket.mid || ''}`,
+        `Merchant: ${ticket.merchant || ''}`,
+        `Contact: ${ticket.contactNumber || ''}`,
+        `Issue: ${ticket.issue || ''}`,
+        `Escalated: ${ticket.escalated || ''}`,
+        `Status: ${ticket.status || ''}`,
+        `Resolution notes: ${rawResolution || ''}`,
+      ];
+      const prompt = [
+        'Write a concise support-ticket resolution summary for the remarks field.',
+        'Use the ticket details below and return only the final summary in one short paragraph.',
+        'Do not add bullets, labels, markdown, or extra commentary.',
+        '',
+        promptParts.join('\n'),
+      ].join('\n');
+
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) return plainTextToRemarkHtml(buildFallbackResolutionSummary({ ...ticket, rawResolution }));
+
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            systemInstruction: {
+              parts: [
+                {
+                  text: 'You write brief customer-support resolution notes. Keep the response under three sentences and return plain text only.',
+                },
+              ],
+            },
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: prompt }],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.2,
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Gemini request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        const summary = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('').trim();
+        if (summary) return plainTextToRemarkHtml(summary);
+      } catch (error) {
+        console.error('AI summary generation failed:', error);
+      }
+
+      return plainTextToRemarkHtml(buildFallbackResolutionSummary({ ...ticket, rawResolution }));
+    }
+
     // pushUndo removed
 
     // ─── CLOCK ───
@@ -202,7 +315,7 @@ export function initCreditcardApp() {
     }
 
     // ─── ADD / EDIT / DELETE ───
-    window.addEntry = function(prefix) {
+    window.addEntry = async function(prefix) {
       if (prefix !== 'creditcard') return;
 
       const midEl = document.getElementById('creditcard-mid');
@@ -233,7 +346,22 @@ export function initCreditcardApp() {
       const issue = document.getElementById('creditcard-issue').value.trim();
       const escalated = document.getElementById('creditcard-escalated').value.trim();
       const status = document.getElementById('creditcard-status').value.trim();
-      const remarks = document.getElementById('creditcard-remarks').value;
+      const remarksHtml = document.getElementById('creditcard-remarks').value;
+      let remarks = remarksHtml;
+      if (!editId) {
+        const summaryHtml = await generateResolutionSummary({
+          store,
+          mid,
+          merchant,
+          contactNumber,
+          issue,
+          escalated,
+          status,
+          remarksHtml,
+        });
+        applyRemarksHtml(summaryHtml);
+        remarks = document.getElementById('creditcard-remarks').value;
+      }
 
       const newEntry = {
         id: Date.now(),
