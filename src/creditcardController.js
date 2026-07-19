@@ -23,7 +23,18 @@ export function initCreditcardApp() {
       '6PM - 5AM': ['02:00 PM', '11:00 PM'],
     };
     const GEMINI_API_KEY_STORAGE_KEY = 'creditcardGeminiApiKey';
-    const GEMINI_MODEL = 'gemini-2.5-flash'; // Changed from 'flash-3-pro'
+    const GEMINI_MODELS = [
+      'gemini-2.5-flash-lite',
+      'gemini-3.1-flash-lite-preview',
+      'gemini-2.0-flash-lite',
+      'gemini-2.0-flash',
+      'gemini-3-flash-preview',
+      'gemini-2.5-flash',
+      'gemini-pro-latest',
+      'gemini-3-pro-preview',
+      'gemini-3.1-pro-preview',
+      'gemini-2.5-pro',
+    ];
 
     // ─── HELPERS ───
     function showNotification(msg) {
@@ -202,6 +213,44 @@ export function initCreditcardApp() {
       return parts.join('. ').replace(/\s+/g, ' ').trim();
     }
 
+    async function generateGeminiSummary(prompt, systemText) {
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) return '';
+
+      let lastError = null;
+
+      for (const model of GEMINI_MODELS) {
+        try {
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: systemText }] },
+              contents: [{ role: 'user', parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.2 },
+            }),
+          });
+
+          if (!response.ok) {
+            lastError = new Error(`Gemini request failed ${response.status} for model ${model}`);
+            continue;
+          }
+
+          const data = await response.json();
+          const summary = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('').trim();
+          if (summary) return summary;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      if (lastError) {
+        console.error('Gemini summary generation failed:', lastError);
+      }
+
+      return '';
+    }
+
     async function generateResolutionSummary(ticket) {
       const rawResolution = htmlToPlainText(ticket.remarksHtml);
       const promptParts = [
@@ -222,45 +271,11 @@ export function initCreditcardApp() {
         promptParts.join('\n'),
       ].join('\n');
 
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) return plainTextToRemarkHtml(buildFallbackResolutionSummary({ ...ticket, rawResolution }));
-
-      try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            systemInstruction: {
-              parts: [
-                {
-                  text: 'You write brief customer-support resolution notes. Keep the response under three sentences and return plain text only.',
-                },
-              ],
-            },
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: prompt }],
-              },
-            ],
-            generationConfig: {
-              temperature: 0.2,
-            },
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Gemini request failed with status ${response.status}`);
-        }
-
-        const data = await response.json();
-        const summary = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('').trim();
-        if (summary) return plainTextToRemarkHtml(summary);
-      } catch (error) {
-        console.error('AI summary generation failed:', error);
-      }
+      const summary = await generateGeminiSummary(
+        prompt,
+        'You write brief customer-support resolution notes. Keep the response under three sentences and return plain text only.'
+      );
+      if (summary) return plainTextToRemarkHtml(summary);
 
       return plainTextToRemarkHtml(buildFallbackResolutionSummary({ ...ticket, rawResolution }));
     }
@@ -274,29 +289,11 @@ export function initCreditcardApp() {
         rawText,
       ].join('\n');
 
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) {
-        return buildLocalTroubleshootingSummary(rawText);
-      }
-
-      try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: 'You write brief customer-support troubleshooting summaries. Keep under three sentences and return plain text only.' }] },
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.2 },
-          }),
-        });
-
-        if (!response.ok) throw new Error(`Gemini request failed ${response.status}`);
-        const data = await response.json();
-        const summary = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim();
-        if (summary) return plainTextToRemarkHtml(summary);
-      } catch (err) {
-        console.error('Remarks summarization failed:', err);
-      }
+      const summary = await generateGeminiSummary(
+        prompt,
+        'You write brief customer-support troubleshooting summaries. Keep under three sentences and return plain text only.'
+      );
+      if (summary) return plainTextToRemarkHtml(summary);
 
       return buildLocalTroubleshootingSummary(rawText);
     }
