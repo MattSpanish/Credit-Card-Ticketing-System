@@ -12,7 +12,7 @@ function Sidebar() {
         <button className="nav-item active" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Dashboard</button>
         <button className="nav-item" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Tickets</button>
         <button className="nav-item" onClick={() => window.createNewTicket && window.createNewTicket()}>New Ticket</button>
-        <button className="nav-item" onClick={() => window.openSettings && window.openSettings()}>Settings</button>
+        
       </nav>
       <div className="sidebar-foot">Logged in as <strong>Support</strong></div>
       <div className="sidebar-key">
@@ -63,7 +63,7 @@ function Tabs() {
   return (
     <div className="top-tabs shell-tabs">
       <button id="tabBtn-creditcard" className="tab-btn active" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Credit Card</button>
-      <button id="tabBtn-newticket" className="tab-btn" onClick={() => window.createNewTicket && window.createNewTicket()}>New Ticket</button>
+      
     </div>
   );
 }

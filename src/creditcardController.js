@@ -37,6 +37,21 @@ export function initCreditcardApp() {
     ];
 
     // ─── HELPERS ───
+    function getESTDateString() {
+      const now = new Date();
+      const estDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+      return estDate.toISOString().slice(0, 10);
+    }
+
+    // 2. The new function needed for the exact local date in the form
+    function getLocalTodayString() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    
     function showNotification(msg) {
       const el = document.getElementById('notification');
       el.textContent = msg;
@@ -77,11 +92,13 @@ export function initCreditcardApp() {
       return new Date(year, month - 1, day);
     }
 
-    function getESTDateString() {
-      const now = new Date();
-      const estDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-      return estDate.toISOString().slice(0, 10);
-    }
+    function getLocalTodayString() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
     function storeGetFormattedDateMinusOne() {
       const now = new Date();
@@ -472,11 +489,11 @@ export function initCreditcardApp() {
     showNotification('Credit Card entry added!');
   }
 
-  // Clear every form element except the remarks block so the technician can instantly look over the result
-  ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status'].forEach(id => {
-    document.getElementById(`creditcard-${id}`).value = '';
-  });
+// Fully clear the form (including the Quill remarks editor) after adding/editing
+  clearFormFields(prefix);
 
+
+  
   saveAllEntries();
   updateStatusCounters();
   renderTable();
@@ -496,11 +513,16 @@ export function initCreditcardApp() {
           quillEditor.root.innerHTML = '';
           document.getElementById('creditcard-remarks').value = '';
         }
+        
+        // Automatically fetch and reset the date to today
+        const dateField = document.getElementById('creditcard-date');
+        if (dateField) {
+          dateField.value = getLocalTodayString();
+        }
       }
       creditcardUpdatePreview();
       saveFormData(prefix);
     }
-
     window.clearFormOnly = function(prefix) {
       if (editId) {
         localStorage.removeItem(EDIT_DRAFT_KEY + editId);
@@ -878,8 +900,8 @@ export function initCreditcardApp() {
                 html += `
                                         <div class="sidebar-card" data-id="${entry.id}">
                                             <div class="preview-item issue-item" ${styleIssue}>${escapeHtml(issueDisplay)}</div>
-                                            <div class="preview-item"><strong>MID:</strong> ${escapeHtml(entry.mid || '-')}</div>
                                             <div class="preview-item"><strong>Store:</strong> ${escapeHtml(entry.store || '-')}</div>
+                                            <div class="preview-item"><strong>MID:</strong> ${escapeHtml(entry.mid || '-')}</div>
                                             <div class="preview-item"><strong>Merchant:</strong> ${escapeHtml(entry.merchant || '-')}</div>
                                             <div class="card-actions">
                                                 <div class="card-actions-row stack-row">
@@ -935,9 +957,9 @@ export function initCreditcardApp() {
           const entry = allEntries.find(e => e.id == id);
           if (entry) {
             const plainText =
-                `MID: ${entry.mid}\nSTORE NAME: ${entry.store}\nMERCHANT: ${entry.merchant || ''}\nCONTACT #: ${entry.contactNumber}\n\nISSUE:\n${entry.issue || ''}`;
+                `STORE NAME: ${entry.store}\nMID: ${entry.mid}\nMERCHANT: ${entry.merchant || ''}\nCONTACT #: ${entry.contactNumber}\n\nISSUE:\n${entry.issue || ''}`;
             const htmlContent =
-                `<strong>MID: </strong>${escapeHtml(entry.mid)}<br><strong>STORE NAME: </strong>${escapeHtml(entry.store)}<br><strong>MERCHANT: </strong>${escapeHtml(entry.merchant || '')}<br><strong>CONTACT #: </strong>${escapeHtml(entry.contactNumber)}<br><br><strong>ISSUE:</strong><br>${escapeHtml(entry.issue || '').replace(/\n/g, '<br>')}`;
+                `<strong>STORE NAME: </strong>${escapeHtml(entry.store)}<br><strong>MID: </strong>${escapeHtml(entry.mid)}<br><strong>MERCHANT: </strong>${escapeHtml(entry.merchant || '')}<br><strong>CONTACT #: </strong>${escapeHtml(entry.contactNumber)}<br><br><strong>ISSUE:</strong><br>${escapeHtml(entry.issue || '').replace(/\n/g, '<br>')}`;
             try {
               const blobHtml = new Blob([htmlContent], { type: 'text/html' });
               const blobPlain = new Blob([plainText], { type: 'text/plain' });
@@ -1371,8 +1393,8 @@ export function initCreditcardApp() {
 
 
     function init() {
-      const todayEST = getESTDateString();
-      document.getElementById('creditcard-date').value = todayEST;
+      const todayLocal = getLocalTodayString();
+      document.getElementById('creditcard-date').value = todayLocal;
 
       const savedCollapse = localStorage.getItem('sidebarCollapseState_creditcard');
       if (savedCollapse) {
