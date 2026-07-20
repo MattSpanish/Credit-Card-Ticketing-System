@@ -44,8 +44,13 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      # Updated to parse the wrapped action's output correctly:
+      url: ${{ fromJSON(steps.deployment.outputs.outputs).page_url }}
     steps:
-      - name: Deploy
+      - name: Deploy with Retry
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: Wandalen/wretry.action@v3.5.0
+        with:
+          action: actions/deploy-pages@v4
+          attempt_limit: 3
+          attempt_delay: 120000
