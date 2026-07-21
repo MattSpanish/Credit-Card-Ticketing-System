@@ -88,7 +88,7 @@ function LeftPanel() {
               <select id="creditcard-shift">
                 <option value="">-- SELECT --</option>
                 <option value="9PM - 8AM">9PM - 8AM</option>
-                <option value="730AM - 630PM">5AM - 2PM</option>
+                <option value="7:30AM - 6:30PM">5AM - 2PM</option>
                 <option value="6PM - 5AM">2PM - 11PM</option>
               </select>
             </td>

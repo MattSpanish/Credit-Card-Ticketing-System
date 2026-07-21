@@ -18,7 +18,7 @@ export function initCreditcardApp() {
     const STATUS_OPTIONS = ['RESOLVED', 'PENDING', 'OTHER TASK', 'UNSOLVED'];
     const CLOCK_TIMES = {
       '9PM - 8AM': ['09:00 PM', '06:00 AM'],
-      '730AM - 630PM': ['05:00 AM', '02:00 PM'],
+      '7:30AM - 6:30PM': ['05:00 AM', '02:00 PM'],
       '6PM - 5AM': ['02:00 PM', '11:00 PM'],
     };
     const GEMINI_API_KEY_STORAGE_KEY = 'creditcardGeminiApiKey';
@@ -604,9 +604,9 @@ export function initCreditcardApp() {
          exportDate = `${d}/${m}/${y}`;
       }
 
-      // Merge Resolution into Remarks for export
+      // Merges Resolution without the label for export
       const combinedRemarks = entry.resolution 
-        ? htmlToPlainText(entry.remarks || '') + '\n\nBackend / Resolution:\n' + entry.resolution 
+        ? htmlToPlainText(entry.remarks || '') + '\n\n' + entry.resolution 
         : htmlToPlainText(entry.remarks || '');
 
       const rowData = [
@@ -660,9 +660,9 @@ export function initCreditcardApp() {
           displayDate = `<strong>${m}/${dd}/${yy} - ${dayName}</strong>`; 
         }
 
-        // Merge Resolution into Remarks for visual display
+        // Merges Resolution without the label for visual display
         const combinedRemarks = entry.resolution 
-          ? htmlToPlainText(entry.remarks || '') + '\n\n<strong>Backend / Resolution:</strong>\n' + escapeHtml(entry.resolution)
+          ? htmlToPlainText(entry.remarks || '') + '\n\n' + escapeHtml(entry.resolution)
           : htmlToPlainText(entry.remarks || '');
 
         const row = document.createElement('tr');
@@ -928,9 +928,9 @@ export function initCreditcardApp() {
            exportDate = `${d}/${m}/${y}`; 
         }
 
-        // Merge Resolution into Remarks for export
+        // Merges Resolution without the label for export
         const combinedRemarks = entry.resolution 
-          ? htmlToPlainText(entry.remarks || '') + '\n\nBackend / Resolution:\n' + entry.resolution 
+          ? htmlToPlainText(entry.remarks || '') + '\n\n' + entry.resolution 
           : htmlToPlainText(entry.remarks || '');
 
         return [
