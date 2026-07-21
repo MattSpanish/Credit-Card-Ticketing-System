@@ -22,6 +22,7 @@ export function initCreditcardApp() {
       '6PM - 5AM': ['02:00 PM', '11:00 PM'],
     };
     const GEMINI_API_KEY_STORAGE_KEY = 'creditcardGeminiApiKey';
+    
     const GEMINI_MODELS = [
       'gemini-2.5-flash-lite',
       'gemini-3.1-flash-lite-preview',
@@ -42,7 +43,6 @@ export function initCreditcardApp() {
       return estDate.toISOString().slice(0, 10);
     }
 
-    // Force the default form date to match EST
     function getLocalTodayString() {
       const now = new Date();
       const estDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
@@ -140,8 +140,6 @@ export function initCreditcardApp() {
       rightPanel.style.overflowY = 'auto';
     }
 
-    function cloneEntries(entries) { return JSON.parse(JSON.stringify(entries)); }
-
     function htmlToPlainText(html) {
       if (!html) return '';
       const div = document.createElement('div');
@@ -189,12 +187,6 @@ export function initCreditcardApp() {
       if (typeof window !== 'undefined' && window.GEMINI_API_KEY) {
         return String(window.GEMINI_API_KEY).trim();
       }
-      try {
-        if (import.meta && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
-          return String(import.meta.env.VITE_GEMINI_API_KEY).trim();
-        }
-      } catch (e) {}
-
       const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
       if (storedKey && storedKey.trim()) return storedKey.trim();
 
@@ -204,15 +196,6 @@ export function initCreditcardApp() {
       if (!trimmedKey) return '';
       localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, trimmedKey);
       return trimmedKey;
-    }
-
-    function buildFallbackResolutionSummary(ticket) {
-      const parts = [];
-      if (ticket.issue) parts.push(`Issue: ${ticket.issue}`);
-      if (ticket.rawResolution) parts.push(`Resolution notes: ${ticket.rawResolution}`);
-      if (ticket.status) parts.push(`Status: ${ticket.status}`);
-      if (ticket.escalated) parts.push(`Escalated to ${ticket.escalated}`);
-      return parts.join('. ').replace(/\s+/g, ' ').trim();
     }
 
     async function generateGeminiSummary(prompt, systemText) {
@@ -233,6 +216,11 @@ export function initCreditcardApp() {
             }),
           });
 
+          if (response.status === 400 || response.status === 403) {
+            console.error(`Gemini API rejected request: ${response.status}. Check your API Key.`);
+            return ''; 
+          }
+
           if (!response.ok) {
             lastError = new Error(`Gemini request failed ${response.status} for model ${model}`);
             continue;
@@ -245,48 +233,15 @@ export function initCreditcardApp() {
           lastError = error;
         }
       }
-
-      if (lastError) {
-        console.error('Gemini summary generation failed:', lastError);
-      }
-
+      if (lastError) console.error('Gemini summary generation failed:', lastError);
       return '';
-    }
-
-    async function generateResolutionSummary(ticket) {
-      const rawResolution = htmlToPlainText(ticket.remarksHtml);
-      const promptParts = [
-        `Store: ${ticket.store || ''}`,
-        `MID: ${ticket.mid || ''}`,
-        `Merchant: ${ticket.merchant || ''}`,
-        `Contact: ${ticket.contactNumber || ''}`,
-        `Issue: ${ticket.issue || ''}`,
-        `Escalated: ${ticket.escalated || ''}`,
-        `Status: ${ticket.status || ''}`,
-        `Resolution notes: ${rawResolution || ''}`,
-      ];
-      const prompt = [
-        'Write a concise support-ticket resolution summary for the remarks field.',
-        'Use the ticket details below and return only the final summary in one short paragraph.',
-        'Do not add bullets, labels, markdown, or extra commentary.',
-        '',
-        promptParts.join('\n'),
-      ].join('\n');
-
-      const summary = await generateGeminiSummary(
-        prompt,
-        'You write brief customer-support resolution notes. Keep the response under three sentences and return plain text only.'
-      );
-      if (summary) return plainTextToRemarkHtml(summary);
-
-      return plainTextToRemarkHtml(buildFallbackResolutionSummary({ ...ticket, rawResolution }));
     }
 
     async function generateRemarksSummary(remarksHtml) {
       const rawText = htmlToPlainText(remarksHtml || '');
       if (!rawText.trim()) return '';
       const prompt = [
-        'Summarize the troubleshooting/resolution notes below into one concise paragraph under three sentences. Return plain text only, no labels or extra commentary.',
+        'Summarize the troubleshooting notes below into one concise paragraph under three sentences. Return plain text only, no labels or extra commentary.',
         '',
         rawText,
       ].join('\n');
@@ -317,7 +272,7 @@ export function initCreditcardApp() {
     // ─── FORM DATA ───
     function saveFormData(prefix) {
       const fields = {
-        creditcard: ['shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'remarks', 'date']
+        creditcard: ['shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'remarks', 'resolution', 'date']
       };
       const formData = {};
       fields[prefix].forEach(id => {
@@ -372,6 +327,8 @@ export function initCreditcardApp() {
       document.getElementById('creditcard-preview-merchant').textContent = document.getElementById('creditcard-merchant').value || '';
       document.getElementById('creditcard-preview-contactNumber').textContent = document.getElementById('creditcard-contactNumber').value || '';
       document.getElementById('creditcard-preview-issue').innerHTML = formatMultilinePreview(document.getElementById('creditcard-issue').value);
+      document.getElementById('creditcard-preview-resolution').innerHTML = formatMultilinePreview(document.getElementById('creditcard-resolution').value);
+      
       const remarksHtml = document.getElementById('creditcard-remarks').value;
       document.getElementById('creditcard-preview-remarks').innerHTML = !isHtmlEmpty(remarksHtml) ? convertQuillLists(remarksHtml) : '';
       syncPreviewHeight();
@@ -398,7 +355,6 @@ export function initCreditcardApp() {
 
       const dateStr = document.getElementById('creditcard-date').value;
       let formattedDate = storeGetFormattedDateMinusOne();
-
       if (dateStr) {
         const [y, m, d] = dateStr.split('-');
         formattedDate = `${parseInt(m, 10)}/${parseInt(d, 10)}/${y}`;
@@ -413,10 +369,12 @@ export function initCreditcardApp() {
       const issue = document.getElementById('creditcard-issue').value.trim();
       const escalated = document.getElementById('creditcard-escalated').value.trim();
       const status = document.getElementById('creditcard-status').value.trim();
+      const resolution = document.getElementById('creditcard-resolution').value.trim();
       
       const remarksField = document.getElementById('creditcard-remarks');
       let remarksHtml = quillEditor ? quillEditor.root.innerHTML : (remarksField ? remarksField.value : '');
       
+      // AI strictly ONLY summarizes the Remarks HTML
       if (!editId) {
         showNotification('Generating AI summary...');
         const summaryHtml = await generateRemarksSummary(remarksHtml);
@@ -439,6 +397,7 @@ export function initCreditcardApp() {
         escalated,
         status,
         remarks: remarksHtml,
+        resolution, 
         source: 'creditcard',
         deleted: false,
         imported: false,
@@ -457,18 +416,7 @@ export function initCreditcardApp() {
             addBtn.textContent = 'ADD ENTRY';
             addBtn.classList.remove('editing');
           }
-        } else {
-          allEntries.unshift(newEntry);
-          showNotification('Credit Card entry added (edit target missing)!');
-          localStorage.removeItem(EDIT_DRAFT_KEY + editId);
-          editId = null;
-          localStorage.removeItem(EDIT_STORAGE_KEY);
-          const addBtn = document.querySelector('#tab-creditcard .add');
-          if (addBtn) {
-            addBtn.textContent = 'ADD ENTRY';
-            addBtn.classList.remove('editing');
-          }
-        }
+        } 
       } else {
         allEntries.unshift(newEntry);
         showNotification('Credit Card entry added!');
@@ -486,7 +434,7 @@ export function initCreditcardApp() {
 
     function clearFormFields(prefix) {
       if (prefix === 'creditcard') {
-        const fields = ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status'];
+        const fields = ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution'];
         fields.forEach(id => {
           const el = document.getElementById(`creditcard-${id}`);
           if (el) el.value = '';
@@ -495,9 +443,6 @@ export function initCreditcardApp() {
           quillEditor.root.innerHTML = '';
           document.getElementById('creditcard-remarks').value = '';
         }
-        
-        // Form is cleared but date remains on user's selection
-        // No longer snapping back to today's date automatically!
       }
       creditcardUpdatePreview();
       saveFormData(prefix);
@@ -512,7 +457,6 @@ export function initCreditcardApp() {
           btn.textContent = 'ADD ENTRY';
           btn.classList.remove('editing');
         });
-        showNotification('Edit cancelled. Form cleared.');
       }
       clearFormFields(prefix);
       showNotification('Form cleared!');
@@ -536,6 +480,8 @@ export function initCreditcardApp() {
       document.getElementById('creditcard-issue').value = entry.issue || '';
       document.getElementById('creditcard-escalated').value = entry.escalated || '';
       document.getElementById('creditcard-status').value = entry.status || '';
+      document.getElementById('creditcard-resolution').value = entry.resolution || '';
+      
       if (quillEditor && entry.remarks) {
         quillEditor.root.innerHTML = entry.remarks;
         document.getElementById('creditcard-remarks').value = entry.remarks;
@@ -547,14 +493,12 @@ export function initCreditcardApp() {
       const saveDraft = () => {
         if (!editId || editId !== entryId) return;
         const formData = {};
-        const fields = ['shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'remarks', 'date'];
+        const fields = ['shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'remarks', 'date'];
         fields.forEach(id => {
           const el = document.getElementById(`creditcard-${id}`);
           if (el) formData[id] = el.value;
         });
-        if (quillEditor) {
-          formData.remarks = quillEditor.root.innerHTML;
-        }
+        if (quillEditor) formData.remarks = quillEditor.root.innerHTML;
         formData.id = entryId;
         localStorage.setItem(draftKey, JSON.stringify(formData));
       };
@@ -578,9 +522,7 @@ export function initCreditcardApp() {
         entryId = parseInt(id);
       } else if (typeof buttonOrId === 'number') {
         entryId = buttonOrId;
-      } else {
-        return;
-      }
+      } else { return; }
       entry = allEntries.find(e => e.id === entryId);
       if (!entry || entry.source !== 'creditcard') return;
 
@@ -605,10 +547,6 @@ export function initCreditcardApp() {
       }
 
       attachDraftAutoSave(editId);
-
-      document.querySelectorAll('#tab-creditcard input, #tab-creditcard textarea, #tab-creditcard select').forEach(el => {
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-      });
       document.querySelectorAll('#tab-creditcard textarea').forEach(ta => autoGrow(ta));
       syncPreviewHeight();
     };
@@ -622,36 +560,20 @@ export function initCreditcardApp() {
         saveAllEntries();
         renderTable();
         renderSidebar();
-        showNotification('Entry removed from main table (still in history)');
-        if (editId == id) {
-          editId = null;
-          localStorage.removeItem(EDIT_STORAGE_KEY);
-          document.querySelectorAll('.add').forEach(btn => {
-            btn.textContent = 'ADD ENTRY';
-            btn.classList.remove('editing');
-          });
-        }
+        showNotification('Entry removed from main table');
       }
     };
 
     function hardDeleteEntry(entryId) {
       const entry = allEntries.find(e => e.id == entryId);
-      if (!entry) { showNotification('Entry not found.'); return; }
-      if (confirm('Delete this entry permanently? This action cannot be undone.')) {
+      if (!entry) return;
+      if (confirm('Delete this entry permanently?')) {
         const index = allEntries.findIndex(e => e.id == entryId);
         if (index !== -1) {
           allEntries.splice(index, 1);
           saveAllEntries();
           renderTable();
           renderSidebar();
-          if (editId == entryId) {
-            editId = null;
-            localStorage.removeItem(EDIT_STORAGE_KEY);
-            document.querySelectorAll('.add').forEach(btn => {
-              btn.textContent = 'ADD ENTRY';
-              btn.classList.remove('editing');
-            });
-          }
           showNotification('Entry permanently deleted.');
         }
       }
@@ -659,39 +581,62 @@ export function initCreditcardApp() {
 
     function restoreEntry(entryId) {
       const entry = allEntries.find(e => e.id == entryId);
-      if (!entry) { showNotification('Entry not found.'); return; }
-      if (!entry.deleted) { showNotification('Entry is already visible.'); return; }
+      if (!entry) return;
       entry.deleted = false;
       saveAllEntries();
       renderTable();
       renderSidebar();
-      showNotification('Entry restored to main table.');
+      showNotification('Entry restored.');
     }
 
     window.copyRow = function(button) {
-      const tds = button.closest('tr').querySelectorAll('td');
-      const dataTds = [...tds].slice(1, -1);
-      const values = dataTds.map(td => escapeCSV(td.textContent || ''));
+      const row = button.closest('tr');
+      const id = row.dataset.id;
+      const entry = allEntries.find(e => e.id == id);
+      if (!entry) return;
+
+      let exportDate = entry.date || '';
+      const dateParts = exportDate.split('/');
+      if (dateParts.length === 3) {
+         const m = dateParts[0].padStart(2, '0');
+         const d = dateParts[1].padStart(2, '0');
+         const y = dateParts[2];
+         exportDate = `${d}/${m}/${y}`;
+      }
+
+      // Merge Resolution into Remarks for export
+      const combinedRemarks = entry.resolution 
+        ? htmlToPlainText(entry.remarks || '') + '\n\nBackend / Resolution:\n' + entry.resolution 
+        : htmlToPlainText(entry.remarks || '');
+
+      const rowData = [
+        exportDate,
+        entry.shift,
+        entry.support,
+        entry.mid,
+        entry.store,
+        entry.merchant || '',
+        entry.contactNumber,
+        entry.issue || '',
+        entry.escalated || '',
+        entry.status || '',
+        combinedRemarks
+      ];
+
+      const values = rowData.map(f => escapeCSV(String(f ?? '')));
       navigator.clipboard.writeText(values.join('\t')).then(() => showNotification('Row copied!'));
     };
 
     // ─── TABLE ───
     function getVisibleEntries() {
-      // Filter completely based on whatever date is selected in the UI
       const selectedDateStr = document.getElementById('creditcard-date').value;
-      
       let entries = allEntries.filter(entry => {
         if (entry.deleted) return false;
-        
         const dateObj = parseDateFromString(entry.date);
         if (!dateObj) return false;
-        
         const entryDateYMD = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
-        
-        // Show only the exact selected day
         return entryDateYMD === selectedDateStr && entry.source === 'creditcard';
       });
-      
       if (currentStatusFilter) {
         entries = entries.filter(entry => (entry.status || '').toUpperCase() === currentStatusFilter);
       }
@@ -702,12 +647,29 @@ export function initCreditcardApp() {
       const visibleEntries = getVisibleEntries();
       const tbody = document.querySelector('#entryTable tbody');
       tbody.innerHTML = '';
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
       visibleEntries.forEach(entry => {
+        let displayDate = entry.date || '';
+        const dateObj = parseDateFromString(entry.date);
+        if (dateObj) {
+          const m = dateObj.getMonth() + 1;
+          const dd = String(dateObj.getDate()).padStart(2, '0');
+          const yy = String(dateObj.getFullYear()).slice(-2);
+          const dayName = dayNames[dateObj.getDay()];
+          displayDate = `<strong>${m}/${dd}/${yy} - ${dayName}</strong>`; 
+        }
+
+        // Merge Resolution into Remarks for visual display
+        const combinedRemarks = entry.resolution 
+          ? htmlToPlainText(entry.remarks || '') + '\n\n<strong>Backend / Resolution:</strong>\n' + escapeHtml(entry.resolution)
+          : htmlToPlainText(entry.remarks || '');
+
         const row = document.createElement('tr');
         row.dataset.id = entry.id;
         row.innerHTML = `
             <td><input type="checkbox" class="row-checkbox" value="${entry.id}"></td>
-            <td>${entry.date}</td>
+            <td>${displayDate}</td>
             <td>${entry.shift || ''}</td>
             <td>${entry.support || ''}</td>
             <td>${entry.mid || ''}</td>
@@ -717,7 +679,7 @@ export function initCreditcardApp() {
             <td style="white-space:pre-wrap;">${entry.issue || ''}</td>
             <td>${entry.escalated || ''}</td>
             <td>${entry.status || ''}</td>
-            <td style="white-space:pre-wrap;">${entry.remarks || ''}</td>
+            <td style="white-space:pre-wrap;">${combinedRemarks}</td>
             <td class="action-cell">
               <div class="action-container">
                 <button class="icon-btn copy-btn" onclick="copyRow(this)" title="Copy"><i class="bi bi-clipboard-fill" aria-hidden="true"></i></button>
@@ -733,9 +695,7 @@ export function initCreditcardApp() {
     }
 
     function updateStatusCounters() {
-      // Sync dashboard with the currently selected date
       const selectedDateStr = document.getElementById('creditcard-date').value;
-      
       const baseEntries = allEntries.filter(entry => {
         if (entry.deleted) return false;
         const dateObj = parseDateFromString(entry.date);
@@ -760,15 +720,8 @@ export function initCreditcardApp() {
       
       const totalEl = document.getElementById('dashboardTotalTickets');
       const openEl = document.getElementById('dashboardOpenTickets');
-      const resolvedEl = document.getElementById('dashboardResolvedTickets');
-      const pendingEl = document.getElementById('dashboardPendingTickets');
-      const todayEl = document.getElementById('dashboardTodayTickets');
-      
       if (totalEl) totalEl.textContent = baseEntries.length;
       if (openEl) openEl.textContent = open;
-      if (resolvedEl) resolvedEl.textContent = resolved;
-      if (pendingEl) pendingEl.textContent = pending;
-      if (todayEl) todayEl.textContent = baseEntries.length;
     }
 
     function updateSelectAllCheckboxState() {
@@ -785,22 +738,15 @@ export function initCreditcardApp() {
     }
 
     window.filterByStatus = function(status) {
-      if (currentStatusFilter === status) {
-        currentStatusFilter = null;
-      } else {
-        currentStatusFilter = status;
-      }
+      if (currentStatusFilter === status) currentStatusFilter = null;
+      else currentStatusFilter = status;
       document.querySelectorAll('.status-filter-btn').forEach(btn => {
-        if (btn.dataset.status === currentStatusFilter) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
+        if (btn.dataset.status === currentStatusFilter) btn.classList.add('active');
+        else btn.classList.remove('active');
       });
       renderTable();
     }
 
-    // ─── CLEAR ALL ───
     function clearAllEntries() {
       if (!confirm('Delete ALL entries permanently? This cannot be undone.')) return;
       allEntries = [];
@@ -811,12 +757,6 @@ export function initCreditcardApp() {
     }
 
     // ─── SIDEBAR ───
-    function getYesterdayFormatted() {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      return yesterday.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    }
-
     function renderSidebar() {
       const container = document.getElementById('creditcardHistoryContent');
       if (!container) return;
@@ -848,62 +788,48 @@ export function initCreditcardApp() {
 
       let html = '';
       for (const month of sortedMonths) {
-        if (collapseState.months[month] === undefined) {
-          collapseState.months[month] = month !== currentMonthKey;
-        }
+        if (collapseState.months[month] === undefined) collapseState.months[month] = month !== currentMonthKey;
         const isMonthCollapsed = collapseState.months[month];
-        const monthArrow = isMonthCollapsed ? '▶' : '▼';
         html += `<div class="sidebar-group">
-                        <div class="month-header" onclick="toggleMonth('${month.replace(/'/g, "\\'")}')">
-                            <span class="month-arrow">${monthArrow}</span> ${month}
-                        </div>`;
+                  <div class="month-header" onclick="toggleMonth('${month.replace(/'/g, "\\'")}')">
+                      <span class="month-arrow">${isMonthCollapsed ? '▶' : '▼'}</span> ${month}
+                  </div>`;
         if (!isMonthCollapsed) {
           const dates = grouped[month];
           const sortedDates = Object.keys(dates).sort((a, b) => new Date(b) - new Date(a));
           for (const dateKey of sortedDates) {
-            if (collapseState.dates[dateKey] === undefined) {
-              collapseState.dates[dateKey] = dateKey !== todayFormatted;
-            }
+            if (collapseState.dates[dateKey] === undefined) collapseState.dates[dateKey] = dateKey !== todayFormatted;
             const isDateCollapsed = collapseState.dates[dateKey];
-            const dateArrow = isDateCollapsed ? '▶' : '▼';
             html += `<div class="date-group">
-                                <div class="date-header" onclick="toggleDate('${dateKey.replace(/'/g, "\\'")}')">
-                                    <span class="date-arrow">${dateArrow}</span> ${dateKey}
-                                </div>`;
+                      <div class="date-header" onclick="toggleDate('${dateKey.replace(/'/g, "\\'")}')">
+                          <span class="date-arrow">${isDateCollapsed ? '▶' : '▼'}</span> ${dateKey}
+                      </div>`;
             if (!isDateCollapsed) {
               html += `<div class="date-entries">`;
               for (const entry of dates[dateKey]) {
                 let issueDisplay = (entry.issue || '-').toUpperCase();
-                if (entry.status && entry.status.toUpperCase() === 'OTHER TASK') {
-                  issueDisplay = 'OTHER TASK';
-                }
+                if (entry.status && entry.status.toUpperCase() === 'OTHER TASK') issueDisplay = 'OTHER TASK';
                 let issueTextColor = '';
                 switch ((entry.status || '').toUpperCase()) {
                   case 'RESOLVED': issueTextColor = '#11734b'; break;
                   case 'PENDING': issueTextColor = '#b10202'; break;
                   case 'OTHER TASK': issueTextColor = '#1a6d9f'; break;
-                  default: issueTextColor = '';
                 }
-                const styleIssue = issueTextColor ? `style="color:${issueTextColor};"` : '';
                 html += `
-                                        <div class="sidebar-card" data-id="${entry.id}">
-                                            <div class="preview-item issue-item" ${styleIssue}>${escapeHtml(issueDisplay)}</div>
-                                            <div class="preview-item"><strong>Store:</strong> ${escapeHtml(entry.store || '-')}</div>
-                                            <div class="preview-item"><strong>MID:</strong> ${escapeHtml(entry.mid || '-')}</div>
-                                            <div class="preview-item"><strong>Merchant:</strong> ${escapeHtml(entry.merchant || '-')}</div>
-                                            <div class="card-actions">
-                                                <div class="card-actions-row stack-row">
-                                                    <button class="copy-store" data-id="${entry.id}">📋 DETAILS</button>
-                                                    <button class="copy-details" data-id="${entry.id}">📋 HRMS</button>
-                                                </div>
-                                                <div class="card-actions-row">
-                                                    <button class="edit-entry stack-btn" data-id="${entry.id}">✏️<br>EDIT</button>
-                                                    <button class="return-entry stack-btn" data-id="${entry.id}">↩️<br>RETURN</button>
-                                                    <button class="delete-entry stack-btn" data-id="${entry.id}">🗑️<br>DELETE</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `;
+                  <div class="sidebar-card" data-id="${entry.id}">
+                      <div class="preview-item issue-item" ${issueTextColor ? `style="color:${issueTextColor};"` : ''}>${escapeHtml(issueDisplay)}</div>
+                      <div class="preview-item"><strong>Store:</strong> ${escapeHtml(entry.store || '-')}</div>
+                      <div class="preview-item"><strong>MID:</strong> ${escapeHtml(entry.mid || '-')}</div>
+                      <div class="card-actions">
+                          <div class="card-actions-row stack-row">
+                              <button class="copy-store" data-id="${entry.id}">📋 DETAILS</button>
+                              <button class="copy-details" data-id="${entry.id}">📋 HRMS</button>
+                          </div>
+                          <div class="card-actions-row">
+                              <button class="edit-entry stack-btn" data-id="${entry.id}">✏️<br>EDIT</button>
+                          </div>
+                      </div>
+                  </div>`;
               }
               html += `</div>`;
             }
@@ -913,29 +839,14 @@ export function initCreditcardApp() {
         html += `</div>`;
       }
 
-      if (historyEntries.length === 0) {
-        html = '<div style="padding:20px; text-align:center; color:#64748b;">No entries yet.</div>';
-      }
-
+      if (historyEntries.length === 0) html = '<div style="padding:20px; text-align:center;">No entries yet.</div>';
       container.innerHTML = html;
       attachSidebarEvents(container);
     }
 
-    function saveCollapseState() {
-      localStorage.setItem('sidebarCollapseState_creditcard', JSON.stringify({ months: collapseState.months, dates: collapseState.dates }));
-    }
-
-    window.toggleMonth = function(monthKey) {
-      collapseState.months[monthKey] = !collapseState.months[monthKey];
-      saveCollapseState();
-      renderSidebar();
-    };
-
-    window.toggleDate = function(dateKey) {
-      collapseState.dates[dateKey] = !collapseState.dates[dateKey];
-      saveCollapseState();
-      renderSidebar();
-    };
+    function saveCollapseState() { localStorage.setItem('sidebarCollapseState_creditcard', JSON.stringify({ months: collapseState.months, dates: collapseState.dates })); }
+    window.toggleMonth = function(monthKey) { collapseState.months[monthKey] = !collapseState.months[monthKey]; saveCollapseState(); renderSidebar(); };
+    window.toggleDate = function(dateKey) { collapseState.dates[dateKey] = !collapseState.dates[dateKey]; saveCollapseState(); renderSidebar(); };
 
     function attachSidebarEvents(container) {
       container.querySelectorAll('.copy-store').forEach(btn => {
@@ -946,19 +857,8 @@ export function initCreditcardApp() {
           if (entry) {
             const plainText =
                 `STORE NAME: ${entry.store}\nMID: ${entry.mid}\nMERCHANT: ${entry.merchant || ''}\nCONTACT #: ${entry.contactNumber}\n\nISSUE:\n${entry.issue || ''}`;
-            const htmlContent =
-                `<strong>STORE NAME: </strong>${escapeHtml(entry.store)}<br><strong>MID: </strong>${escapeHtml(entry.mid)}<br><strong>MERCHANT: </strong>${escapeHtml(entry.merchant || '')}<br><strong>CONTACT #: </strong>${escapeHtml(entry.contactNumber)}<br><br><strong>ISSUE:</strong><br>${escapeHtml(entry.issue || '').replace(/\n/g, '<br>')}`;
-            try {
-              const blobHtml = new Blob([htmlContent], { type: 'text/html' });
-              const blobPlain = new Blob([plainText], { type: 'text/plain' });
-              await navigator.clipboard.write([
-                new ClipboardItem({ 'text/plain': blobPlain, 'text/html': blobHtml })
-              ]);
-              showNotification('Details copied (rich format)');
-            } catch (err) {
-              navigator.clipboard.writeText(plainText);
-              showNotification('Details copied (plain text)');
-            }
+            navigator.clipboard.writeText(plainText);
+            showNotification('Details copied (plain text)');
           }
         });
       });
@@ -969,20 +869,9 @@ export function initCreditcardApp() {
           const id = btn.dataset.id;
           const entry = allEntries.find(e => e.id == id);
           if (entry) {
-            const plainText = `📞 CONTACT:\nCALLER NAME: ${entry.merchant || ''}\nCONTACT NUMBER: ${entry.contactNumber}\n\n🔧 ISSUE:\n${entry.issue || ''}\n\n✅ RESOLUTION:\n${entry.remarks || ''}`;
-            const htmlContent =
-                `<strong>📞 CONTACT: </strong><br><strong>MERCHANT: </strong> ${escapeHtml(entry.merchant || '')}<br><strong>CONTACT NUMBER: </strong> ${escapeHtml(entry.contactNumber)}<br><br><strong>🔧 ISSUE: </strong><br>${escapeHtml(entry.issue || '').replace(/\n/g, '<br>')}<br><br><strong>✅ RESOLUTION: </strong><br>${escapeHtml(entry.remarks || '').replace(/\n/g, '<br>')}`;
-            try {
-              const blob = new Blob([htmlContent], { type: 'text/html' });
-              const plainBlob = new Blob([plainText], { type: 'text/plain' });
-              await navigator.clipboard.write([
-                new ClipboardItem({ 'text/plain': plainBlob, 'text/html': blob })
-              ]);
-              showNotification('HRMS details copied (rich format)');
-            } catch (err) {
-              navigator.clipboard.writeText(plainText);
-              showNotification('HRMS details copied (plain text)');
-            }
+            const plainText = `📞 CONTACT:\nMERCHANT: ${entry.merchant || ''}\nCONTACT NUMBER: ${entry.contactNumber}\n\n🔧 ISSUE:\n${entry.issue || ''}\n\n🛠️ TROUBLESHOOTING:\n${htmlToPlainText(entry.remarks || '')}\n\n🎯 RESOLUTION / BACKEND:\n${entry.resolution || ''}`;
+            navigator.clipboard.writeText(plainText);
+            showNotification('HRMS details copied');
           }
         });
       });
@@ -990,86 +879,37 @@ export function initCreditcardApp() {
       container.querySelectorAll('.edit-entry').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
-          const id = parseInt(btn.dataset.id);
-          window.editEntry(id);
-        });
-      });
-
-      container.querySelectorAll('.return-entry').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const id = btn.dataset.id;
-          restoreEntry(Number(id));
-        });
-      });
-
-      container.querySelectorAll('.delete-entry').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const id = btn.dataset.id;
-          hardDeleteEntry(Number(id));
+          window.editEntry(parseInt(btn.dataset.id));
         });
       });
     }
 
     function attachGeminiKeyControls() {
-      try {
-        const input = document.getElementById('geminiApiKeyInput');
-        const saveBtn = document.getElementById('saveGeminiKeyBtn');
-        const clearBtn = document.getElementById('clearGeminiKeyBtn');
-        const stored = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY) || '';
-        if (input) input.value = stored;
-        if (saveBtn) {
-          saveBtn.addEventListener('click', () => {
-            const initialValue = input ? (input.value || stored) : stored;
-            const entered = window.prompt('Paste your Gemini API key:', initialValue || '');
-            if (entered === null) {
-              showNotification('Gemini API key not changed');
-              return;
-            }
-            const v = entered.trim();
-            if (v) {
-              localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, v);
-              if (input) input.value = v;
-              try { window.GEMINI_API_KEY = v; } catch (e) {}
-              showNotification('Gemini API key saved');
-            } else {
-              localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
-              if (input) input.value = '';
-              try { delete window.GEMINI_API_KEY; } catch (e) {}
-              showNotification('Gemini API key cleared');
-            }
-          });
-        }
-        if (clearBtn) {
-          clearBtn.addEventListener('click', () => {
-            input.value = '';
-            localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
-            try { delete window.GEMINI_API_KEY; } catch (e) {}
-            showNotification('Gemini API key cleared');
-          });
-        }
-      } catch (e) {}
+      const input = document.getElementById('geminiApiKeyInput');
+      const saveBtn = document.getElementById('saveGeminiKeyBtn');
+      if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+          const entered = window.prompt('Paste your Gemini API key:');
+          if (entered && entered.trim()) {
+            localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, entered.trim());
+            showNotification('Gemini API key saved');
+          }
+        });
+      }
     }
 
     // ─── BULK OPERATIONS ───
-    function getSelectedRowIds() {
-      const checkboxes = document.querySelectorAll('#entryTable tbody .row-checkbox:checked');
-      return Array.from(checkboxes).map(cb => cb.value);
-    }
+    function getSelectedRowIds() { return Array.from(document.querySelectorAll('#entryTable tbody .row-checkbox:checked')).map(cb => cb.value); }
 
     function bulkDelete() {
       const ids = getSelectedRowIds();
-      if (ids.length === 0) { showNotification('No rows selected'); return; }
+      if (ids.length === 0) return;
       if (!confirm(`Remove ${ids.length} selected entries?`)) return;
       ids.forEach(id => {
         const entry = allEntries.find(e => e.id == id);
         if (entry) entry.deleted = true;
       });
-      saveAllEntries();
-      renderTable();
-      renderSidebar();
-      showNotification(`${ids.length} entries removed.`);
+      saveAllEntries(); renderTable(); renderSidebar();
     }
 
     function bulkCopy() {
@@ -1077,10 +917,36 @@ export function initCreditcardApp() {
       if (ids.length === 0) { showNotification('No rows selected'); return; }
       const selectedRows = allEntries.filter(entry => ids.includes(entry.id.toString()));
       selectedRows.reverse();
-      const rows = selectedRows.map(entry =>
-        [entry.date, entry.shift, entry.support, entry.mid, entry.store, entry.merchant || '', entry.contactNumber, entry.issue || '', entry.escalated || '', entry.status || '', entry.remarks || '']
-        .map(f => escapeCSV(String(f ?? ''))).join('\t')
-      );
+      
+      const rows = selectedRows.map(entry => {
+        let exportDate = entry.date || '';
+        const dateParts = exportDate.split('/');
+        if (dateParts.length === 3) {
+           const m = dateParts[0].padStart(2, '0');
+           const d = dateParts[1].padStart(2, '0');
+           const y = dateParts[2];
+           exportDate = `${d}/${m}/${y}`; 
+        }
+
+        // Merge Resolution into Remarks for export
+        const combinedRemarks = entry.resolution 
+          ? htmlToPlainText(entry.remarks || '') + '\n\nBackend / Resolution:\n' + entry.resolution 
+          : htmlToPlainText(entry.remarks || '');
+
+        return [
+          exportDate, 
+          entry.shift, 
+          entry.support, 
+          entry.mid, 
+          entry.store, 
+          entry.merchant || '', 
+          entry.contactNumber, 
+          entry.issue || '', 
+          entry.escalated || '', 
+          entry.status || '', 
+          combinedRemarks 
+        ].map(f => escapeCSV(String(f ?? ''))).join('\t')
+      });
       navigator.clipboard.writeText(rows.join('\n')).then(() => showNotification(`Copied ${rows.length} rows`));
     }
 
@@ -1104,10 +970,7 @@ export function initCreditcardApp() {
           const div = document.createElement('div');
           div.className = 'combobox-suggestion-item';
           div.textContent = opt;
-          div.setAttribute('data-value', opt);
-          div.addEventListener('click', (e) => { e.stopPropagation();
-            selectOption(opt); });
-          div.addEventListener('mouseenter', () => { setFocus(idx); });
+          div.addEventListener('click', (e) => { e.stopPropagation(); selectOption(opt); });
           suggestionsDiv.appendChild(div);
         });
         suggestionsDiv.style.display = 'block';
@@ -1123,129 +986,49 @@ export function initCreditcardApp() {
         input.dispatchEvent(new Event('input', { bubbles: true }));
         setTimeout(() => { ignoreNextRender = false; }, 100);
       }
-
-      function setFocus(index) {
-        const items = suggestionsDiv.querySelectorAll('.combobox-suggestion-item');
-        items.forEach((item, i) => {
-          if (i === index) item.classList.add('selected');
-          else item.classList.remove('selected');
-        });
-        currentFocus = index;
-        if (index >= 0 && items[index]) items[index].scrollIntoView({ block: 'nearest' });
-      }
-
+      
       input.addEventListener('input', (e) => {
-        if (input._skipNextInput) { delete input._skipNextInput; return; }
         if (ignoreNextRender) return;
-        const val = e.target.value;
-        hidden.value = val;
-        renderSuggestions(val);
-        if (onSelectCallback) onSelectCallback(val);
+        hidden.value = e.target.value;
+        renderSuggestions(e.target.value);
+        if (onSelectCallback) onSelectCallback(e.target.value);
       });
-
-      input.addEventListener('focus', () => {
-        if (ignoreNextRender) return;
-        renderSuggestions(input.value);
-      });
-
-      input.addEventListener('keydown', (e) => {
-        const items = suggestionsDiv.querySelectorAll('.combobox-suggestion-item');
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          if (currentFocus < items.length - 1) setFocus(currentFocus + 1);
-          else if (items.length > 0) setFocus(0);
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          if (currentFocus > 0) setFocus(currentFocus - 1);
-          else if (items.length > 0) setFocus(items.length - 1);
-        } else if (e.key === 'Enter' && currentFocus >= 0 && items[currentFocus]) {
-          e.preventDefault();
-          selectOption(items[currentFocus].textContent);
-        } else if (e.key === 'Escape') {
-          suggestionsDiv.style.display = 'none';
-        }
-      });
-
+      input.addEventListener('focus', () => { if (!ignoreNextRender) renderSuggestions(input.value); });
       document.addEventListener('click', (e) => {
-        if (!input.contains(e.target) && !suggestionsDiv.contains(e.target)) {
-          suggestionsDiv.style.display = 'none';
-          ignoreNextRender = false;
-        }
+        if (!input.contains(e.target) && !suggestionsDiv.contains(e.target)) { suggestionsDiv.style.display = 'none'; ignoreNextRender = false; }
       });
-
       if (hidden.value) input.value = hidden.value;
     }
 
-    // ─── THEME ───
+    // ─── INIT & TAB MANGEMENT ───
     function initTheme() {
-      const savedTheme = localStorage.getItem('theme_creditcard');
-      if (savedTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-        document.getElementById('themeToggle').textContent = '☀️';
-      } else {
-        document.body.classList.remove('dark-mode');
-        document.getElementById('themeToggle').textContent = '🌙';
-      }
+      if (localStorage.getItem('theme_creditcard') === 'dark') document.body.classList.add('dark-mode');
     }
 
-    function toggleTheme() {
-      const isDark = document.body.classList.toggle('dark-mode');
-      localStorage.setItem('theme_creditcard', isDark ? 'dark' : 'light');
-      document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
-      syncPreviewHeight();
-    }
-
-    // ─── INIT ───
     window.switchToTab = function(tab) {
-      const mapping = {
-        creditcard: 'tab-creditcard'
-      };
-      Object.values(mapping).forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = (id === mapping[tab]) ? 'block' : 'none';
-      });
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        const expected = btn.id.replace('tabBtn-', '');
-        if (expected === tab) btn.classList.add('active'); else btn.classList.remove('active');
-      });
+      document.getElementById('tab-creditcard').style.display = 'block';
       syncPreviewHeight();
     };
 
     window.createNewTicket = function() {
       const tabsContainer = document.querySelector('.top-tabs');
-      if (!tabsContainer) return showNotification('Tabs container missing');
-      const midVal = document.getElementById('creditcard-mid')?.value?.trim();
-      const storeVal = document.getElementById('creditcard-store')?.value?.trim();
-      const remarksVal = document.getElementById('creditcard-remarks')?.value?.trim();
-      const hasContent = !!(midVal || storeVal || remarksVal);
-      if (!currentDraftId && hasContent) {
-        const snapId = `draft-${Date.now()}`;
-        const snapBtn = document.createElement('button'); snapBtn.id = `ticketTab-${snapId}`; snapBtn.className = 'tab-btn';
-        const lbl = document.createElement('span'); lbl.className = 'tab-label'; lbl.textContent = `${midVal || 'Ticket'} • ${storeVal || ''}`; lbl.title = lbl.textContent;
-        const close = document.createElement('button'); close.className = 'tab-close'; close.textContent = '×'; close.title = 'Close tab'; close.onclick = (e) => { e.stopPropagation(); closeDraftTab(snapId); };
-        snapBtn.appendChild(lbl); snapBtn.appendChild(close); snapBtn.onclick = () => activateDraftTab(snapId);
-        tabsContainer.appendChild(snapBtn);
-        const saved = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]'); saved.push({ id: snapId, label: lbl.textContent }); localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(saved));
-        const data = { shift:'', mid: midVal || '', store: storeVal || '', merchant:'', contactNumber:'', issue:'', escalated:'', status:'', remarks: remarksVal || '', date: getESTDateString(), support:'' };
-        localStorage.setItem(`draftData_${snapId}`, JSON.stringify(data));
-      }
+      if (!tabsContainer) return;
       const draftId = `draft-${Date.now()}`;
-      const btn = document.createElement('button'); btn.id = `ticketTab-${draftId}`; btn.className = 'tab-btn';
-      const labelSpan = document.createElement('span'); labelSpan.className = 'tab-label'; labelSpan.textContent = 'Ticket'; labelSpan.title = 'Ticket';
-      const closeBtn = document.createElement('button'); closeBtn.className = 'tab-close'; closeBtn.textContent = '×'; closeBtn.title = 'Close tab'; closeBtn.onclick = (e) => { e.stopPropagation(); closeDraftTab(draftId); };
-      btn.appendChild(labelSpan); btn.appendChild(closeBtn); btn.onclick = () => activateDraftTab(draftId);
+      const btn = document.createElement('button'); btn.id = `ticketTab-${draftId}`; btn.className = 'tab-btn active';
+      btn.innerHTML = `<span class="tab-label">Ticket</span><button class="tab-close">×</button>`;
+      btn.onclick = () => activateDraftTab(draftId);
+      btn.querySelector('.tab-close').onclick = (e) => { e.stopPropagation(); closeDraftTab(draftId); };
       tabsContainer.appendChild(btn);
+      
       const savedNow = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]'); savedNow.push({ id: draftId, label: 'Ticket' }); localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(savedNow));
       activateDraftTab(draftId);
-      manageTabOverflow();
-      showNotification('New ticket tab created');
     };
 
     let currentDraftId = null;
 
     function saveDraftData(draftId) {
       if (!draftId) return;
-      const fields = ['shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'remarks', 'date', 'support'];
+      const fields = ['shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'date', 'support'];
       const data = {};
       fields.forEach(id => {
         const el = document.getElementById(`creditcard-${id}`);
@@ -1270,7 +1053,7 @@ export function initCreditcardApp() {
       editId = null;
       localStorage.removeItem(EDIT_STORAGE_KEY);
       if (data) {
-        ['date','shift','support','mid','store','merchant','contactNumber','issue','escalated','status'].forEach(id => {
+        ['date','shift','support','mid','store','merchant','contactNumber','issue','escalated','status', 'resolution'].forEach(id => {
           const el = document.getElementById(`creditcard-${id}`);
           if (el && data[id] !== undefined) el.value = data[id];
         });
@@ -1283,31 +1066,15 @@ export function initCreditcardApp() {
       }
       currentDraftId = draftId;
       creditcardUpdatePreview();
-      syncPreviewHeight();
-      attachDraftAutoSaveForDraft(draftId);
-      const midEl = document.getElementById('creditcard-mid');
-      if (midEl) midEl.focus();
-    }
-
-    function attachDraftAutoSaveForDraft(draftId) {
-      const data = loadDraftData(draftId);
-      if (data) updateTabLabelFromDraft(draftId, data);
     }
 
     function updateTabLabelFromDraft(draftId, data) {
       try {
         const btn = document.getElementById(`ticketTab-${draftId}`);
         if (!btn) return;
-        const labelSpan = btn.querySelector('.tab-label');
         const mid = (data && data.mid) ? data.mid : document.getElementById('creditcard-mid')?.value || '';
-        const store = (data && data.store) ? data.store : document.getElementById('creditcard-store')?.value || '';
-        let label = 'Ticket';
-        if (mid) label = mid;
-        if (store) label = `${label} • ${store.length > 12 ? store.slice(0,12)+'…' : store}`;
-        if (labelSpan) labelSpan.textContent = label;
-        const saved = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
-        const idx = saved.findIndex(s => s.id === draftId);
-        if (idx !== -1) { saved[idx].label = label; localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(saved)); }
+        let label = mid || 'Ticket';
+        btn.querySelector('.tab-label').textContent = label;
       } catch (e) {}
     }
 
@@ -1316,142 +1083,31 @@ export function initCreditcardApp() {
       if (btn) btn.remove();
       localStorage.removeItem(`draftData_${draftId}`);
       const saved = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
-      const updated = saved.filter(s => s.id !== draftId);
-      localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(updated));
-      if (currentDraftId === draftId) {
-        currentDraftId = null;
-        window.switchToTab && window.switchToTab('creditcard');
-      }
-      manageTabOverflow();
-      showNotification('Draft tab closed');
+      localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(saved.filter(s => s.id !== draftId)));
+      if (currentDraftId === draftId) { currentDraftId = null; clearFormFields('creditcard'); }
     }
 
-    window.saveDraftNow = function(draftId) {
-      if (!draftId) {
-        showNotification('No draft selected');
-        return;
-      }
-      saveDraftData(draftId);
-      showNotification('Draft saved');
-      manageTabOverflow();
-    };
-
     window.saveCurrentDraft = function() {
-      if (currentDraftId) { window.saveDraftNow(currentDraftId); return; }
-      const draftId = `draft-${Date.now()}`;
-      const tabsContainer = document.querySelector('.top-tabs');
-      if (!tabsContainer) return showNotification('Tabs container missing');
-      const btn = document.createElement('button'); btn.id = `ticketTab-${draftId}`; btn.className = 'tab-btn';
-      const labelSpan = document.createElement('span'); labelSpan.className = 'tab-label'; labelSpan.textContent = 'Ticket'; labelSpan.title = 'Ticket';
-      const closeBtn = document.createElement('button'); closeBtn.className = 'tab-close'; closeBtn.textContent = '×'; closeBtn.title = 'Close tab'; closeBtn.onclick = (e) => { e.stopPropagation(); closeDraftTab(draftId); };
-      btn.appendChild(labelSpan); btn.appendChild(closeBtn); btn.onclick = () => activateDraftTab(draftId);
-      tabsContainer.appendChild(btn);
-      const savedNow = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]'); savedNow.push({ id: draftId, label: 'Ticket' }); localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(savedNow));
-      saveDraftData(draftId);
-      activateDraftTab(draftId);
-      manageTabOverflow();
-      showNotification('Draft created and saved');
+      if (currentDraftId) { saveDraftData(currentDraftId); showNotification('Draft saved'); return; }
+      window.createNewTicket();
     };
 
     function init() {
-      const todayLocal = getLocalTodayString();
-      document.getElementById('creditcard-date').value = todayLocal;
-
-      const savedCollapse = localStorage.getItem('sidebarCollapseState_creditcard');
-      if (savedCollapse) {
-        try {
-          const parsed = JSON.parse(savedCollapse);
-          collapseState.months = parsed.months || {};
-          collapseState.dates = parsed.dates || {};
-        } catch (e) {}
-      }
-
+      document.getElementById('creditcard-date').value = getLocalTodayString();
       loadFormData('creditcard');
       loadAllEntries();
-
       attachGeminiKeyControls();
-
-      (function restoreDraftTabs() {
-        const tabsContainer = document.querySelector('.top-tabs');
-        if (!tabsContainer) return;
-        let saved = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
-        if (!Array.isArray(saved)) return;
-        const seen = new Set();
-        const deduped = [];
-        saved.forEach(item => {
-          const id = (typeof item === 'string') ? item : (item && item.id);
-          if (!id) return;
-          if (!seen.has(id)) {
-            seen.add(id);
-            deduped.push(item);
-          }
-        });
-        if (deduped.length !== saved.length) {
-          try { localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(deduped)); } catch (e) {}
-          saved = deduped;
-        }
-        saved.forEach(item => {
-          const draftId = (typeof item === 'string') ? item : item.id;
-          const label = (typeof item === 'string') ? 'Ticket' : (item.label || 'Ticket');
-          if (!draftId) return;
-          if (document.getElementById(`ticketTab-${draftId}`)) return;
-          const btn = document.createElement('button');
-          btn.id = `ticketTab-${draftId}`;
-          btn.className = 'tab-btn';
-          const labelSpan = document.createElement('span');
-          labelSpan.className = 'tab-label';
-          labelSpan.textContent = label;
-          const closeBtn = document.createElement('button');
-          closeBtn.className = 'tab-close';
-          closeBtn.textContent = '×';
-          closeBtn.title = 'Close tab';
-          closeBtn.onclick = (e) => { e.stopPropagation(); closeDraftTab(draftId); };
-          btn.appendChild(labelSpan);
-          btn.appendChild(closeBtn);
-          btn.onclick = () => activateDraftTab(draftId);
-          tabsContainer.appendChild(btn);
-          const data = loadDraftData(draftId);
-          if (data) updateTabLabelFromDraft(draftId, data);
-        });
-        manageTabOverflow();
-        if (saved.length > 0) {
-          const last = saved[saved.length - 1];
-          const lastId = (typeof last === 'string') ? last : last.id;
-          setTimeout(() => activateDraftTab(lastId), 200);
-        }
-      })();
-
-      const tabsContainerObserverTarget = document.querySelector('.top-tabs');
-      if (tabsContainerObserverTarget) {
-        const mo = new MutationObserver(() => manageTabOverflow());
-        mo.observe(tabsContainerObserverTarget, { childList: true });
-      }
-
-      const storedEditId = localStorage.getItem(EDIT_STORAGE_KEY);
-      if (storedEditId) {
-        const id = parseInt(storedEditId);
-        const entryToEdit = allEntries.find(e => e.id === id && !e.deleted);
-        if (entryToEdit) {
-          setTimeout(() => { window.editEntry(id); }, 100);
-        } else {
-          localStorage.removeItem(EDIT_STORAGE_KEY);
-          localStorage.removeItem(EDIT_DRAFT_KEY + id);
-        }
-      }
-
       initTheme();
-      document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        const isDark = document.body.classList.toggle('dark-mode');
+        localStorage.setItem('theme_creditcard', isDark ? 'dark' : 'light');
+      });
       document.getElementById('clearAllBtn').addEventListener('click', clearAllEntries);
       document.getElementById('bulkDeleteBtn').addEventListener('click', bulkDelete);
       document.getElementById('bulkCopyBtn').addEventListener('click', bulkCopy);
       document.getElementById('selectAllCheckbox').addEventListener('change', (e) => handleSelectAll(e.target));
-      document.addEventListener('change', (e) => {
-        if (e.target.classList.contains('row-checkbox')) {
-          updateSelectAllCheckboxState();
-        }
-      });
       
-      // Update the table dynamically when you pick a new date!
       const dateFieldEl = document.getElementById('creditcard-date');
       if (dateFieldEl) {
         dateFieldEl.addEventListener('change', () => {
@@ -1460,182 +1116,43 @@ export function initCreditcardApp() {
         });
       }
 
-      const fields = ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status'];
-      fields.forEach(id => {
+      ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution'].forEach(id => {
         const el = document.getElementById(`creditcard-${id}`);
         if (el) {
-          el.addEventListener('input', () => {
-            creditcardUpdatePreview();
-            saveFormData('creditcard');
-          });
+          el.addEventListener('input', () => { creditcardUpdatePreview(); saveFormData('creditcard'); });
         }
       });
       document.getElementById('creditcard-shift').addEventListener('change', () => saveFormData('creditcard'));
 
-      const creditcardContactNumber = document.getElementById('creditcard-contactNumber');
-      if (creditcardContactNumber) {
-        creditcardContactNumber.addEventListener('input', function() {
-          let digits = this.value.replace(/\D/g, '');
-          if (digits.length > 10) digits = digits.slice(0, 10);
-          let formatted = '';
-          if (digits.length > 0) {
-            if (digits.length <= 3) formatted = `(${digits}`;
-            else if (digits.length <= 6) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-            else formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-          }
-          this.value = formatted;
-          saveFormData('creditcard');
-          creditcardUpdatePreview();
-        });
-        creditcardContactNumber.addEventListener('blur', function() {
-          let digits = this.value.replace(/\D/g, '');
-          if (digits.length > 0 && digits.length < 10) {
-            digits = digits.padStart(10, '0');
-            let formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-            this.value = formatted;
-            saveFormData('creditcard');
-            creditcardUpdatePreview();
-          }
-        });
-      }
-
       quillEditor = new Quill('#creditcard-remarks-editor', {
         theme: 'snow',
-        modules: {
-          toolbar: [
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            ['clean']
-          ]
-        },
+        modules: { toolbar: [ ['bold', 'italic', 'underline', 'strike'], [{ list: 'ordered' }, { list: 'bullet' }], ['clean'] ] },
       });
 
       if (quillEditor && document.getElementById('creditcard-remarks').value) {
         quillEditor.root.innerHTML = document.getElementById('creditcard-remarks').value;
       }
-
       quillEditor.on('text-change', function() {
-        const htmlContent = quillEditor.root.innerHTML;
-        document.getElementById('creditcard-remarks').value = htmlContent;
+        document.getElementById('creditcard-remarks').value = quillEditor.root.innerHTML;
         creditcardUpdatePreview();
         saveFormData('creditcard');
       });
 
       initCombobox('creditcard-status-combobox', 'creditcard-status', STATUS_OPTIONS, 'creditcard-status-suggestions', () => {
-        creditcardUpdatePreview();
-        saveFormData('creditcard');
+        creditcardUpdatePreview(); saveFormData('creditcard');
       });
-
-      window.addEventListener('resize', () => { syncPreviewHeight(); manageTabOverflow(); });
-
-      function manageTabOverflow() {
-        const container = document.querySelector('.top-tabs');
-        if (!container) return;
-        const existingDropdown = container.querySelector('.tabs-dropdown');
-        if (existingDropdown) existingDropdown.remove();
-
-        const tabButtons = Array.from(container.querySelectorAll('.tab-btn'));
-        if (tabButtons.length === 0) return;
-
-        const staticIds = ['tabBtn-creditcard', 'tabBtn-newticket'];
-        const ordered = [];
-        staticIds.forEach(id => {
-          const b = tabButtons.find(t => t.id === id);
-          if (b) ordered.push(b);
-        });
-        tabButtons.forEach(t => { if (!ordered.includes(t)) ordered.push(t); });
-
-        const containerWidth = container.clientWidth;
-        let used = 0;
-        const visible = [];
-        const overflow = [];
-        const reserve = 44;
-
-        ordered.forEach(btn => {
-          btn.style.display = 'inline-flex';
-          const w = btn.offsetWidth + 8;
-          if (used + w <= containerWidth - reserve) {
-            visible.push(btn);
-            used += w;
-          } else {
-            overflow.push(btn);
-          }
-        });
-
-        if (overflow.length > 0) {
-          overflow.forEach(b => { b.style.display = 'none'; });
-          const dropdown = document.createElement('div');
-          dropdown.className = 'tabs-dropdown';
-          const ddBtn = document.createElement('button');
-          ddBtn.type = 'button';
-          ddBtn.textContent = '⋯';
-          const ul = document.createElement('ul');
-          overflow.forEach(b => {
-            const li = document.createElement('li');
-            const id = b.id;
-            const label = b.querySelector('.tab-label')?.textContent || b.textContent || id;
-            li.textContent = label;
-            li.onclick = (e) => {
-              e.stopPropagation();
-              const draftId = id.replace('ticketTab-','');
-              activateDraftTab(draftId);
-              manageTabOverflow();
-              ul.classList.remove('show');
-            };
-            ul.appendChild(li);
-          });
-          ddBtn.onclick = (e) => { e.stopPropagation(); ul.classList.toggle('show'); };
-          dropdown.appendChild(ddBtn);
-          dropdown.appendChild(ul);
-          container.appendChild(dropdown);
-          document.addEventListener('click', () => { ul.classList.remove('show'); });
-        }
-      }
-
-      function checkAndRefreshTable() {
+      
+      setInterval(() => {
         const todayEST = getESTDateString();
-        const storedDate = localStorage.getItem('lastClearDate_creditcard');
-        if (storedDate !== todayEST) {
-          // Snap back to today ONLY if a new physical day occurs
-          const dateInput = document.getElementById('creditcard-date');
-          if (dateInput) {
-             dateInput.value = getLocalTodayString();
-          }
-          saveAllEntries();
-          renderTable();
-          renderSidebar();
-          showNotification('New day detected. Table switched to today.');
+        if (localStorage.getItem('lastClearDate_creditcard') !== todayEST) {
+          document.getElementById('creditcard-date').value = getLocalTodayString();
+          saveAllEntries(); renderTable(); renderSidebar();
           localStorage.setItem('lastClearDate_creditcard', todayEST);
         }
-      }
-      
-      if (!localStorage.getItem('lastClearDate_creditcard')) {
-        localStorage.setItem('lastClearDate_creditcard', getESTDateString());
-      }
-      setInterval(checkAndRefreshTable, 60000);
+      }, 60000);
 
-      const IDLE_REFRESH_DELAY = 900000;
-      let idleTimeout;
-      function idleReload() { window.location.reload(); }
-      function resetIdleTimer() { if (idleTimeout) clearTimeout(idleTimeout);
-        idleTimeout = setTimeout(idleReload, IDLE_REFRESH_DELAY); }
-      ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click', 'focusin', 'input'].forEach(eventName => {
-        window.addEventListener(eventName, resetIdleTimer, { passive: true });
-      });
-      resetIdleTimer();
-
-      setInterval(() => { updateStatusCounters(); }, 30000);
-
-      window.addEventListener('beforeunload', () => {
-        saveFormData('creditcard');
-        if (editId) {
-          attachDraftAutoSave(editId);
-        }
-      });
-
-      creditcardUpdatePreview();
-      syncPreviewHeight();
-      manageTabOverflow();
+      window.addEventListener('beforeunload', () => { saveFormData('creditcard'); if (editId) attachDraftAutoSave(editId); });
+      creditcardUpdatePreview(); syncPreviewHeight();
     }
 
     init();

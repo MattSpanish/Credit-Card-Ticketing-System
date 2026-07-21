@@ -12,7 +12,6 @@ function Sidebar() {
         <button className="nav-item active" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Dashboard</button>
         <button className="nav-item" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Tickets</button>
         <button className="nav-item" onClick={() => window.createNewTicket && window.createNewTicket()}>New Ticket</button>
-        
       </nav>
       <div className="sidebar-foot">Logged in as <strong>Support</strong></div>
       <div className="sidebar-key">
@@ -63,7 +62,6 @@ function Tabs() {
   return (
     <div className="top-tabs shell-tabs">
       <button id="tabBtn-creditcard" className="tab-btn active" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Credit Card</button>
-      
     </div>
   );
 }
@@ -91,7 +89,7 @@ function LeftPanel() {
                 <option value="">-- SELECT --</option>
                 <option value="9PM - 8AM">9PM - 8AM</option>
                 <option value="730AM - 630PM">5AM - 2PM</option>
-                <option value="6PM - 5PM">2PM - 11PM</option>
+                <option value="6PM - 5AM">2PM - 11PM</option>
               </select>
             </td>
           </tr>
@@ -134,11 +132,15 @@ function LeftPanel() {
             </td>
           </tr>
           <tr>
-            <th><label htmlFor="creditcard-remarks">Troubleshooting</label></th>
+            <th><label htmlFor="creditcard-remarks">Troubleshooting (AI)</label></th>
             <td>
               <div id="creditcard-remarks-editor" style={{ height: 200 }}></div>
               <textarea id="creditcard-remarks" style={{ display: 'none' }}></textarea>
             </td>
+          </tr>
+          <tr>
+            <th><label htmlFor="creditcard-resolution">Backend / Resolution</label></th>
+            <td><textarea id="creditcard-resolution" className="no-uppercase" rows={3}></textarea></td>
           </tr>
         </tbody>
       </table>
@@ -173,8 +175,12 @@ function RightPanel() {
         <div className="preview-box"><span id="creditcard-preview-issue" className="preview-multiline"></span></div>
       </div>
       <div className="preview-section">
-        <span className="preview-label">Remarks</span>
+        <span className="preview-label">Troubleshooting</span>
         <div className="preview-box preview-box-accent"><span id="creditcard-preview-remarks" className="preview-multiline"></span></div>
+      </div>
+      <div className="preview-section">
+        <span className="preview-label">Backend / Resolution</span>
+        <div className="preview-box"><span id="creditcard-preview-resolution" className="preview-multiline"></span></div>
       </div>
     </div>
   );
