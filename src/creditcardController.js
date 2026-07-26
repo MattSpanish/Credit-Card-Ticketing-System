@@ -15,7 +15,7 @@ export function initCreditcardApp() {
     const EDIT_DRAFT_KEY = 'editingDraft_creditcard_';
     const DRAFT_TABS_KEY = 'ticketDraftTabs_creditcard';
     const collapseState = { months: {}, dates: {} };
-    const STATUS_OPTIONS = ['RESOLVED', 'PENDING', 'OTHER TASK', 'UNSOLVED'];
+    const STATUS_OPTIONS = ['RESOLVED', 'PENDING', 'OTHER TASK', 'OPEN'];
     const CLOCK_TIMES = {
       '9PM - 8AM': ['09:00 PM', '06:00 AM'],
       '730AM - 630PM': ['05:00 AM', '02:00 PM'],
@@ -749,16 +749,26 @@ export function initCreditcardApp() {
         else if (status === 'OTHER TASK') other++;
       });
       
-      const open = Math.max(baseEntries.length - resolved, 0);
+      // Calculate open tickets. "OTHER TASK" is now treated as resolved (not open).
+      const open = Math.max(baseEntries.length - (resolved + other), 0);
       
+      // Update Bulk Bar small counters
       if (document.getElementById('counterResolved')) document.getElementById('counterResolved').innerText = resolved;
       if (document.getElementById('counterPending')) document.getElementById('counterPending').innerText = pending;
       if (document.getElementById('counterOther')) document.getElementById('counterOther').innerText = other;
       
+      // Update Top Dashboard Grid counters
       const totalEl = document.getElementById('dashboardTotalTickets');
       const openEl = document.getElementById('dashboardOpenTickets');
+      const dashResolvedEl = document.getElementById('dashboardResolvedTickets');
+      const dashPendingEl = document.getElementById('dashboardPendingTickets');
+      
       if (totalEl) totalEl.textContent = baseEntries.length;
       if (openEl) openEl.textContent = open;
+      
+      // Groups 'RESOLVED' and 'OTHER TASK' together for the dashboard resolved stat
+      if (dashResolvedEl) dashResolvedEl.textContent = resolved + other;
+      if (dashPendingEl) dashPendingEl.textContent = pending;
     }
 
     function updateSelectAllCheckboxState() {
