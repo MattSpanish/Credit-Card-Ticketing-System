@@ -124,9 +124,55 @@ function LeftPanel() {
           <tr>
             <th><label htmlFor="creditcard-status">STATUS</label></th>
             <td>
-              <div className="combobox-wrapper">
-                <input type="text" id="creditcard-status-combobox" className="combobox-input no-uppercase" autoComplete="off" placeholder="Type or select status" />
+              <div className="combobox-wrapper" style={{ position: 'relative' }}>
+                <input 
+                  type="text" 
+                  id="creditcard-status-combobox" 
+                  className="combobox-input no-uppercase" 
+                  autoComplete="off" 
+                  placeholder="Type or select status" 
+                  style={{ paddingRight: '28px' }}
+                  onClick={() => {
+                    // Clicking the box triggers the dropdown suggestions list to re-appear
+                    const suggestions = document.getElementById('creditcard-status-suggestions');
+                    if (suggestions) suggestions.style.display = 'block';
+                  }}
+                />
                 <input type="hidden" id="creditcard-status" />
+
+                {/* 'X' button inside the input box */}
+                <button
+                  type="button"
+                  title="Clear Status"
+                  style={{
+                    position: 'absolute',
+                    right: '8px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: '#888',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                    zIndex: 2
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const combo = document.getElementById('creditcard-status-combobox');
+                    const hidden = document.getElementById('creditcard-status');
+                    if (combo) combo.value = '';
+                    if (hidden) hidden.value = '';
+
+                    // Open dropdown after clearing so you can pick a new option right away
+                    const suggestions = document.getElementById('creditcard-status-suggestions');
+                    if (suggestions) suggestions.style.display = 'block';
+                  }}
+                >
+                  ✖
+                </button>
+
                 <div id="creditcard-status-suggestions" className="combobox-suggestions"></div>
               </div>
             </td>
@@ -190,10 +236,28 @@ function HistoryPanel() {
   return (
     <div className="history-panel">
       <div className="panel-header panel-header-history">
-        <div>
-          <p className="panel-kicker">Activity feed</p>
-          <h3>Credit Card History</h3>
-          <p className="panel-subtitle">Recent tickets, grouped by date.</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+          <div>
+            <p className="panel-kicker">Activity feed</p>
+            <h3>Credit Card History</h3>
+            <p className="panel-subtitle">Recent tickets, grouped by date.</p>
+          </div>
+          
+          {/* Workload Tracker Controls */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-end' }}>
+            <input 
+              type="date" 
+              id="workload-date-picker" 
+              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+            <button 
+              className="btn btn-sm btn-primary" 
+              onClick={() => window.generateWorkload && window.generateWorkload()}
+            >
+              Workload Tracker
+            </button>
+          </div>
+
         </div>
       </div>
       <div id="creditcardHistoryContent" className="history-content"></div>

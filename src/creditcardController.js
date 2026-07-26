@@ -63,7 +63,18 @@ export function initCreditcardApp() {
       if (!text) return '';
       return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
-
+    
+    function formatMultiline(html) {
+      if (!html) return '';
+      let text = html.replace(/<br\s*\/?>/gi, '\n')
+                     .replace(/<\/p>/gi, '\n')
+                     .replace(/<\/li>/gi, '\n')
+                     .replace(/<li>/gi, '- ');
+      const div = document.createElement('div');
+      div.innerHTML = text;
+      return (div.textContent || div.innerText || '').replace(/\n\s*\n/g, '\n').trim();
+    }
+    
     function escapeCSV(text) {
       if (text.includes('\n') || text.includes('"')) {
         text = text.replace(/"/g, '""');
@@ -84,6 +95,7 @@ export function initCreditcardApp() {
     }
 
     function parseDateFromString(dateStr) {
+      if (!dateStr) return null;
       const parts = dateStr.split('/');
       if (parts.length !== 3) return null;
       const month = parseInt(parts[0], 10);
@@ -267,7 +279,7 @@ export function initCreditcardApp() {
       const timeStr = CLOCK_TIMES[shift][type === 'IN' ? 0 : 1];
       const output = `${dateStr} - ${dayName} Shift\nClock ${type} - ${timeStr}`;
       navigator.clipboard.writeText(output).then(() => showNotification(`Clock ${type} copied!`));
-    };
+    }
 
     // ─── FORM DATA ───
     function saveFormData(prefix) {
@@ -782,7 +794,6 @@ export function initCreditcardApp() {
     }
 
     // ─── SIDEBAR ───
-    // ─── SIDEBAR ───
     function renderSidebar() {
       const container = document.getElementById('creditcardHistoryContent');
       if (!container) return;
@@ -877,18 +888,9 @@ export function initCreditcardApp() {
     window.toggleMonth = function(monthKey) { collapseState.months[monthKey] = !collapseState.months[monthKey]; saveCollapseState(); renderSidebar(); };
     window.toggleDate = function(dateKey) { collapseState.dates[dateKey] = !collapseState.dates[dateKey]; saveCollapseState(); renderSidebar(); };
 
-  function attachSidebarEvents(container) {
+    function attachSidebarEvents(container) {
       // Helper: Converts HTML to plain text while PRESERVING line breaks
-      function formatMultiline(html) {
-        if (!html) return '';
-        let text = html.replace(/<br\s*\/?>/gi, '\n')
-                       .replace(/<\/p>/gi, '\n')
-                       .replace(/<\/li>/gi, '\n')
-                       .replace(/<li>/gi, '- ');
-        const div = document.createElement('div');
-        div.innerHTML = text;
-        return (div.textContent || div.innerText || '').replace(/\n\s*\n/g, '\n').trim();
-      }
+     
 
       container.querySelectorAll('.copy-store').forEach(btn => {
         btn.addEventListener('click', async (e) => {
@@ -1001,7 +1003,119 @@ TICKET IN HRMS [SOLVED] ${footerType}`;
         });
       });
     }
-  
+    
+   // ─── WORKLOAD TRACKER ───
+    window.generateWorkload = function() {
+      const datePicker = document.getElementById('workload-date-picker');
+      const entries = JSON.parse(localStorage.getItem('unifiedEntries_creditcard')) || [];
+      
+      if (entries.length === 0) {
+        alert("No tickets found in the system.");
+        return;
+      }
+
+      let filteredEntries = entries;
+      let headerDate = "ALL DATES";
+
+      // Parse and compare YYYY-MM-DD input with MM/DD/YYYY stored dates
+      if (datePicker && datePicker.value) {
+        const selectedYMD = datePicker.value;
+        
+        filteredEntries = entries.filter(entry => {
+          if (!entry.date) return false;
+          
+          const parts = entry.date.split('/');
+          if (parts.length !== 3) return false;
+          
+          const m = parts[0].padStart(2, '0');
+          const d = parts[1].padStart(2, '0');
+          const y = parts[2];
+          
+          const entryDateYMD = `${y}-${m}-${d}`;
+          
+          // Grab only active credit card tickets for this date
+          return entryDateYMD === selectedYMD && entry.source === 'creditcard' && !entry.deleted; 
+        });
+        
+        headerDate = selectedYMD;
+      } else {
+        // If no date picked, grab all active credit card tickets
+        filteredEntries = entries.filter(e => e.source === 'creditcard' && !e.deleted);
+      }
+      
+      if (filteredEntries.length === 0) {
+        alert(`No tickets found for ${headerDate}`);
+        return;
+      }
+
+      // Sort entries chronologically by ID so [1] is the oldest and [10] is the newest
+      filteredEntries.sort((a, b) => a.id - b.id);
+      
+      let outputText = "";
+      
+      filteredEntries.forEach((entry, index) => {
+        const statusUp = (entry.status || '').toUpperCase();
+        const dailyNumber = index + 1;
+
+        // Only show the date header on the very first ticket
+        let dateHeader = (dailyNumber === 1 && entry.date) ? `(${entry.date})\n` : '';
+
+        // DETAILS LOGIC: TROUBLESHOOTING uses the RAW original text!
+        let rawTroubleshootingText = formatMultiline(entry.originalRemarks || entry.remarks);
+        let troubleshootingSection = rawTroubleshootingText ? `TROUBLESHOOTING:\n${rawTroubleshootingText}\n\n` : '';
+        
+        // DETAILS LOGIC: RESOLUTION uses the AI summary (stored in entry.remarks)
+        let summaryText = '';
+        if (entry.originalRemarks && entry.originalRemarks !== entry.remarks) {
+          summaryText = formatMultiline(entry.remarks); 
+        } else if (entry.aiSummary) {
+          summaryText = formatMultiline(entry.aiSummary);
+        }
+
+        let manualResolution = entry.resolution || '';
+        let resolutionText = '';
+        let footerType = "CALL & BACKEND"; // Default fallback
+
+        if (statusUp === 'RESOLVED') {
+          footerType = "CALL";
+          resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
+        } else if (statusUp === 'OTHER TASK') {
+          footerType = "BACKEND";
+          resolutionText = manualResolution; // OTHER TASK ignores the AI summary
+        } else {
+          resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
+        }
+
+        const blockText = 
+`${dateHeader}[${dailyNumber}]
+TICKET NUMBER: ${entry.ticketNumber || ''}
+STORE NAME: ${entry.store || ''}
+MID: ${entry.mid || ''}
+PERSON NAME: ${entry.merchant || ''}
+PHONE NUMBER: ${entry.contactNumber || ''}
+ISSUE: ${entry.issue || ''}
+-
+
+${troubleshootingSection}RESOLUTION:
+${resolutionText}
+
+-
+TICKET IN HRMS [${statusUp || 'SOLVED'}] ${footerType}`;
+
+        outputText += blockText + '\n\n-------------------------------------------------------------------\n\n';
+      });
+      
+      navigator.clipboard.writeText(outputText).then(() => {
+        if (typeof showNotification === 'function') {
+          showNotification(`Workload copied to clipboard!`);
+        } else {
+          alert(`Workload copied to clipboard!`);
+        }
+      }).catch(err => {
+        console.error('Failed to copy workload: ', err);
+        alert('Failed to copy to clipboard. Check the console for details.');
+      });
+    };
 
     function attachGeminiKeyControls() {
       const input = document.getElementById('geminiApiKeyInput');
