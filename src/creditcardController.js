@@ -18,7 +18,7 @@ export function initCreditcardApp() {
     const STATUS_OPTIONS = ['RESOLVED', 'PENDING', 'OTHER TASK', 'UNSOLVED'];
     const CLOCK_TIMES = {
       '9PM - 8AM': ['09:00 PM', '06:00 AM'],
-      '7:30AM - 6:30PM': ['05:00 AM', '02:00 PM'],
+      '730AM - 630PM': ['05:00 AM', '02:00 PM'],
       '6PM - 5AM': ['02:00 PM', '11:00 PM'],
     };
     const GEMINI_API_KEY_STORAGE_KEY = 'creditcardGeminiApiKey';
@@ -334,7 +334,7 @@ export function initCreditcardApp() {
       syncPreviewHeight();
     }
 
-    // ─── ADD / EDIT / DELETE ───
+   // ─── ADD / EDIT / DELETE ───
     window.addEntry = async function(prefix) {
       if (prefix !== 'creditcard') return;
 
@@ -369,18 +369,32 @@ export function initCreditcardApp() {
       const issue = document.getElementById('creditcard-issue').value.trim();
       const escalated = document.getElementById('creditcard-escalated').value.trim();
       const status = document.getElementById('creditcard-status').value.trim();
+      
       const resolution = document.getElementById('creditcard-resolution').value.trim();
-      
       const remarksField = document.getElementById('creditcard-remarks');
-      let remarksHtml = quillEditor ? quillEditor.root.innerHTML : (remarksField ? remarksField.value : '');
       
-      // AI strictly ONLY summarizes the Remarks HTML
-      if (!editId) {
+      let rawRemarksHtml = quillEditor ? quillEditor.root.innerHTML : (remarksField ? remarksField.value : '');
+      let remarksHtmlToSave = rawRemarksHtml;
+      let originalRemarksHtml = rawRemarksHtml;
+
+      // Preserve original text if editing an existing entry
+      if (editId) {
+        const existing = allEntries.find(e => e.id === editId && e.source === 'creditcard');
+        if (existing && existing.originalRemarks) {
+          originalRemarksHtml = existing.originalRemarks;
+        }
+      }
+
+      // ✅ AI generates summary for the ENTRY'S REMARKS
+      if (status.toUpperCase() !== 'OTHER TASK') {
         showNotification('Generating AI summary...');
-        const summaryHtml = await generateRemarksSummary(remarksHtml);
+        const summaryHtml = await generateRemarksSummary(rawRemarksHtml);
         if (summaryHtml) {
-          remarksHtml = summaryHtml;
-          applyRemarksHtml(summaryHtml);
+          remarksHtmlToSave = summaryHtml; // The UI table will show this summarized version!
+          // If brand new entry, lock in the raw text so we never lose it
+          if (!editId) {
+            originalRemarksHtml = rawRemarksHtml;
+          }
         }
       }
 
@@ -396,8 +410,9 @@ export function initCreditcardApp() {
         issue,
         escalated,
         status,
-        remarks: remarksHtml,
-        resolution, 
+        remarks: remarksHtmlToSave,          // Summarized troubleshooting (Shows in App)
+        originalRemarks: originalRemarksHtml, // Raw untouched text (Used for DETAILS clipboard)
+        resolution: resolution,              // Manual resolution
         source: 'creditcard',
         deleted: false,
         imported: false,
@@ -604,10 +619,15 @@ export function initCreditcardApp() {
          exportDate = `${d}/${m}/${y}`;
       }
 
-      // Merges Resolution without the label for export
-      const combinedRemarks = entry.resolution 
-        ? htmlToPlainText(entry.remarks || '') + '\n\n' + entry.resolution 
-        : htmlToPlainText(entry.remarks || '');
+      // ✅ FIX: Only grab Resolution if status is OTHER TASK, hide remarks completely
+      let combinedRemarks = '';
+      if ((entry.status || '').toUpperCase() === 'OTHER TASK') {
+        combinedRemarks = entry.resolution || '';
+      } else {
+        combinedRemarks = entry.resolution 
+          ? htmlToPlainText(entry.remarks || '') + '\n\n' + entry.resolution 
+          : htmlToPlainText(entry.remarks || '');
+      }
 
       const rowData = [
         exportDate,
@@ -660,10 +680,15 @@ export function initCreditcardApp() {
           displayDate = `<strong>${m}/${dd}/${yy} - ${dayName}</strong>`; 
         }
 
-        // Merges Resolution without the label for visual display
-        const combinedRemarks = entry.resolution 
-          ? htmlToPlainText(entry.remarks || '') + '\n\n' + escapeHtml(entry.resolution)
-          : htmlToPlainText(entry.remarks || '');
+        // ✅ FIX: Only display Resolution in table if status is OTHER TASK
+        let combinedRemarks = '';
+        if ((entry.status || '').toUpperCase() === 'OTHER TASK') {
+          combinedRemarks = escapeHtml(entry.resolution || '');
+        } else {
+          combinedRemarks = entry.resolution 
+            ? htmlToPlainText(entry.remarks || '') + '\n\n' + escapeHtml(entry.resolution)
+            : htmlToPlainText(entry.remarks || '');
+        }
 
         const row = document.createElement('tr');
         row.dataset.id = entry.id;
@@ -757,6 +782,7 @@ export function initCreditcardApp() {
     }
 
     // ─── SIDEBAR ───
+    // ─── SIDEBAR ───
     function renderSidebar() {
       const container = document.getElementById('creditcardHistoryContent');
       if (!container) return;
@@ -766,7 +792,8 @@ export function initCreditcardApp() {
       const todayEST = getESTDateString();
       const todayFormatted = new Date(todayEST).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-      const historyEntries = allEntries.filter(entry => !entry.imported && entry.source === 'creditcard');
+      // ✅ FIX: Added `!entry.deleted` so deleted rows are completely hidden from the sidebar
+      const historyEntries = allEntries.filter(entry => !entry.deleted && !entry.imported && entry.source === 'creditcard');
 
       const grouped = {};
       historyEntries.forEach(entry => {
@@ -807,23 +834,25 @@ export function initCreditcardApp() {
             if (!isDateCollapsed) {
               html += `<div class="date-entries">`;
               for (const entry of dates[dateKey]) {
-                let issueDisplay = (entry.issue || '-').toUpperCase();
-                if (entry.status && entry.status.toUpperCase() === 'OTHER TASK') issueDisplay = 'OTHER TASK';
+                
+                let ticketDisplay = entry.ticketNumber ? `TICKET #: ${entry.ticketNumber}` : 'NO TICKET #';
+                
                 let issueTextColor = '';
                 switch ((entry.status || '').toUpperCase()) {
                   case 'RESOLVED': issueTextColor = '#11734b'; break;
                   case 'PENDING': issueTextColor = '#b10202'; break;
                   case 'OTHER TASK': issueTextColor = '#1a6d9f'; break;
                 }
+                
                 html += `
                   <div class="sidebar-card" data-id="${entry.id}">
-                      <div class="preview-item issue-item" ${issueTextColor ? `style="color:${issueTextColor};"` : ''}>${escapeHtml(issueDisplay)}</div>
+                      <div class="preview-item issue-item" ${issueTextColor ? `style="color:${issueTextColor};"` : ''}>${escapeHtml(ticketDisplay)}</div>
                       <div class="preview-item"><strong>Store:</strong> ${escapeHtml(entry.store || '-')}</div>
                       <div class="preview-item"><strong>MID:</strong> ${escapeHtml(entry.mid || '-')}</div>
                       <div class="card-actions">
                           <div class="card-actions-row stack-row">
                               <button class="copy-store" data-id="${entry.id}">📋 DETAILS</button>
-                              <button class="copy-details" data-id="${entry.id}">📋 HRMS</button>
+                              <button class="add-ticket-btn" data-id="${entry.id}">🎫 TICKET #</button>
                           </div>
                           <div class="card-actions-row">
                               <button class="edit-entry stack-btn" data-id="${entry.id}">✏️<br>EDIT</button>
@@ -848,17 +877,98 @@ export function initCreditcardApp() {
     window.toggleMonth = function(monthKey) { collapseState.months[monthKey] = !collapseState.months[monthKey]; saveCollapseState(); renderSidebar(); };
     window.toggleDate = function(dateKey) { collapseState.dates[dateKey] = !collapseState.dates[dateKey]; saveCollapseState(); renderSidebar(); };
 
-    function attachSidebarEvents(container) {
+  function attachSidebarEvents(container) {
+      // Helper: Converts HTML to plain text while PRESERVING line breaks
+      function formatMultiline(html) {
+        if (!html) return '';
+        let text = html.replace(/<br\s*\/?>/gi, '\n')
+                       .replace(/<\/p>/gi, '\n')
+                       .replace(/<\/li>/gi, '\n')
+                       .replace(/<li>/gi, '- ');
+        const div = document.createElement('div');
+        div.innerHTML = text;
+        return (div.textContent || div.innerText || '').replace(/\n\s*\n/g, '\n').trim();
+      }
+
       container.querySelectorAll('.copy-store').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
           const id = btn.dataset.id;
           const entry = allEntries.find(e => e.id == id);
           if (entry) {
-            const plainText =
-                `STORE NAME: ${entry.store}\nMID: ${entry.mid}\nMERCHANT: ${entry.merchant || ''}\nCONTACT #: ${entry.contactNumber}\n\nISSUE:\n${entry.issue || ''}`;
+            
+            const statusUp = (entry.status || '').toUpperCase();
+            
+            // Dynamically calculate the daily ticket number
+            const dayEntries = allEntries.filter(e => e.date === entry.date && e.source === 'creditcard' && !e.deleted)
+                                         .sort((a, b) => a.id - b.id);
+            const dailyNumber = dayEntries.findIndex(e => e.id === entry.id) + 1;
+
+            // ✅ FIX: Only show the date if this is the FIRST ticket of the day [1]
+            let dateHeader = (dailyNumber === 1 && entry.date) ? `(${entry.date})\n` : '';
+
+            // DETAILS: TROUBLESHOOTING uses the RAW original text!
+            let rawTroubleshootingText = formatMultiline(entry.originalRemarks || entry.remarks);
+            let troubleshootingSection = rawTroubleshootingText ? `TROUBLESHOOTING:\n${rawTroubleshootingText}\n\n` : '';
+            
+            // DETAILS: RESOLUTION uses the AI summary (stored in entry.remarks)
+            let summaryText = '';
+            if (entry.originalRemarks && entry.originalRemarks !== entry.remarks) {
+              summaryText = formatMultiline(entry.remarks); 
+            } else if (entry.aiSummary) { // Fallback for older test entries
+              summaryText = formatMultiline(entry.aiSummary);
+            }
+
+            let manualResolution = entry.resolution || '';
+            let resolutionText = '';
+            let footerType = "CALL & BACKEND"; // Default fallback
+
+            if (statusUp === 'RESOLVED') {
+              footerType = "CALL";
+              resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
+            } else if (statusUp === 'OTHER TASK') {
+              footerType = "BACKEND";
+              resolutionText = manualResolution; // OTHER TASK ignores the AI summary
+            } else {
+              resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
+            }
+
+            const plainText = 
+`${dateHeader}[${dailyNumber}]
+TICKET NUMBER: ${entry.ticketNumber || ''}
+STORE NAME: ${entry.store || ''}
+MID: ${entry.mid || ''}
+PERSON NAME: ${entry.merchant || ''}
+PHONE NUMBER: ${entry.contactNumber || ''}
+ISSUE: ${entry.issue || ''}
+-
+
+${troubleshootingSection}RESOLUTION:
+${resolutionText}
+
+-
+TICKET IN HRMS [SOLVED] ${footerType}`;
+
             navigator.clipboard.writeText(plainText);
-            showNotification('Details copied (plain text)');
+            showNotification('Details copied!');
+          }
+        });
+      });
+
+      container.querySelectorAll('.add-ticket-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          const entry = allEntries.find(e => e.id == id);
+          if (entry) {
+            const ticketNum = prompt('Enter Ticket Number:', entry.ticketNumber || '');
+            
+            if (ticketNum !== null) {
+              entry.ticketNumber = ticketNum.trim();
+              saveAllEntries();
+              renderSidebar(); 
+              showNotification('Ticket number saved!');
+            }
           }
         });
       });
@@ -869,7 +979,15 @@ export function initCreditcardApp() {
           const id = btn.dataset.id;
           const entry = allEntries.find(e => e.id == id);
           if (entry) {
-            const plainText = `📞 CONTACT:\nMERCHANT: ${entry.merchant || ''}\nCONTACT NUMBER: ${entry.contactNumber}\n\n🔧 ISSUE:\n${entry.issue || ''}\n\n🛠️ TROUBLESHOOTING:\n${htmlToPlainText(entry.remarks || '')}\n\n🎯 RESOLUTION / BACKEND:\n${entry.resolution || ''}`;
+            // HRMS Copy Logic (Uses the summarized entry.remarks)
+            const statusUp = (entry.status || '').toUpperCase();
+            let plainText = '';
+            
+            if (statusUp === 'OTHER TASK') {
+              plainText = `📞 CONTACT:\nMERCHANT: ${entry.merchant || ''}\nCONTACT NUMBER: ${entry.contactNumber}\n\n🔧 ISSUE:\n${entry.issue || ''}\n\n🎯 RESOLUTION / BACKEND:\n${entry.resolution || ''}`;
+            } else {
+              plainText = `📞 CONTACT:\nMERCHANT: ${entry.merchant || ''}\nCONTACT NUMBER: ${entry.contactNumber}\n\n🔧 ISSUE:\n${entry.issue || ''}\n\n🛠️ TROUBLESHOOTING:\n${formatMultiline(entry.remarks)}\n\n🎯 RESOLUTION / BACKEND:\n${entry.resolution || ''}`;
+            }
             navigator.clipboard.writeText(plainText);
             showNotification('HRMS details copied');
           }
@@ -883,6 +1001,7 @@ export function initCreditcardApp() {
         });
       });
     }
+  
 
     function attachGeminiKeyControls() {
       const input = document.getElementById('geminiApiKeyInput');
@@ -928,10 +1047,15 @@ export function initCreditcardApp() {
            exportDate = `${d}/${m}/${y}`; 
         }
 
-        // Merges Resolution without the label for export
-        const combinedRemarks = entry.resolution 
-          ? htmlToPlainText(entry.remarks || '') + '\n\n' + entry.resolution 
-          : htmlToPlainText(entry.remarks || '');
+        // ✅ FIX: Only grab Resolution for Bulk Export if status is OTHER TASK
+        let combinedRemarks = '';
+        if ((entry.status || '').toUpperCase() === 'OTHER TASK') {
+          combinedRemarks = entry.resolution || '';
+        } else {
+          combinedRemarks = entry.resolution 
+            ? htmlToPlainText(entry.remarks || '') + '\n\n' + entry.resolution 
+            : htmlToPlainText(entry.remarks || '');
+        }
 
         return [
           exportDate, 
