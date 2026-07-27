@@ -899,9 +899,7 @@ export function initCreditcardApp() {
     window.toggleDate = function(dateKey) { collapseState.dates[dateKey] = !collapseState.dates[dateKey]; saveCollapseState(); renderSidebar(); };
 
     function attachSidebarEvents(container) {
-      // Helper: Converts HTML to plain text while PRESERVING line breaks
-     
-
+      
       container.querySelectorAll('.copy-store').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
@@ -934,6 +932,7 @@ export function initCreditcardApp() {
             let manualResolution = entry.resolution || '';
             let resolutionText = '';
             let footerType = "CALL & BACKEND"; // Default fallback
+            let footerStatus = "SOLVED"; // Default bracket text
 
             if (statusUp === 'RESOLVED') {
               footerType = "CALL";
@@ -941,13 +940,16 @@ export function initCreditcardApp() {
             } else if (statusUp === 'OTHER TASK') {
               footerType = "BACKEND";
               resolutionText = manualResolution; // OTHER TASK ignores the AI summary
+            } else if (statusUp === 'PENDING') {
+              footerStatus = "PENDING"; 
+              footerType = "CALL"; // Matches Workload Tracker
+              resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
             } else {
               resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
             }
 
-            const plainText = 
-`${dateHeader}[${dailyNumber}]
-TICKET NUMBER: ${entry.ticketNumber || ''}
+            const blockText = 
+`TICKET NUMBER: ${entry.ticketNumber || ''}
 STORE NAME: ${entry.store || ''}
 MID: ${entry.mid || ''}
 PERSON NAME: ${entry.merchant || ''}
@@ -959,9 +961,10 @@ ${troubleshootingSection}RESOLUTION:
 ${resolutionText}
 
 -
-TICKET IN HRMS [SOLVED] ${footerType}`;
+TICKET IN HRMS [${footerStatus}] ${footerType}`;
 
-            navigator.clipboard.writeText(plainText);
+            // ✅ FIXED: It now copies blockText instead of plainText (which caused the error)
+            navigator.clipboard.writeText(blockText);
             showNotification('Details copied!');
           }
         });
@@ -1016,7 +1019,8 @@ TICKET IN HRMS [SOLVED] ${footerType}`;
     
    // ─── WORKLOAD TRACKER ───
     window.generateWorkload = function() {
-      const datePicker = document.getElementById('workload-date-picker');
+      const workloadDatePicker = document.getElementById('workload-date-picker');
+      const mainDatePicker = document.getElementById('creditcard-date');
       const entries = JSON.parse(localStorage.getItem('unifiedEntries_creditcard')) || [];
       
       if (entries.length === 0) {
@@ -1024,41 +1028,43 @@ TICKET IN HRMS [SOLVED] ${footerType}`;
         return;
       }
 
-      let filteredEntries = entries;
-      let headerDate = "ALL DATES";
-
-      // Parse and compare YYYY-MM-DD input with MM/DD/YYYY stored dates
-      if (datePicker && datePicker.value) {
-        const selectedYMD = datePicker.value;
-        
-        filteredEntries = entries.filter(entry => {
-          if (!entry.date) return false;
-          
-          const parts = entry.date.split('/');
-          if (parts.length !== 3) return false;
-          
-          const m = parts[0].padStart(2, '0');
-          const d = parts[1].padStart(2, '0');
-          const y = parts[2];
-          
-          const entryDateYMD = `${y}-${m}-${d}`;
-          
-          // Grab only active credit card tickets for this date
-          return entryDateYMD === selectedYMD && entry.source === 'creditcard' && !entry.deleted; 
-        });
-        
-        headerDate = selectedYMD;
-      } else {
-        // If no date picked, grab all active credit card tickets
-        filteredEntries = entries.filter(e => e.source === 'creditcard' && !e.deleted);
+      // 1. Get the specific date selected by the user
+      let selectedYMD = "";
+      if (workloadDatePicker && workloadDatePicker.value) {
+        selectedYMD = workloadDatePicker.value;
+      } else if (mainDatePicker && mainDatePicker.value) {
+        selectedYMD = mainDatePicker.value;
       }
-      
-      if (filteredEntries.length === 0) {
-        alert(`No tickets found for ${headerDate}`);
+
+      // 2. Stop the function if no date is selected (prevents copying all dates)
+      if (!selectedYMD) {
+        alert("Please select a specific date to generate the workload tracker.");
         return;
       }
 
-      // Sort entries chronologically by ID so [1] is the oldest and [10] is the newest
+      // 3. Filter entries STRICTLY for that selected date
+      const filteredEntries = entries.filter(entry => {
+        if (!entry.date) return false;
+        
+        const parts = entry.date.split('/');
+        if (parts.length !== 3) return false;
+        
+        const m = parts[0].padStart(2, '0');
+        const d = parts[1].padStart(2, '0');
+        const y = parts[2];
+        
+        const entryDateYMD = `${y}-${m}-${d}`;
+        
+        // Only keep tickets that match the selected date perfectly
+        return entryDateYMD === selectedYMD && entry.source === 'creditcard' && !entry.deleted; 
+      });
+      
+      if (filteredEntries.length === 0) {
+        alert(`No tickets found for ${selectedYMD}`);
+        return;
+      }
+
+      // Sort entries chronologically by ID (oldest first)
       filteredEntries.sort((a, b) => a.id - b.id);
       
       let outputText = "";
@@ -1067,14 +1073,13 @@ TICKET IN HRMS [SOLVED] ${footerType}`;
         const statusUp = (entry.status || '').toUpperCase();
         const dailyNumber = index + 1;
 
-        // Only show the date header on the very first ticket
         let dateHeader = (dailyNumber === 1 && entry.date) ? `(${entry.date})\n` : '';
 
-        // DETAILS LOGIC: TROUBLESHOOTING uses the RAW original text!
+        // TROUBLESHOOTING: RAW original text
         let rawTroubleshootingText = formatMultiline(entry.originalRemarks || entry.remarks);
         let troubleshootingSection = rawTroubleshootingText ? `TROUBLESHOOTING:\n${rawTroubleshootingText}\n\n` : '';
         
-        // DETAILS LOGIC: RESOLUTION uses the AI summary (stored in entry.remarks)
+        // RESOLUTION: AI summary
         let summaryText = '';
         if (entry.originalRemarks && entry.originalRemarks !== entry.remarks) {
           summaryText = formatMultiline(entry.remarks); 
@@ -1084,14 +1089,19 @@ TICKET IN HRMS [SOLVED] ${footerType}`;
 
         let manualResolution = entry.resolution || '';
         let resolutionText = '';
-        let footerType = "CALL & BACKEND"; // Default fallback
+        let footerType = "CALL & BACKEND"; 
+        let footerStatus = "SOLVED"; 
 
         if (statusUp === 'RESOLVED') {
           footerType = "CALL";
           resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
         } else if (statusUp === 'OTHER TASK') {
           footerType = "BACKEND";
-          resolutionText = manualResolution; // OTHER TASK ignores the AI summary
+          resolutionText = manualResolution;
+        } else if (statusUp === 'PENDING') {
+          footerStatus = "PENDING"; 
+          footerType = "CALL"; // Matches individual DETAILS behavior
+          resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
         } else {
           resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
         }
@@ -1110,16 +1120,16 @@ ${troubleshootingSection}RESOLUTION:
 ${resolutionText}
 
 -
-TICKET IN HRMS [${statusUp || 'SOLVED'}] ${footerType}`;
+TICKET IN HRMS [${footerStatus}] ${footerType}`;
 
         outputText += blockText + '\n\n-------------------------------------------------------------------\n\n';
       });
       
       navigator.clipboard.writeText(outputText).then(() => {
         if (typeof showNotification === 'function') {
-          showNotification(`Workload copied to clipboard!`);
+          showNotification(`Workload for ${selectedYMD} copied to clipboard!`);
         } else {
-          alert(`Workload copied to clipboard!`);
+          alert(`Workload for ${selectedYMD} copied to clipboard!`);
         }
       }).catch(err => {
         console.error('Failed to copy workload: ', err);
@@ -1127,6 +1137,7 @@ TICKET IN HRMS [${statusUp || 'SOLVED'}] ${footerType}`;
       });
     };
 
+    
     function attachGeminiKeyControls() {
       const input = document.getElementById('geminiApiKeyInput');
       const saveBtn = document.getElementById('saveGeminiKeyBtn');
