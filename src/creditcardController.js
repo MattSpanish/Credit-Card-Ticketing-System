@@ -9,7 +9,7 @@ export function initCreditcardApp() {
     let allEntries = [];
     let editId = null;
     let currentStatusFilter = null;
-    let currentSearchQuery = ''; // <-- ADD THIS
+    let currentSearchQuery = ''; 
     let quillEditor = null;
 
     const EDIT_STORAGE_KEY = 'editingEntryId_creditcard';
@@ -796,17 +796,6 @@ export function initCreditcardApp() {
       if (dashPendingEl) dashPendingEl.textContent = pending;
     }
 
-    let historyEntries = allEntries.filter(entry => !entry.deleted && !entry.imported && entry.source === 'creditcard');
-
-      // --- ADD THIS BLOCK ---
-      if (currentSearchQuery) {
-        historyEntries = historyEntries.filter(entry => {
-          const searchString = `${entry.ticketNumber || ''} ${entry.store || ''} ${entry.mid || ''} ${entry.merchant || ''} ${entry.contactNumber || ''} ${entry.issue || ''}`.toLowerCase();
-          return searchString.includes(currentSearchQuery);
-        });
-      }
-      // ----------------------
-
     function updateSelectAllCheckboxState() {
       const selectAllBar = document.getElementById('selectAllCheckbox');
       const rowCheckboxes = document.querySelectorAll('#entryTable tbody .row-checkbox');
@@ -849,8 +838,16 @@ export function initCreditcardApp() {
       const todayEST = getESTDateString();
       const todayFormatted = new Date(todayEST).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-      // ✅ FIX: Added `!entry.deleted` so deleted rows are completely hidden from the sidebar
-      const historyEntries = allEntries.filter(entry => !entry.deleted && !entry.imported && entry.source === 'creditcard');
+      let historyEntries = allEntries.filter(entry => !entry.deleted && !entry.imported && entry.source === 'creditcard');
+
+      // --- MOVED INSIDE THE FUNCTION WHERE IT BELONGS ---
+      if (currentSearchQuery) {
+        historyEntries = historyEntries.filter(entry => {
+          const searchString = `${entry.ticketNumber || ''} ${entry.store || ''} ${entry.mid || ''} ${entry.merchant || ''} ${entry.contactNumber || ''} ${entry.issue || ''}`.toLowerCase();
+          return searchString.includes(currentSearchQuery);
+        });
+      }
+      // --------------------------------------------------
 
       const grouped = {};
       historyEntries.forEach(entry => {
@@ -909,6 +906,7 @@ export function initCreditcardApp() {
                       <div class="card-actions">
                           <div class="card-actions-row stack-row">
                               <button class="copy-store" data-id="${entry.id}">📋 DETAILS</button>
+                              <button class="copy-details" data-id="${entry.id}">📋 HRMS</button> <!-- ✅ ADDED HRMS BUTTON -->
                               <button class="add-ticket-btn" data-id="${entry.id}">🎫 TICKET #</button>
                           </div>
                           <div class="card-actions-row">
@@ -936,7 +934,7 @@ export function initCreditcardApp() {
 
     function attachSidebarEvents(container) {
       
-      container.querySelectorAll('.copy-store').forEach(btn => {
+     container.querySelectorAll('.copy-store').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
           const id = btn.dataset.id;
@@ -950,8 +948,16 @@ export function initCreditcardApp() {
                                          .sort((a, b) => a.id - b.id);
             const dailyNumber = dayEntries.findIndex(e => e.id === entry.id) + 1;
 
-            // ✅ FIX: Only show the date if this is the FIRST ticket of the day [1]
-            let dateHeader = (dailyNumber === 1 && entry.date) ? `(${entry.date})\n` : '';
+            // ✅ Format Date Header with dashes and 2-digit year
+            let dateHeader = '';
+            if (dailyNumber === 1 && entry.date) {
+              const parts = entry.date.split('/');
+              let shortDate = entry.date;
+              if (parts.length === 3) {
+                shortDate = `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2].slice(-2)}`;
+              }
+              dateHeader = `--------------\n${shortDate}\n--------------\n\n`;
+            }
 
             // DETAILS: TROUBLESHOOTING uses the RAW original text!
             let rawTroubleshootingText = formatMultiline(entry.originalRemarks || entry.remarks);
@@ -961,7 +967,7 @@ export function initCreditcardApp() {
             let summaryText = '';
             if (entry.originalRemarks && entry.originalRemarks !== entry.remarks) {
               summaryText = formatMultiline(entry.remarks); 
-            } else if (entry.aiSummary) { // Fallback for older test entries
+            } else if (entry.aiSummary) {
               summaryText = formatMultiline(entry.aiSummary);
             }
 
@@ -975,17 +981,18 @@ export function initCreditcardApp() {
               resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
             } else if (statusUp === 'OTHER TASK') {
               footerType = "BACKEND";
-              resolutionText = manualResolution; // OTHER TASK ignores the AI summary
+              resolutionText = manualResolution; 
             } else if (statusUp === 'PENDING') {
               footerStatus = "PENDING"; 
-              footerType = "CALL"; // Matches Workload Tracker
+              footerType = "CALL"; 
               resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
             } else {
               resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
             }
 
+            // ✅ ADDED `${dateHeader}` to the beginning of the template!
             const blockText = 
-`TICKET NUMBER: ${entry.ticketNumber || ''}
+`${dateHeader}TICKET NUMBER: ${entry.ticketNumber || ''}
 STORE NAME: ${entry.store || ''}
 MID: ${entry.mid || ''}
 PERSON NAME: ${entry.merchant || ''}
@@ -999,7 +1006,6 @@ ${resolutionText}
 -
 TICKET IN HRMS [${footerStatus}] ${footerType}`;
 
-            // ✅ FIXED: It now copies blockText instead of plainText (which caused the error)
             navigator.clipboard.writeText(blockText);
             showNotification('Details copied!');
           }
@@ -1030,17 +1036,42 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
           const id = btn.dataset.id;
           const entry = allEntries.find(e => e.id == id);
           if (entry) {
-            // HRMS Copy Logic (Uses the summarized entry.remarks)
-            const statusUp = (entry.status || '').toUpperCase();
-            let plainText = '';
             
-            if (statusUp === 'OTHER TASK') {
-              plainText = `📞 CONTACT:\nMERCHANT: ${entry.merchant || ''}\nCONTACT NUMBER: ${entry.contactNumber}\n\n🔧 ISSUE:\n${entry.issue || ''}\n\n🎯 RESOLUTION / BACKEND:\n${entry.resolution || ''}`;
-            } else {
-              plainText = `📞 CONTACT:\nMERCHANT: ${entry.merchant || ''}\nCONTACT NUMBER: ${entry.contactNumber}\n\n🔧 ISSUE:\n${entry.issue || ''}\n\n🛠️ TROUBLESHOOTING:\n${formatMultiline(entry.remarks)}\n\n🎯 RESOLUTION / BACKEND:\n${entry.resolution || ''}`;
+            // Extract the troubleshooting text and split it into individual steps
+            const rawTroubleshooting = formatMultiline(entry.remarks || entry.originalRemarks || '');
+            
+            // This cleans up existing bullets/dashes to prevent double-bulleting
+            const steps = rawTroubleshooting.split('\n')
+                                            .map(s => s.trim().replace(/^[-•]\s*/, ''))
+                                            .filter(s => s.length > 0);
+            
+            // 1. Generate Plain Text Fallback (For apps that don't support rich text)
+            let plainText = `CONTACT INFORMATION:\nPERSON NAME: ${entry.merchant || ''}\nPHONE NUMBER: ${entry.contactNumber || ''}\n\nTROUBLESHOOTING:\n`;
+            steps.forEach(step => {
+               plainText += `• ${step}\n`;
+            });
+            
+            // 2. Generate Rich Text HTML (Keeps real bolding and real bullets when pasted!)
+            let htmlText = ` <strong style="font-weight: bold;">CONTACT INFORMATION:</strong><br>PERSON NAME: ${escapeHtml(entry.merchant || '')}<br> PHONE NUMBER: ${escapeHtml(entry.contactNumber || '')}<br><br>
+                <strong style="font-weight: bold;">TROUBLESHOOTING:</strong><br> <ul>`;
+            steps.forEach(step => {
+               htmlText += `<li>${escapeHtml(step)}</li>`;
+            });
+            htmlText += `</ul>`;
+
+            try {
+              // Push BOTH versions to the clipboard simultaneously
+              const clipboardItem = new ClipboardItem({
+                'text/plain': new Blob([plainText], { type: 'text/plain' }),
+                'text/html': new Blob([htmlText], { type: 'text/html' })
+              });
+              await navigator.clipboard.write([clipboardItem]);
+              showNotification('HRMS format copied!');
+            } catch (err) {
+              // Fallback just in case they use an older browser
+              navigator.clipboard.writeText(plainText);
+              showNotification('HRMS plain text copied!');
             }
-            navigator.clipboard.writeText(plainText);
-            showNotification('HRMS details copied');
           }
         });
       });
@@ -1053,18 +1084,22 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
       });
     }
     
-  // ─── WORKLOAD TRACKER ───
+ // ─── WORKLOAD TRACKER ───
     window.generateWorkload = function() {
       const workloadDatePicker = document.getElementById('workload-date-picker');
       const mainDatePicker = document.getElementById('creditcard-date');
-      const entries = JSON.parse(localStorage.getItem('unifiedEntries_creditcard')) || [];
+      
+      // ✅ 1. Prioritize active in-memory entries, fallback to localStorage
+      const entries = (allEntries && allEntries.length > 0) 
+        ? allEntries 
+        : (JSON.parse(localStorage.getItem('unifiedEntries_creditcard')) || []);
       
       if (entries.length === 0) {
         alert("No tickets found in the system.");
         return;
       }
 
-      // 1. Get the specific date selected by the user
+      // Get the specific date selected by the user
       let selectedYMD = "";
       if (workloadDatePicker && workloadDatePicker.value) {
         selectedYMD = workloadDatePicker.value;
@@ -1072,26 +1107,24 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
         selectedYMD = mainDatePicker.value;
       }
 
-      // 2. Stop the function if no date is selected
       if (!selectedYMD) {
         alert("Please select a specific date to generate the workload tracker.");
         return;
       }
 
-      // 3. Filter entries STRICTLY for that selected date
+      // ✅ 2. Robust date matching using parseDateFromString
       const filteredEntries = entries.filter(entry => {
-        if (!entry.date) return false;
+        if (!entry.date || entry.deleted || entry.source !== 'creditcard') return false;
         
-        const parts = entry.date.split('/');
-        if (parts.length !== 3) return false;
+        const dateObj = parseDateFromString(entry.date);
+        if (!dateObj) return false;
         
-        const m = parts[0].padStart(2, '0');
-        const d = parts[1].padStart(2, '0');
-        const y = parts[2];
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        const entryDateYMD = `${yyyy}-${mm}-${dd}`;
         
-        const entryDateYMD = `${y}-${m}-${d}`;
-        
-        return entryDateYMD === selectedYMD && entry.source === 'creditcard' && !entry.deleted; 
+        return entryDateYMD === selectedYMD; 
       });
       
       if (filteredEntries.length === 0) {
@@ -1108,9 +1141,18 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
         const statusUp = (entry.status || '').toUpperCase();
         const dailyNumber = index + 1;
 
-        let dateHeader = (dailyNumber === 1 && entry.date) ? `(${entry.date})\n` : '';
-        
-        // RESOLUTION: AI summary (Used for the resolution text block)
+        // Format Date Header with dashes and 2-digit year for the 1st ticket of the day
+        let dateHeader = '';
+        if (dailyNumber === 1 && entry.date) {
+          const parts = entry.date.split('/');
+          let shortDate = entry.date;
+          if (parts.length === 3) {
+            shortDate = `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2].slice(-2)}`;
+          }
+          dateHeader = `--------------\n${shortDate}\n--------------\n\n`;
+        }
+
+        // ✅ 3. Re-defined summaryText to prevent ReferenceError crash
         let summaryText = '';
         if (entry.originalRemarks && entry.originalRemarks !== entry.remarks) {
           summaryText = formatMultiline(entry.remarks); 
@@ -1137,7 +1179,6 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
           resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
         }
 
-        // Removed the Troubleshooting section entirely from this template
         const blockText = 
 `${dateHeader}[${dailyNumber}]
 TICKET NUMBER: ${entry.ticketNumber || ''}
@@ -1146,15 +1187,10 @@ MID: ${entry.mid || ''}
 PERSON NAME: ${entry.merchant || ''}
 PHONE NUMBER: ${entry.contactNumber || ''}
 ISSUE: ${entry.issue || ''}
--
-
-RESOLUTION:
-${resolutionText}
-
--
+RESOLUTION: ${resolutionText}
 TICKET IN HRMS [${footerStatus}] ${footerType}`;
 
-        outputText += blockText + '\n\n-------------------------------------------------------------------\n\n';
+        outputText += blockText + '\n\n';
       });
       
       navigator.clipboard.writeText(outputText).then(() => {
@@ -1168,7 +1204,6 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
         alert('Failed to copy to clipboard. Check the console for details.');
       });
     };
-
     
     function attachGeminiKeyControls() {
       const input = document.getElementById('geminiApiKeyInput');
