@@ -1004,7 +1004,7 @@ ${troubleshootingSection}RESOLUTION:
 ${resolutionText}
 
 -
-TICKET IN HRMS [${footerStatus}] ${footerType}`;
+TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
 
             navigator.clipboard.writeText(blockText);
             showNotification('Details copied!');
@@ -1037,30 +1037,34 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
           const entry = allEntries.find(e => e.id == id);
           if (entry) {
             
-            // Extract the troubleshooting text and split it into individual steps
-            const rawTroubleshooting = formatMultiline(entry.remarks || entry.originalRemarks || '');
+            // ✅ FIX: Prioritize originalRemarks (RAW) over remarks (SUMMARY)
+            const rawTroubleshooting = formatMultiline(entry.originalRemarks || entry.remarks || '');
             
-            // This cleans up existing bullets/dashes to prevent double-bulleting
+            // Clean up existing bullets/dashes to prevent double-bulleting
             const steps = rawTroubleshooting.split('\n')
                                             .map(s => s.trim().replace(/^[-•]\s*/, ''))
                                             .filter(s => s.length > 0);
             
-            // 1. Generate Plain Text Fallback (For apps that don't support rich text)
+            // 1. Generate Plain Text Fallback
             let plainText = `CONTACT INFORMATION:\nPERSON NAME: ${entry.merchant || ''}\nPHONE NUMBER: ${entry.contactNumber || ''}\n\nTROUBLESHOOTING:\n`;
             steps.forEach(step => {
                plainText += `• ${step}\n`;
             });
             
-            // 2. Generate Rich Text HTML (Keeps real bolding and real bullets when pasted!)
-            let htmlText = ` <strong style="font-weight: bold;">CONTACT INFORMATION:</strong><br>PERSON NAME: ${escapeHtml(entry.merchant || '')}<br> PHONE NUMBER: ${escapeHtml(entry.contactNumber || '')}<br><br>
-                <strong style="font-weight: bold;">TROUBLESHOOTING:</strong><br> <ul>`;
+            // 2. Generate Rich Text HTML (Keeps bold and bullets)
+            let htmlText = `
+              <strong style="font-weight: bold;">CONTACT INFORMATION:</strong><br>
+              PERSON NAME: ${escapeHtml(entry.merchant || '')}<br>
+              PHONE NUMBER: ${escapeHtml(entry.contactNumber || '')}<br><br>
+              <strong style="font-weight: bold;">TROUBLESHOOTING:</strong><br>
+              <ul>
+              `;
             steps.forEach(step => {
                htmlText += `<li>${escapeHtml(step)}</li>`;
             });
             htmlText += `</ul>`;
 
             try {
-              // Push BOTH versions to the clipboard simultaneously
               const clipboardItem = new ClipboardItem({
                 'text/plain': new Blob([plainText], { type: 'text/plain' }),
                 'text/html': new Blob([htmlText], { type: 'text/html' })
@@ -1068,7 +1072,6 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
               await navigator.clipboard.write([clipboardItem]);
               showNotification('HRMS format copied!');
             } catch (err) {
-              // Fallback just in case they use an older browser
               navigator.clipboard.writeText(plainText);
               showNotification('HRMS plain text copied!');
             }
@@ -1188,7 +1191,7 @@ PERSON NAME: ${entry.merchant || ''}
 PHONE NUMBER: ${entry.contactNumber || ''}
 ISSUE: ${entry.issue || ''}
 RESOLUTION: ${resolutionText}
-TICKET IN HRMS [${footerStatus}] ${footerType}`;
+TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
 
         outputText += blockText + '\n\n';
       });
