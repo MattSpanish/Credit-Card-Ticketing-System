@@ -1053,7 +1053,7 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
       });
     }
     
-   // ─── WORKLOAD TRACKER ───
+  // ─── WORKLOAD TRACKER ───
     window.generateWorkload = function() {
       const workloadDatePicker = document.getElementById('workload-date-picker');
       const mainDatePicker = document.getElementById('creditcard-date');
@@ -1072,7 +1072,7 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
         selectedYMD = mainDatePicker.value;
       }
 
-      // 2. Stop the function if no date is selected (prevents copying all dates)
+      // 2. Stop the function if no date is selected
       if (!selectedYMD) {
         alert("Please select a specific date to generate the workload tracker.");
         return;
@@ -1091,7 +1091,6 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
         
         const entryDateYMD = `${y}-${m}-${d}`;
         
-        // Only keep tickets that match the selected date perfectly
         return entryDateYMD === selectedYMD && entry.source === 'creditcard' && !entry.deleted; 
       });
       
@@ -1110,12 +1109,8 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
         const dailyNumber = index + 1;
 
         let dateHeader = (dailyNumber === 1 && entry.date) ? `(${entry.date})\n` : '';
-
-        // TROUBLESHOOTING: RAW original text
-        let rawTroubleshootingText = formatMultiline(entry.originalRemarks || entry.remarks);
-        let troubleshootingSection = rawTroubleshootingText ? `TROUBLESHOOTING:\n${rawTroubleshootingText}\n\n` : '';
         
-        // RESOLUTION: AI summary
+        // RESOLUTION: AI summary (Used for the resolution text block)
         let summaryText = '';
         if (entry.originalRemarks && entry.originalRemarks !== entry.remarks) {
           summaryText = formatMultiline(entry.remarks); 
@@ -1136,12 +1131,13 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
           resolutionText = manualResolution;
         } else if (statusUp === 'PENDING') {
           footerStatus = "PENDING"; 
-          footerType = "CALL"; // Matches individual DETAILS behavior
+          footerType = "CALL"; 
           resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
         } else {
           resolutionText = (summaryText && manualResolution) ? `${summaryText}\n${manualResolution}` : (summaryText || manualResolution);
         }
 
+        // Removed the Troubleshooting section entirely from this template
         const blockText = 
 `${dateHeader}[${dailyNumber}]
 TICKET NUMBER: ${entry.ticketNumber || ''}
@@ -1152,7 +1148,7 @@ PHONE NUMBER: ${entry.contactNumber || ''}
 ISSUE: ${entry.issue || ''}
 -
 
-${troubleshootingSection}RESOLUTION:
+RESOLUTION:
 ${resolutionText}
 
 -
