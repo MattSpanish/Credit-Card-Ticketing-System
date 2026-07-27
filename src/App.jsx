@@ -2,11 +2,24 @@ import React, { useEffect } from 'react';
 import { initCreditcardApp } from './creditcardController';
 
 function Sidebar() {
+  // Native React handler for dark mode
+  const toggleTheme = () => {
+    const isDark = document.body.classList.toggle('dark-mode');
+    localStorage.setItem('theme_creditcard', isDark ? 'dark' : 'light');
+  };
+
   return (
     <aside className="sidebar" aria-label="Primary navigation">
       <div className="sidebar-top">
         <div className="logo">CC Tickets</div>
-        <button className="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+        <button 
+          className="theme-toggle" 
+          id="themeToggle" 
+          title="Toggle dark mode"
+          onClick={toggleTheme} // Added the onClick handler here
+        >
+          🌙
+        </button>
       </div>
       <nav className="nav-list">
         <button className="nav-item active" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Dashboard</button>
@@ -29,7 +42,11 @@ function Header() {
         <p className="small">Capture issues quickly and resolve faster.</p>
       </div>
       <div className="header-actions">
-        <input className="header-search" placeholder="Search tickets, stores, MID..." />
+        <input 
+          className="header-search" 
+          placeholder="Search tickets, stores, MID..." 
+          onChange={(e) => window.handleGlobalSearch && window.handleGlobalSearch(e.target.value)}
+        />
       </div>
     </header>
   );

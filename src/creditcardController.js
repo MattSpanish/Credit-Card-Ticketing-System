@@ -9,6 +9,7 @@ export function initCreditcardApp() {
     let allEntries = [];
     let editId = null;
     let currentStatusFilter = null;
+    let currentSearchQuery = ''; // <-- ADD THIS
     let quillEditor = null;
 
     const EDIT_STORAGE_KEY = 'editingEntryId_creditcard';
@@ -659,16 +660,35 @@ export function initCreditcardApp() {
       navigator.clipboard.writeText(values.join('\t')).then(() => showNotification('Row copied!'));
     };
 
+
+    window.handleGlobalSearch = function(query) {
+      currentSearchQuery = (query || '').toLowerCase().trim();
+      renderTable();
+      renderSidebar();
+    };
+
     // ─── TABLE ───
     function getVisibleEntries() {
       const selectedDateStr = document.getElementById('creditcard-date').value;
-      let entries = allEntries.filter(entry => {
-        if (entry.deleted) return false;
-        const dateObj = parseDateFromString(entry.date);
-        if (!dateObj) return false;
-        const entryDateYMD = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
-        return entryDateYMD === selectedDateStr && entry.source === 'creditcard';
-      });
+      
+      let entries = allEntries.filter(entry => !entry.deleted && entry.source === 'creditcard');
+
+      if (currentSearchQuery) {
+        // GLOBAL SEARCH: Ignore the date picker, search EVERYTHING for matches
+        entries = entries.filter(entry => {
+          const searchString = `${entry.ticketNumber || ''} ${entry.store || ''} ${entry.mid || ''} ${entry.merchant || ''} ${entry.contactNumber || ''} ${entry.issue || ''}`.toLowerCase();
+          return searchString.includes(currentSearchQuery);
+        });
+      } else {
+        // NO SEARCH: Just filter by the selected date like normal
+        entries = entries.filter(entry => {
+          const dateObj = parseDateFromString(entry.date);
+          if (!dateObj) return false;
+          const entryDateYMD = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+          return entryDateYMD === selectedDateStr;
+        });
+      }
+
       if (currentStatusFilter) {
         entries = entries.filter(entry => (entry.status || '').toUpperCase() === currentStatusFilter);
       }
@@ -733,13 +753,23 @@ export function initCreditcardApp() {
 
     function updateStatusCounters() {
       const selectedDateStr = document.getElementById('creditcard-date').value;
-      const baseEntries = allEntries.filter(entry => {
-        if (entry.deleted) return false;
-        const dateObj = parseDateFromString(entry.date);
-        if (!dateObj) return false;
-        const entryDateYMD = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
-        return entryDateYMD === selectedDateStr && entry.source === 'creditcard';
-      });
+      
+      let baseEntries = allEntries.filter(entry => !entry.deleted && entry.source === 'creditcard');
+
+      // Add the same search check to the counters
+      if (currentSearchQuery) {
+        baseEntries = baseEntries.filter(entry => {
+          const searchString = `${entry.ticketNumber || ''} ${entry.store || ''} ${entry.mid || ''} ${entry.merchant || ''} ${entry.contactNumber || ''} ${entry.issue || ''}`.toLowerCase();
+          return searchString.includes(currentSearchQuery);
+        });
+      } else {
+        baseEntries = baseEntries.filter(entry => {
+          const dateObj = parseDateFromString(entry.date);
+          if (!dateObj) return false;
+          const entryDateYMD = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+          return entryDateYMD === selectedDateStr;
+        });
+      }
       
       let resolved = 0, pending = 0, other = 0;
       baseEntries.forEach(entry => {
@@ -749,15 +779,12 @@ export function initCreditcardApp() {
         else if (status === 'OTHER TASK') other++;
       });
       
-      // Calculate open tickets. "OTHER TASK" is now treated as resolved (not open).
       const open = Math.max(baseEntries.length - (resolved + other), 0);
       
-      // Update Bulk Bar small counters
       if (document.getElementById('counterResolved')) document.getElementById('counterResolved').innerText = resolved;
       if (document.getElementById('counterPending')) document.getElementById('counterPending').innerText = pending;
       if (document.getElementById('counterOther')) document.getElementById('counterOther').innerText = other;
       
-      // Update Top Dashboard Grid counters
       const totalEl = document.getElementById('dashboardTotalTickets');
       const openEl = document.getElementById('dashboardOpenTickets');
       const dashResolvedEl = document.getElementById('dashboardResolvedTickets');
@@ -765,11 +792,20 @@ export function initCreditcardApp() {
       
       if (totalEl) totalEl.textContent = baseEntries.length;
       if (openEl) openEl.textContent = open;
-      
-      // Groups 'RESOLVED' and 'OTHER TASK' together for the dashboard resolved stat
       if (dashResolvedEl) dashResolvedEl.textContent = resolved + other;
       if (dashPendingEl) dashPendingEl.textContent = pending;
     }
+
+    let historyEntries = allEntries.filter(entry => !entry.deleted && !entry.imported && entry.source === 'creditcard');
+
+      // --- ADD THIS BLOCK ---
+      if (currentSearchQuery) {
+        historyEntries = historyEntries.filter(entry => {
+          const searchString = `${entry.ticketNumber || ''} ${entry.store || ''} ${entry.mid || ''} ${entry.merchant || ''} ${entry.contactNumber || ''} ${entry.issue || ''}`.toLowerCase();
+          return searchString.includes(currentSearchQuery);
+        });
+      }
+      // ----------------------
 
     function updateSelectAllCheckboxState() {
       const selectAllBar = document.getElementById('selectAllCheckbox');
@@ -1358,10 +1394,7 @@ TICKET IN HRMS [${footerStatus}] ${footerType}`;
       attachGeminiKeyControls();
       initTheme();
 
-      document.getElementById('themeToggle').addEventListener('click', () => {
-        const isDark = document.body.classList.toggle('dark-mode');
-        localStorage.setItem('theme_creditcard', isDark ? 'dark' : 'light');
-      });
+      
       document.getElementById('clearAllBtn').addEventListener('click', clearAllEntries);
       document.getElementById('bulkDeleteBtn').addEventListener('click', bulkDelete);
       document.getElementById('bulkCopyBtn').addEventListener('click', bulkCopy);
