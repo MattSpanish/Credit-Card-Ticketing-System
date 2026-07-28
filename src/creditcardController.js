@@ -467,6 +467,11 @@ export function initCreditcardApp() {
           const el = document.getElementById(`creditcard-${id}`);
           if (el) el.value = '';
         });
+        
+        // ✅ FIX: Clear the visible Combobox text as well
+        const statusCombobox = document.getElementById('creditcard-status-combobox');
+        if (statusCombobox) statusCombobox.value = '';
+
         if (quillEditor) {
           quillEditor.root.innerHTML = '';
           document.getElementById('creditcard-remarks').value = '';
@@ -507,7 +512,12 @@ export function initCreditcardApp() {
       document.getElementById('creditcard-contactNumber').value = entry.contactNumber || '';
       document.getElementById('creditcard-issue').value = entry.issue || '';
       document.getElementById('creditcard-escalated').value = entry.escalated || '';
+      
+      // ✅ FIX: Sync both the hidden status field AND the visible combobox
       document.getElementById('creditcard-status').value = entry.status || '';
+      const statusCombobox = document.getElementById('creditcard-status-combobox');
+      if (statusCombobox) statusCombobox.value = entry.status || '';
+      
       document.getElementById('creditcard-resolution').value = entry.resolution || '';
       
       if (quillEditor && entry.remarks) {
