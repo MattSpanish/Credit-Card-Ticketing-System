@@ -1,11 +1,128 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { initCreditcardApp } from './creditcardController';
 
 function Sidebar() {
+  // State to handle opening/closing the TID Template popup modal
+  const [showTemplates, setShowTemplates] = useState(false);
+
   // Native React handler for dark mode
   const toggleTheme = () => {
     const isDark = document.body.classList.toggle('dark-mode');
     localStorage.setItem('theme_creditcard', isDark ? 'dark' : 'light');
+  };
+
+  // ✅ Dictionary of specific templates
+  const TID_TEMPLATES = {
+    "PAX": `(PAX) - MSD
+ / 
+[]
+PAX BROADPOS [NASHVILLE]
+NMID#
+TID#
+GROUP ID# 10001`,
+    "NEXGO": `(NEXGO)
+ / 
+[ADDRESS]
+Nexgo MFE V201 DwSrsSs [NASHVILLE]
+NMID#
+TID#
+GROUP ID# 10001
+MCC#`,
+    "FD150": `(FD150) - FD150
+ /
+[]
+FD150 [NASHVILLE] OR FD150 W/ RP10 [NASHVILLE]
+AUTO CLOSE - 12:23AM
+NMID -
+TID# , DLID#, RESET KEY:
+APP: 751UN150
+D/L# 855-641-1001
+D/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
+    "FD130": `(FD130) - FD130
+ / 
+[]
+EQUIPMENT: FD130 [NASHVILLE]
+AUTO CLOSE - 12:00AM
+NMID -
+TID#, DLID# , RESET KEY:
+APP: 751UN130
+D/L# 855-641-1001
+D/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
+    "VALOR": `(VALOR) -ValorPay GTW RC SRS
+ / 
+[]
+ValorPay GTW RC SRS [NASHVILLE]
+NMID#
+TID#
+GROUP ID# 10001
+MCC#`,
+    "DEJAVOO": `(DEJAVOO) - DVC
+ / 
+[ ]
+DejavooDvCreditRC1.20 [NASHVILLE]
+NMID#
+TID#
+GROUP ID# 10001
+MCC#`,
+    "NMI": `(NMI) - Network Merchants Gateway
+ / 
+[]
+Network Merchants Gateway
+NMID#
+TID#
+GROUP ID# 30001`,
+    "AUTH.NET": `(AUTH.NET) - AUTHORIZENET(G/W)
+DBA Name:
+First Data Merchant ID Number:
+[,  - ]
+Nashville Short MID:
+Network: FDC Nashville
+Manufacturer: AUTHORIZE.NET
+Equipment Name: AUTHORIZENET(G/W)
+Equipment Type: TSOL
+Product ID: 815300
+Terminal ID:
+Terminal PW:
+Program ID: 000
+FD Data wire: (800) 704-4202`,
+    "VERIFONE COMMANDER / RUBY": `BUYPASS TID 
+VERIFONE COMMANDER / RUBY 2 / RUBY CI
+
+ /
+[]
+EQUIPMENT: VERIFONE COMMANDER / RUBY 2 / RUBY CI  
+BUYPASS ID: 
+FD Datawire: (800) 704-4202
+FD Buypass: (800) 733-3322`,
+    "GILBARCO PASSPORT": `GILBARCO PASSPORT
+[Address, City State - Zipcode]
+EQUIPMENT: GILBARCO PASSPORT
+BUYPASS ID: L3(State) (BuypassID) 001
+FD Datawire: (800) 704-4202
+FD Buypass: (800) 733-3322`,
+    "FD150 W/ RP10 (BUYPASS)": `FD150 W/ RP10 (BUYPASS)
+ / 
+[]
+EQUIPMENT: FD150 W/ RP10 (BUYPASS)
+BUYPASS ID: , DLID: [CALL BUYPASS]
+FD Datawire: (800) 704-4202
+FD Buypass: (800) 733-3322`
+  };
+
+  // ✅ Function to copy a specific template
+  const copySpecificTemplate = (device) => {
+    const text = TID_TEMPLATES[device];
+    navigator.clipboard.writeText(text).then(() => {
+      const notif = document.getElementById('notification');
+      if (notif) {
+        notif.textContent = `${device} Template copied!`;
+        notif.classList.add('show');
+        setTimeout(() => notif.classList.remove('show'), 2000);
+      } else {
+        alert(`${device} Template copied!`);
+      }
+      setShowTemplates(false); // Auto-close modal after copying
+    });
   };
 
   return (
@@ -16,20 +133,87 @@ function Sidebar() {
           className="theme-toggle" 
           id="themeToggle" 
           title="Toggle dark mode"
-          onClick={toggleTheme} // Added the onClick handler here
+          onClick={toggleTheme}
         >
           🌙
         </button>
       </div>
       <nav className="nav-list">
         <button className="nav-item active" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Dashboard</button>
-        <button className="nav-item" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Tickets</button>
         <button className="nav-item" onClick={() => window.createNewTicket && window.createNewTicket()}>New Ticket</button>
+        <button className="nav-item" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Tickets</button>
+        
+        {/* ✅ Button that opens the Popup Modal */}
+        <button className="nav-item" onClick={() => setShowTemplates(true)}>📋 TID Templates</button>
       </nav>
       <div className="sidebar-foot">Logged in as <strong>Support</strong></div>
       <div className="sidebar-key">
         <button id="saveGeminiKeyBtn" className="btn btn-sm btn-primary" style={{marginTop:8, width:'100%'}}>Set Gemini API Key</button>
       </div>
+
+      {/* ✅ Pop-up Box (Modal) for Templates */}
+      {showTemplates && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0, left: 0, width: '100vw', height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 10000 
+          }}
+          onClick={() => setShowTemplates(false)} 
+        >
+          <div 
+            style={{
+              backgroundColor: 'var(--panel-bg, #fff)', 
+              color: 'var(--text-color, #333)',
+              padding: '24px',
+              borderRadius: '8px',
+              width: '90%',
+              maxWidth: '650px',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()} 
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ccc', paddingBottom: '10px', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0 }}>Select a TID Template</h3>
+              <button 
+                onClick={() => setShowTemplates(false)} 
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', color: 'inherit', fontWeight: 'bold' }}
+              >
+                ✖
+              </button>
+            </div>
+            
+            {/* Grid Layout for the device buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+              {Object.keys(TID_TEMPLATES).map((device) => (
+                <button 
+                  key={device} 
+                  onClick={() => copySpecificTemplate(device)}
+                  style={{
+                    padding: '12px 10px',
+                    backgroundColor: 'var(--accent-color, #1a6d9f)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    transition: 'background-color 0.2s',
+                    fontSize: '0.85em'
+                  }}
+                  onMouseOver={(e) => e.target.style.opacity = '0.8'}
+                  onMouseOut={(e) => e.target.style.opacity = '1'}
+                >
+                  {device}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
@@ -150,14 +334,32 @@ function LeftPanel() {
                   placeholder="Type or select status" 
                   style={{ paddingRight: '28px' }}
                   onClick={() => {
-                    // Clicking the box triggers the dropdown suggestions list to re-appear
                     const suggestions = document.getElementById('creditcard-status-suggestions');
                     if (suggestions) suggestions.style.display = 'block';
                   }}
                 />
                 <input type="hidden" id="creditcard-status" />
+                
+                <div className="form-group" id="creditcard-other-task-container" style={{ display: 'none', marginTop: '10px' }}>
+                  <label>Select Other Task:</label>
+                  <select id="creditcard-other-task-select" className="form-control">
+                    <option value="">Choose a task</option>
+                    <option value="Program PAX A35 w/ P98">Program PAX A35 w/ P98</option>
+                    <option value="PAX TID ">PAX TID </option>
+                    <option value="DEJAVOO TID ">DEJAVOO TID </option>
+                    <option value="VALOR TID">VALOR TID </option>
+                    <option value="CLOVER DEPROVISIONED">CLOVER DEPROVISIONED</option>
+                    <option value="BANK CHANGE">BANK CHANGE</option>
+                    <option value="DEJAVOO PROGRAMMING">DEJAVOO PROGRAMMING</option>
+                    <option value="TSYS V2 DEJAVOO PROGRAMMING">TSYS V2 DEJAVOO PROGRAMMING</option>
+                    <option value="LEADS CREATION">LEADS CREATION</option>
+                    <option value="DISPUTE LETTER">DISPUTE LETTER</option>
+                    <option value="FILLING TSYS V2">FILLING TSYS V2</option>
+                    <option value="1099-K REPORT">1099-K REPORT</option>
+                    <option value="RETURN LABEL">RETURN LABEL</option>  
+                  </select>
+                </div>
 
-                {/* 'X' button inside the input box */}
                 <button
                   type="button"
                   title="Clear Status"
@@ -182,20 +384,38 @@ function LeftPanel() {
                     if (combo) combo.value = '';
                     if (hidden) hidden.value = '';
 
-                    // Open dropdown after clearing so you can pick a new option right away
                     const suggestions = document.getElementById('creditcard-status-suggestions');
                     if (suggestions) suggestions.style.display = 'block';
                   }}
                 >
                   ✖
                 </button>
-
+                    
                 <div id="creditcard-status-suggestions" className="combobox-suggestions"></div>
               </div>
             </td>
           </tr>
           <tr>
-            <th><label htmlFor="creditcard-remarks">Troubleshooting (AI)</label></th>
+            <th>
+              <label htmlFor="creditcard-remarks">Troubleshooting</label>
+              {/* ✅ NEW: Auto-AI Toggle Options (Gaps removed) */}
+          <div style={{ marginTop: '5px', fontSize: '0.85em', backgroundColor: 'var(--panel-bg, #f8f9fa)', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}>                
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer', marginBottom: '5px' }}>
+                <input type="radio" name="aiActionMode" value="summarize" defaultChecked style={{ margin: 0, width: 'auto' }} /> 
+                <span style={{ color: '#673ab7', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Summarize</span>
+              </label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer', marginBottom: '5px' }}>
+                <input type="radio" name="aiActionMode" value="grammar" style={{ margin: 0, width: 'auto' }} /> 
+                <span style={{ color: '#009688', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Fix Grammar</span>
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer' }}>
+                <input type="radio" name="aiActionMode" value="none" style={{ margin: 0, width: 'auto' }} /> 
+                <span style={{ color: '#666', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Off (Raw Text)</span>
+              </label>
+            </div>
+            </th>
             <td>
               <div id="creditcard-remarks-editor" style={{ height: 200 }}></div>
               <textarea id="creditcard-remarks" style={{ display: 'none' }}></textarea>
@@ -260,7 +480,6 @@ function HistoryPanel() {
             <p className="panel-subtitle">Recent tickets, grouped by date.</p>
           </div>
           
-          {/* Workload Tracker Controls */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-end' }}>
             <input 
               type="date" 
