@@ -1047,42 +1047,55 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
           const entry = allEntries.find(e => e.id == id);
           if (entry) {
             
-            // ✅ FIX: Prioritize originalRemarks (RAW) over remarks (SUMMARY)
-            const rawTroubleshooting = formatMultiline(entry.originalRemarks || entry.remarks || '');
+            const statusUp = (entry.status || '').toUpperCase();
+
+            // ✅ Grab notes (prioritizes original raw remarks, falls back to resolution if it's an Other Task)
+            const rawTroubleshooting = formatMultiline(entry.originalRemarks || entry.remarks || entry.resolution || '');
             
             // Clean up existing bullets/dashes to prevent double-bulleting
             const steps = rawTroubleshooting.split('\n')
                                             .map(s => s.trim().replace(/^[-•]\s*/, ''))
                                             .filter(s => s.length > 0);
             
-            // 1. Generate Plain Text Fallback
-            let plainText = `CONTACT INFORMATION:\nPERSON NAME: ${entry.merchant || ''}\nPHONE NUMBER: ${entry.contactNumber || ''}\n\nTROUBLESHOOTING:\n`;
-            steps.forEach(step => {
-               plainText += `• ${step}\n`;
-            });
+            let plainText = '';
+            let htmlText = '';
+
+            // ✅ FIX: If status is "OTHER TASK", only output the Troubleshooting section
+            if (statusUp === 'OTHER TASK') {
+              
+              
+              steps.forEach(step => { plainText += `• ${step}\n`; });
             
-            // 2. Generate Rich Text HTML (Keeps bold and bullets)
-            let htmlText = `
-              <strong style="font-weight: bold;">CONTACT INFORMATION:</strong><br>
-              PERSON NAME: ${escapeHtml(entry.merchant || '')}<br>
-              PHONE NUMBER: ${escapeHtml(entry.contactNumber || '')}<br><br>
-              <strong style="font-weight: bold;">TROUBLESHOOTING:</strong><br>
-              <ul>
-              `;
-            steps.forEach(step => {
-               htmlText += `<li>${escapeHtml(step)}</li>`;
-            });
-            htmlText += `</ul>`;
+              htmlText = `<strong style="font-weight: bold;">TROUBLESHOOTING:</strong><br><ul>`;
+              steps.forEach(step => { htmlText += `<li>${escapeHtml(step)}</li>`; });
+              htmlText += `</ul>`;
+
+            } else {
+              
+              // Standard Output: Contact Info + Troubleshooting
+              plainText = `CONTACT INFORMATION:\nPERSON NAME: ${entry.merchant || ''}\nPHONE NUMBER: ${entry.contactNumber || ''}\n\nTROUBLESHOOTING:\n`;
+              steps.forEach(step => { plainText += `• ${step}\n`; });
+              
+              htmlText = `
+<strong style="font-weight: bold;">CONTACT INFORMATION:</strong><br>
+PERSON NAME: ${escapeHtml(entry.merchant || '')}<br>
+PHONE NUMBER: ${escapeHtml(entry.contactNumber || '')}<br><br>
+<strong style="font-weight: bold;">TROUBLESHOOTING:</strong><br>
+<ul>
+`;
+              steps.forEach(step => { htmlText += `<li>${escapeHtml(step)}</li>`; });
+              htmlText += `</ul>`;
+            }
 
             try {
               const clipboardItem = new ClipboardItem({
-                'text/plain': new Blob([plainText], { type: 'text/plain' }),
-                'text/html': new Blob([htmlText], { type: 'text/html' })
+                'text/plain': new Blob([plainText.trim()], { type: 'text/plain' }),
+                'text/html': new Blob([htmlText.trim()], { type: 'text/html' })
               });
               await navigator.clipboard.write([clipboardItem]);
               showNotification('HRMS format copied!');
             } catch (err) {
-              navigator.clipboard.writeText(plainText);
+              navigator.clipboard.writeText(plainText.trim());
               showNotification('HRMS plain text copied!');
             }
           }
@@ -1289,7 +1302,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       navigator.clipboard.writeText(rows.join('\n')).then(() => showNotification(`Copied ${rows.length} rows`));
     }
 
-    // ─── COMBOBOX ───
+   // ─── COMBOBOX ───
     function initCombobox(comboboxId, hiddenId, optionsArray, suggestionsId, onSelectCallback) {
       const input = document.getElementById(comboboxId);
       const hidden = document.getElementById(hiddenId);
@@ -1299,12 +1312,18 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       let currentOptions = [];
       let ignoreNextRender = false;
 
-      function renderSuggestions(filterText) {
+      // ✅ FIX: Added `forceShowAll` so we can force the full list to appear on click
+      function renderSuggestions(filterText, forceShowAll = false) {
         if (ignoreNextRender) return;
         const filter = filterText.trim().toLowerCase();
-        currentOptions = filter === '' ? [...optionsArray] : optionsArray.filter(opt => opt.toLowerCase().includes(filter));
+        
+        currentOptions = (filter === '' || forceShowAll) 
+            ? [...optionsArray] 
+            : optionsArray.filter(opt => opt.toLowerCase().includes(filter));
+            
         suggestionsDiv.innerHTML = '';
         if (currentOptions.length === 0) { suggestionsDiv.style.display = 'none'; return; }
+        
         currentOptions.forEach((opt, idx) => {
           const div = document.createElement('div');
           div.className = 'combobox-suggestion-item';
@@ -1329,13 +1348,26 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       input.addEventListener('input', (e) => {
         if (ignoreNextRender) return;
         hidden.value = e.target.value;
-        renderSuggestions(e.target.value);
+        renderSuggestions(e.target.value); // Filters normally as you type
         if (onSelectCallback) onSelectCallback(e.target.value);
       });
-      input.addEventListener('focus', () => { if (!ignoreNextRender) renderSuggestions(input.value); });
-      document.addEventListener('click', (e) => {
-        if (!input.contains(e.target) && !suggestionsDiv.contains(e.target)) { suggestionsDiv.style.display = 'none'; ignoreNextRender = false; }
+      
+      // ✅ FIX: When you click the input, it forces the full list to drop down again!
+      input.addEventListener('click', () => { 
+        if (!ignoreNextRender) renderSuggestions(input.value, true); 
       });
+      
+      input.addEventListener('focus', () => { 
+        if (!ignoreNextRender) renderSuggestions(input.value, true); 
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !suggestionsDiv.contains(e.target)) { 
+          suggestionsDiv.style.display = 'none'; 
+          ignoreNextRender = false; 
+        }
+      });
+      
       if (hidden.value) input.value = hidden.value;
     }
 
