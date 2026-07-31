@@ -335,9 +335,9 @@ export function initCreditcardApp() {
         prompt = `Fix the grammar, spelling, and formatting of the following technical support troubleshooting notes. Keep the exact technical meaning, details, and steps intact. Format it cleanly as plain text:\n\n${rawText}`;
         systemText = 'You are a technical support editor. Fix grammar and spelling but do not remove any technical details or steps. Return plain text only.';
       } else {
-        // Default to summarize
-        prompt = `Summarize the troubleshooting notes below into one concise paragraph under three sentences. Return plain text only, no labels or extra commentary.\n\n${rawText}`;
-        systemText = 'You write brief customer-support troubleshooting summaries. Keep under three sentences and return plain text only.';
+        // ✅ NEW: Standard ticketing summary (1 to 2 sentences)
+        prompt = `Summarize the troubleshooting notes below into a clear, standard ticket summary of 1 to 2 sentences. Focus on the main issue and the resolution or next steps. Return plain text only, no labels or extra commentary.\n\n${rawText}`;
+        systemText = 'You write clear and professional customer-support troubleshooting ticket summaries. Keep it strictly to 1 or 2 sentences and return plain text only.';
       }
 
       const aiResponse = await generateGeminiSummary(prompt, systemText);
@@ -349,7 +349,6 @@ export function initCreditcardApp() {
       }
       return plainTextToRemarkHtml(rawText); // If grammar fails, return raw text
     }
-
     // ─── CLOCK ───
     window.clock = function(type, prefix) {
       const shift = document.getElementById(`${prefix}-shift`).value;
@@ -884,6 +883,7 @@ export function initCreditcardApp() {
         else if (status === 'PENDING') pending++;
         else if (status === 'OTHER TASK') other++;
       });
+
       
       const open = Math.max(baseEntries.length - (resolved + other), 0);
       
@@ -1586,7 +1586,30 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
           } else {
             container.style.display = 'none';
             const otherTaskSelect = document.getElementById('creditcard-other-task-select');
-            if (otherTaskSelect) otherTaskSelect.value = ''; 
+            
+            // Check if a template was previously selected
+            if (otherTaskSelect && otherTaskSelect.value !== '') {
+              otherTaskSelect.value = ''; // Always reset the hidden dropdown choice
+              
+              // ✅ ONLY clear the text fields if the new status is "RESOLVED"
+              if (selectedValue.toUpperCase() === 'RESOLVED') {
+                document.getElementById('creditcard-issue').value = '';
+                document.getElementById('creditcard-resolution').value = '';
+                document.getElementById('creditcard-remarks').value = '';
+                
+                if (quillEditor) {
+                  quillEditor.root.innerHTML = '';
+                }
+                
+                if (typeof showNotification === 'function') {
+                  showNotification('Template removed');
+                }
+              }
+              
+              // Save and update preview whether we cleared the text or kept it!
+              creditcardUpdatePreview();
+              saveFormData('creditcard');
+            }
           }
         }
       });
