@@ -16,7 +16,7 @@ export function initCreditcardApp() {
     const EDIT_DRAFT_KEY = 'editingDraft_creditcard_';
     const DRAFT_TABS_KEY = 'ticketDraftTabs_creditcard';
     const collapseState = { months: {}, dates: {} };
-    const STATUS_OPTIONS = ['RESOLVED', 'PENDING', 'OTHER TASK', 'OPEN'];
+    const STATUS_OPTIONS = ['RESOLVED', 'PENDING', 'OTHER TASK'];
 
 // ✅ NEW: OTHER TASK TEMPLATES DICTIONARY
     const OTHER_TASK_TEMPLATES = {
@@ -337,7 +337,7 @@ export function initCreditcardApp() {
       } else {
         // ✅ NEW: Standard ticketing summary (1 to 2 sentences)
         prompt = `Summarize the troubleshooting notes below into a clear, standard ticket summary of 1 to 2 sentences. Focus on the main issue and the resolution or next steps. Return plain text only, no labels or extra commentary.\n\n${rawText}`;
-        systemText = 'You write clear and professional customer-support troubleshooting ticket summaries. Keep it strictly to 1 or 2 sentences and return plain text only.';
+        systemText = 'You write clear and simple  merchant-support troubleshooting ticket summaries. Keep it strictly to 1 or 2 sentences and return plain text only.';
       }
 
       const aiResponse = await generateGeminiSummary(prompt, systemText);
@@ -883,30 +883,18 @@ export function initCreditcardApp() {
         else if (status === 'PENDING') pending++;
         else if (status === 'OTHER TASK') other++;
       });
-
-      
-      const open = Math.max(baseEntries.length - (resolved + other), 0);
       
       if (document.getElementById('counterResolved')) document.getElementById('counterResolved').innerText = resolved;
       if (document.getElementById('counterPending')) document.getElementById('counterPending').innerText = pending;
       if (document.getElementById('counterOther')) document.getElementById('counterOther').innerText = other;
       
       const totalEl = document.getElementById('dashboardTotalTickets');
-      const openEl = document.getElementById('dashboardOpenTickets');
       const dashResolvedEl = document.getElementById('dashboardResolvedTickets');
       const dashPendingEl = document.getElementById('dashboardPendingTickets');
       
       if (totalEl) totalEl.textContent = baseEntries.length;
-      if (openEl) openEl.textContent = open;
       if (dashResolvedEl) dashResolvedEl.textContent = resolved + other;
       if (dashPendingEl) dashPendingEl.textContent = pending;
-    }
-
-    function updateSelectAllCheckboxState() {
-      const selectAllBar = document.getElementById('selectAllCheckbox');
-      const rowCheckboxes = document.querySelectorAll('#entryTable tbody .row-checkbox');
-      const allChecked = rowCheckboxes.length > 0 && Array.from(rowCheckboxes).every(cb => cb.checked);
-      selectAllBar.checked = allChecked;
     }
 
     function handleSelectAll(checkbox) {
@@ -1318,6 +1306,27 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       }
     }
 
+    function updateSelectAllCheckboxState() {
+      const selectAllCb = document.getElementById('selectAllCheckbox');
+      const rowCbs = document.querySelectorAll('#entryTable tbody .row-checkbox');
+      if (!selectAllCb) return;
+      if (rowCbs.length === 0) {
+        selectAllCb.checked = false;
+        selectAllCb.indeterminate = false;
+        return;
+      }
+      const checkedCount = Array.from(rowCbs).filter(cb => cb.checked).length;
+      if (checkedCount === 0) {
+        selectAllCb.checked = false;
+        selectAllCb.indeterminate = false;
+      } else if (checkedCount === rowCbs.length) {
+        selectAllCb.checked = true;
+        selectAllCb.indeterminate = false;
+      } else {
+        selectAllCb.checked = false;
+        selectAllCb.indeterminate = true;
+      }
+    }
     // ─── BULK OPERATIONS ───
     function getSelectedRowIds() { return Array.from(document.querySelectorAll('#entryTable tbody .row-checkbox:checked')).map(cb => cb.value); }
 

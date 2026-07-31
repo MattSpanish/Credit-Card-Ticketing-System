@@ -243,10 +243,7 @@ function DashboardGrid() {
         <div className="stat-label">Total</div>
         <div className="stat-value" id="dashboardTotalTickets">0</div>
       </div>
-      <div className="stat-card">
-        <div className="stat-label">Open</div>
-        <div className="stat-value" id="dashboardOpenTickets">0</div>
-      </div>
+      
       <div className="stat-card success">
         <div className="stat-label">Resolved</div>
         <div className="stat-value" id="dashboardResolvedTickets">0</div>
