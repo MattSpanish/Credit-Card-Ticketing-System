@@ -354,6 +354,15 @@ function LeftPanel() {
                     <option value="FILLING TSYS V2">FILLING TSYS V2</option>
                     <option value="1099-K REPORT">1099-K REPORT</option>
                     <option value="RETURN LABEL">RETURN LABEL</option>  
+                    <option value="CLOSE ACCOUNT FISERV">CLOSE ACCOUNT FISERV</option>
+                    <option value="CLOVER PROVISION">CLOVER PROVISION</option>
+                    <option value="CLOVER DEPROVISIONED">CLOVER DEPROVISIONED</option>
+                    <option value="PROGRAM PAX S300 PROGRAMMING">PROGRAM PAX S300 PROGRAMMING</option>
+                    <option value="REQUEST FOR TSYS VARSHEET">REQUEST FOR TSYS VARSHEET</option>
+                    <option value="RESET THE ACCESS FOR IRIS PORTAL">RESET THE ACCESS FOR IRIS PORTAL</option>
+                    <option value="ACCESS FOR IRIS PORTAL">ACCESS FOR IRIS PORTAL</option>
+                    <option value="BUYPASS TID CREATION">BUYPASS TID CREATION</option>
+
                   </select>
                 </div>
 
