@@ -138,10 +138,7 @@ export function initCreditcardApp() {
         issue: "BUYPASS TID CREATION",
         troubleshooting: "OPEN THE BUYPASS TOOL , MERCHANT MANAGER AND FDPOS\nNEED A COPY FOR THE EXISTING BUYPASS ID\nMERCHANT SETUP TO INPUT THE INFORMATION OF THE MERCHANT\nTERMINAL SET UP TO ADD THE EQUIPMENT\nDEBIT NETWORKS CHECKED THE BOXES\nPROP SHARE GROUP ENTITLE THE (5 , 7 , 50)\nPLUGGED FOR TABLE LOAD\nBUYPASS TID HAS BEEN CREATED ON BUYPASS TOOL AND ADDED ON FDPOS. BUYPASS ID: ",
         resolution: "BUYPASS TID CREATION - TID: "
-      },
-
-
-
+      }
     };
 
     const CLOCK_TIMES = {
@@ -377,7 +374,8 @@ export function initCreditcardApp() {
       return '';
     }
 
-    async function generateRemarksSummary(remarksHtml, mode) {
+    // ✅ FIXED: Now takes issueText to give AI full context
+    async function generateRemarksSummary(issueText, remarksHtml, mode) {
       const rawText = htmlToPlainText(remarksHtml || '');
       if (!rawText.trim()) return '';
       
@@ -388,20 +386,20 @@ export function initCreditcardApp() {
         prompt = `Fix the grammar, spelling, and formatting of the following technical support troubleshooting notes. Keep the exact technical meaning, details, and steps intact. Format it cleanly as plain text:\n\n${rawText}`;
         systemText = 'You are a technical support editor. Fix grammar and spelling but do not remove any technical details or steps. Return plain text only.';
       } else {
-        // ✅ NEW: Standard ticketing summary (1 to 2 sentences)
-        prompt = `Summarize the troubleshooting notes below into a clear, standard ticket summary of 1 to 2 sentences. Focus on the main issue and the resolution or next steps. Return plain text only, no labels or extra commentary.\n\n${rawText}`;
-        systemText = 'You write clear and simple  merchant-support troubleshooting ticket summaries. Keep it strictly to 1 or 2 sentences and return plain text only.';
+        // ✅ NEW: Passes both the ISSUE and the NOTES to the AI
+        prompt = `Issue Reported: ${issueText}\n\nTroubleshooting Notes:\n${rawText}\n\nBased on the issue and notes above, summarize the specific steps taken to resolve the issue. Write a clear, 1 to 2 sentence resolution summary detailing exactly what actions were performed to fix the problem or what the final outcome was. Return plain text only, no labels, no bullet points, and no extra commentary.`;
+        systemText = 'You are a merchant-support specialist. Your job is to read an issue and raw troubleshooting steps, and extract a concise, 1 to 2 sentence summary of the resolution (the actions taken to solve the ticket). Return plain text only.';
       }
 
       const aiResponse = await generateGeminiSummary(prompt, systemText);
       if (aiResponse) return plainTextToRemarkHtml(aiResponse);
 
-      // Fallback if AI fails or key is missing
       if (mode === 'summarize') {
         return buildLocalTroubleshootingSummary(rawText);
       }
-      return plainTextToRemarkHtml(rawText); // If grammar fails, return raw text
+      return plainTextToRemarkHtml(rawText); 
     }
+
     // ─── CLOCK ───
     window.clock = function(type, prefix) {
       const shift = document.getElementById(`${prefix}-shift`).value;
@@ -522,9 +520,9 @@ export function initCreditcardApp() {
       
       let rawRemarksHtml = quillEditor ? quillEditor.root.innerHTML : (remarksField ? remarksField.value : '');
       let remarksHtmlToSave = rawRemarksHtml;
+      
       let originalRemarksHtml = rawRemarksHtml;
 
-      // Preserve original text if editing an existing entry
       if (editId) {
         const existing = allEntries.find(e => e.id === editId && e.source === 'creditcard');
         if (existing && existing.originalRemarks) {
@@ -532,19 +530,18 @@ export function initCreditcardApp() {
         }
       }
 
-      // ✅ AI generates summary or fixes grammar automatically on save
       const aiActionMode = document.querySelector('input[name="aiActionMode"]:checked')?.value || 'summarize';
 
-      if (status.toUpperCase() !== 'OTHER TASK' && aiActionMode !== 'none') {
-        showNotification(`Generating AI ${aiActionMode === 'grammar' ? 'Grammar Fix' : 'Summary'}...`);
-        const aiResultHtml = await generateRemarksSummary(rawRemarksHtml, aiActionMode);
-        
-        if (aiResultHtml) {
-          remarksHtmlToSave = aiResultHtml; 
-          // If brand new entry, lock in the raw text so we never lose it
-          if (!editId) {
-            originalRemarksHtml = rawRemarksHtml;
+      if (status.toUpperCase() !== 'OTHER TASK') {
+        if (aiActionMode !== 'none') {
+          showNotification(`Generating AI ${aiActionMode === 'grammar' ? 'Grammar Fix' : 'Summary'}...`);
+          // ✅ FIXED: Pass 'issue' to the function
+          const aiResultHtml = await generateRemarksSummary(issue, rawRemarksHtml, aiActionMode);
+          if (aiResultHtml) {
+            remarksHtmlToSave = aiResultHtml; 
           }
+        } else {
+          remarksHtmlToSave = '';
         }
       }
 
@@ -560,9 +557,9 @@ export function initCreditcardApp() {
         issue,
         escalated,
         status,
-        remarks: remarksHtmlToSave,          // Summarized troubleshooting (Shows in App)
-        originalRemarks: originalRemarksHtml, // Raw untouched text (Used for DETAILS clipboard)
-        resolution: resolution,              // Manual resolution
+        remarks: remarksHtmlToSave,          
+        originalRemarks: originalRemarksHtml, 
+        resolution: resolution,              
         source: 'creditcard',
         deleted: false,
         imported: false,
@@ -605,11 +602,9 @@ export function initCreditcardApp() {
           if (el) el.value = '';
         });
         
-        // Clear the visible Combobox text as well
         const statusCombobox = document.getElementById('creditcard-status-combobox');
         if (statusCombobox) statusCombobox.value = '';
 
-        // ✅ NEW: Hide and clear the Other Task container/dropdown
         const otherTaskContainer = document.getElementById('creditcard-other-task-container');
         if (otherTaskContainer) otherTaskContainer.style.display = 'none';
 
@@ -657,12 +652,10 @@ export function initCreditcardApp() {
       document.getElementById('creditcard-issue').value = entry.issue || '';
       document.getElementById('creditcard-escalated').value = entry.escalated || '';
       
-      // Sync both the hidden status field AND the visible combobox
       document.getElementById('creditcard-status').value = entry.status || '';
       const statusCombobox = document.getElementById('creditcard-status-combobox');
       if (statusCombobox) statusCombobox.value = entry.status || '';
 
-      // Check if we need to show the other task container when editing
       const otherTaskContainer = document.getElementById('creditcard-other-task-container');
       if (otherTaskContainer) {
         otherTaskContainer.style.display = (entry.status || '').toUpperCase() === 'OTHER TASK' ? 'block' : 'none';
@@ -670,9 +663,10 @@ export function initCreditcardApp() {
       
       document.getElementById('creditcard-resolution').value = entry.resolution || '';
       
-      if (quillEditor && entry.remarks) {
-        quillEditor.root.innerHTML = entry.remarks;
-        document.getElementById('creditcard-remarks').value = entry.remarks;
+      if (quillEditor) {
+        const textToLoad = entry.originalRemarks || entry.remarks || '';
+        quillEditor.root.innerHTML = textToLoad;
+        document.getElementById('creditcard-remarks').value = textToLoad;
       }
     }
 
@@ -792,14 +786,17 @@ export function initCreditcardApp() {
          exportDate = `${d}/${m}/${y}`;
       }
 
-      // Only grab Resolution if status is OTHER TASK, hide remarks completely
       let combinedRemarks = '';
       if ((entry.status || '').toUpperCase() === 'OTHER TASK') {
         combinedRemarks = entry.resolution || '';
       } else {
-        combinedRemarks = entry.resolution 
-          ? htmlToPlainText(entry.remarks || '') + '\n\n' + entry.resolution 
-          : htmlToPlainText(entry.remarks || '');
+        const parsedRem = formatMultiline(entry.remarks || '');
+        const parsedRes = entry.resolution || '';
+        if (parsedRem && parsedRes) {
+          combinedRemarks = parsedRem + '\n\n' + parsedRes;
+        } else {
+          combinedRemarks = parsedRem || parsedRes;
+        }
       }
 
       const rowData = [
@@ -834,13 +831,11 @@ export function initCreditcardApp() {
       let entries = allEntries.filter(entry => !entry.deleted && entry.source === 'creditcard');
 
       if (currentSearchQuery) {
-        // GLOBAL SEARCH: Ignore the date picker, search EVERYTHING for matches
         entries = entries.filter(entry => {
           const searchString = `${entry.ticketNumber || ''} ${entry.store || ''} ${entry.mid || ''} ${entry.merchant || ''} ${entry.contactNumber || ''} ${entry.issue || ''}`.toLowerCase();
           return searchString.includes(currentSearchQuery);
         });
       } else {
-        // NO SEARCH: Just filter by the selected date like normal
         entries = entries.filter(entry => {
           const dateObj = parseDateFromString(entry.date);
           if (!dateObj) return false;
@@ -876,9 +871,13 @@ export function initCreditcardApp() {
         if ((entry.status || '').toUpperCase() === 'OTHER TASK') {
           combinedRemarks = escapeHtml(entry.resolution || '');
         } else {
-          combinedRemarks = entry.resolution 
-            ? htmlToPlainText(entry.remarks || '') + '\n\n' + escapeHtml(entry.resolution)
-            : htmlToPlainText(entry.remarks || '');
+          const parsedRem = formatMultiline(entry.remarks || '');
+          const parsedRes = entry.resolution || '';
+          if (parsedRem && parsedRes) {
+            combinedRemarks = escapeHtml(parsedRem) + '\n\n' + escapeHtml(parsedRes);
+          } else {
+            combinedRemarks = escapeHtml(parsedRem || parsedRes);
+          }
         }
 
         const row = document.createElement('tr');
@@ -1105,13 +1104,7 @@ export function initCreditcardApp() {
             let rawTroubleshootingText = formatMultiline(entry.originalRemarks || entry.remarks);
             let troubleshootingSection = rawTroubleshootingText ? `TROUBLESHOOTING:\n${rawTroubleshootingText}\n\n` : '';
             
-            let summaryText = '';
-            if (entry.originalRemarks && entry.originalRemarks !== entry.remarks) {
-              summaryText = formatMultiline(entry.remarks); 
-            } else if (entry.aiSummary) {
-              summaryText = formatMultiline(entry.aiSummary);
-            }
-
+            let summaryText = formatMultiline(entry.remarks || entry.aiSummary || '');
             let manualResolution = entry.resolution || '';
             let resolutionText = '';
             let footerType = "CALL & BACKEND"; 
@@ -1293,13 +1286,7 @@ PHONE NUMBER: ${escapeHtml(entry.contactNumber || '')}<br><br>
           dateHeader = `--------------\n${shortDate}\n--------------\n\n`;
         }
 
-        let summaryText = '';
-        if (entry.originalRemarks && entry.originalRemarks !== entry.remarks) {
-          summaryText = formatMultiline(entry.remarks); 
-        } else if (entry.aiSummary) {
-          summaryText = formatMultiline(entry.aiSummary);
-        }
-
+        let summaryText = formatMultiline(entry.remarks || entry.aiSummary || '');
         let manualResolution = entry.resolution || '';
         let resolutionText = '';
         let footerType = "CALL & BACKEND"; 
@@ -1414,9 +1401,13 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         if ((entry.status || '').toUpperCase() === 'OTHER TASK') {
           combinedRemarks = entry.resolution || '';
         } else {
-          combinedRemarks = entry.resolution 
-            ? htmlToPlainText(entry.remarks || '') + '\n\n' + entry.resolution 
-            : htmlToPlainText(entry.remarks || '');
+          const parsedRem = formatMultiline(entry.remarks || '');
+          const parsedRes = entry.resolution || '';
+          if (parsedRem && parsedRes) {
+            combinedRemarks = parsedRem + '\n\n' + parsedRes;
+          } else {
+            combinedRemarks = parsedRem || parsedRes;
+          }
         }
 
         return [
@@ -1649,11 +1640,9 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
             container.style.display = 'none';
             const otherTaskSelect = document.getElementById('creditcard-other-task-select');
             
-            // Check if a template was previously selected
             if (otherTaskSelect && otherTaskSelect.value !== '') {
-              otherTaskSelect.value = ''; // Always reset the hidden dropdown choice
+              otherTaskSelect.value = ''; 
               
-              // ✅ ONLY clear the text fields if the new status is "RESOLVED"
               if (selectedValue.toUpperCase() === 'RESOLVED') {
                 document.getElementById('creditcard-issue').value = '';
                 document.getElementById('creditcard-resolution').value = '';
@@ -1668,7 +1657,6 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
                 }
               }
               
-              // Save and update preview whether we cleared the text or kept it!
               creditcardUpdatePreview();
               saveFormData('creditcard');
             }
