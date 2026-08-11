@@ -1,3 +1,5 @@
+import { ensureDraftForSaving } from './draftStorage';
+
 export function initCreditcardApp() {
   if (window.__creditcardAppInitialized) return;
   window.__creditcardAppInitialized = true;
@@ -585,6 +587,9 @@ export function initCreditcardApp() {
       }
 
       clearFormFields(prefix);
+      if (!editId) {
+        window.createNewTicket();
+      }
 
       saveAllEntries();
       updateStatusCounters();
@@ -1504,18 +1509,35 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       syncPreviewHeight();
     };
 
+    function createDraftTabButton(draftId, label = 'Ticket') {
+      const btn = document.createElement('button');
+      btn.id = `ticketTab-${draftId}`;
+      btn.className = 'tab-btn';
+      btn.innerHTML = `<span class="tab-label">${label}</span><button class="tab-close">×</button>`;
+      btn.onclick = () => activateDraftTab(draftId);
+      btn.querySelector('.tab-close').onclick = (e) => { e.stopPropagation(); closeDraftTab(draftId); };
+      return btn;
+    }
+
+    function persistActiveDraftId(draftId) {
+      if (draftId) {
+        localStorage.setItem('activeDraftId_creditcard', draftId);
+      }
+    }
+
     window.createNewTicket = function() {
       const tabsContainer = document.querySelector('.top-tabs');
       if (!tabsContainer) return;
       const draftId = `draft-${Date.now()}`;
-      const btn = document.createElement('button'); btn.id = `ticketTab-${draftId}`; btn.className = 'tab-btn active';
-      btn.innerHTML = `<span class="tab-label">Ticket</span><button class="tab-close">×</button>`;
-      btn.onclick = () => activateDraftTab(draftId);
-      btn.querySelector('.tab-close').onclick = (e) => { e.stopPropagation(); closeDraftTab(draftId); };
+      const btn = createDraftTabButton(draftId, 'Ticket');
       tabsContainer.appendChild(btn);
       
-      const savedNow = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]'); savedNow.push({ id: draftId, label: 'Ticket' }); localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(savedNow));
+      const savedNow = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
+      savedNow.push({ id: draftId, label: 'Ticket' });
+      localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(savedNow));
+      clearFormFields('creditcard');
       activateDraftTab(draftId);
+      return draftId;
     };
 
     let currentDraftId = null;
@@ -1559,6 +1581,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         clearFormFields('creditcard');
       }
       currentDraftId = draftId;
+      persistActiveDraftId(draftId);
       creditcardUpdatePreview();
     }
 
@@ -1577,13 +1600,30 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       if (btn) btn.remove();
       localStorage.removeItem(`draftData_${draftId}`);
       const saved = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
-      localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(saved.filter(s => s.id !== draftId)));
-      if (currentDraftId === draftId) { currentDraftId = null; clearFormFields('creditcard'); }
+      const remaining = saved.filter(s => s.id !== draftId);
+      localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(remaining));
+      if (currentDraftId === draftId) {
+        currentDraftId = null;
+        localStorage.removeItem('activeDraftId_creditcard');
+        clearFormFields('creditcard');
+      } else if (remaining.length > 0) {
+        const nextDraft = remaining[remaining.length - 1];
+        persistActiveDraftId(nextDraft.id);
+      }
     }
 
     window.saveCurrentDraft = function() {
-      if (currentDraftId) { saveDraftData(currentDraftId); showNotification('Draft saved'); return; }
-      window.createNewTicket();
+      const savedDraftId = ensureDraftForSaving({
+        currentDraftId,
+        createNewDraft: () => window.createNewTicket(),
+        saveDraftData: (draftId) => {
+          saveDraftData(draftId);
+        }
+      });
+
+      if (savedDraftId) {
+        showNotification('Draft saved');
+      }
     };
 
     function init() {
@@ -1592,6 +1632,22 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       loadAllEntries();
       attachGeminiKeyControls();
       initTheme();
+
+      const tabsContainer = document.querySelector('.top-tabs');
+      const savedTabs = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
+      if (tabsContainer) {
+        tabsContainer.querySelectorAll('.tab-btn[id^="ticketTab-"]').forEach(btn => btn.remove());
+        savedTabs.forEach(tab => {
+          tabsContainer.appendChild(createDraftTabButton(tab.id, tab.label || 'Ticket'));
+        });
+      }
+
+      const activeDraftId = localStorage.getItem('activeDraftId_creditcard');
+      const restoreTarget = savedTabs.find(tab => tab.id === activeDraftId) || savedTabs[savedTabs.length - 1];
+      if (restoreTarget) {
+        currentDraftId = restoreTarget.id;
+        activateDraftTab(restoreTarget.id);
+      }
 
       document.getElementById('clearAllBtn').addEventListener('click', clearAllEntries);
       document.getElementById('bulkDeleteBtn').addEventListener('click', bulkDelete);
@@ -1609,10 +1665,17 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution'].forEach(id => {
         const el = document.getElementById(`creditcard-${id}`);
         if (el) {
-          el.addEventListener('input', () => { creditcardUpdatePreview(); saveFormData('creditcard'); });
+          el.addEventListener('input', () => {
+            creditcardUpdatePreview();
+            saveFormData('creditcard');
+            if (currentDraftId) saveDraftData(currentDraftId);
+          });
         }
       });
-      document.getElementById('creditcard-shift').addEventListener('change', () => saveFormData('creditcard'));
+      document.getElementById('creditcard-shift').addEventListener('change', () => {
+        saveFormData('creditcard');
+        if (currentDraftId) saveDraftData(currentDraftId);
+      });
 
       quillEditor = new Quill('#creditcard-remarks-editor', {
         theme: 'snow',
@@ -1626,6 +1689,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         document.getElementById('creditcard-remarks').value = quillEditor.root.innerHTML;
         creditcardUpdatePreview();
         saveFormData('creditcard');
+        if (currentDraftId) saveDraftData(currentDraftId);
       });
 
       initCombobox('creditcard-status-combobox', 'creditcard-status', STATUS_OPTIONS, 'creditcard-status-suggestions', (selectedValue) => {
@@ -1699,7 +1763,11 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         }
       }, 60000);
 
-      window.addEventListener('beforeunload', () => { saveFormData('creditcard'); if (editId) attachDraftAutoSave(editId); });
+      window.addEventListener('beforeunload', () => {
+        saveFormData('creditcard');
+        if (currentDraftId) saveDraftData(currentDraftId);
+        if (editId) attachDraftAutoSave(editId);
+      });
       creditcardUpdatePreview(); syncPreviewHeight();
     }
 

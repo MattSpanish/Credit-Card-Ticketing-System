@@ -4,11 +4,35 @@ import { initCreditcardApp } from './creditcardController';
 function Sidebar() {
   // State to handle opening/closing the TID Template popup modal
   const [showTemplates, setShowTemplates] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+
+  useEffect(() => {
+    const updateView = () => setIsMobileView(window.innerWidth <= 1000);
+    updateView();
+    window.addEventListener('resize', updateView);
+    return () => window.removeEventListener('resize', updateView);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileView) {
+      setIsMobileNavOpen(false);
+    }
+  }, [isMobileView]);
 
   // Native React handler for dark mode
   const toggleTheme = () => {
     const isDark = document.body.classList.toggle('dark-mode');
     localStorage.setItem('theme_creditcard', isDark ? 'dark' : 'light');
+  };
+
+  const handleNavAction = (action) => {
+    if (typeof action === 'function') {
+      action();
+    }
+    if (isMobileView) {
+      setIsMobileNavOpen(false);
+    }
   };
 
   // ✅ Dictionary of specific templates
@@ -129,22 +153,35 @@ FD Buypass: (800) 733-3322`
     <aside className="sidebar" aria-label="Primary navigation">
       <div className="sidebar-top">
         <div className="logo">CC Tickets</div>
-        <button 
-          className="theme-toggle" 
-          id="themeToggle" 
-          title="Toggle dark mode"
-          onClick={toggleTheme}
-        >
-          🌙
-        </button>
+        <div className="sidebar-actions">
+          <button 
+            className="theme-toggle" 
+            id="themeToggle" 
+            title="Toggle dark mode"
+            onClick={toggleTheme}
+          >
+            🌙
+          </button>
+          {isMobileView && (
+            <button
+              className="sidebar-toggle"
+              type="button"
+              aria-label="Toggle navigation"
+              aria-expanded={isMobileNavOpen}
+              onClick={() => setIsMobileNavOpen((prev) => !prev)}
+            >
+              ☰
+            </button>
+          )}
+        </div>
       </div>
-      <nav className="nav-list">
-        <button className="nav-item active" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Dashboard</button>
-        <button className="nav-item" onClick={() => window.createNewTicket && window.createNewTicket()}>New Ticket</button>
-        <button className="nav-item" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Tickets</button>
+      <nav className={`nav-list ${isMobileView && !isMobileNavOpen ? 'nav-list-collapsed' : 'nav-list-open'}`}>
+        <button className="nav-item active" onClick={() => handleNavAction(() => window.switchToTab && window.switchToTab('creditcard'))}>Dashboard</button>
+        <button className="nav-item" onClick={() => handleNavAction(() => window.createNewTicket && window.createNewTicket())}>New Ticket</button>
+        <button className="nav-item" onClick={() => handleNavAction(() => window.switchToTab && window.switchToTab('creditcard'))}>Tickets</button>
         
         {/* ✅ Button that opens the Popup Modal */}
-        <button className="nav-item" onClick={() => setShowTemplates(true)}>📋 TID Templates</button>
+        <button className="nav-item" onClick={() => handleNavAction(() => setShowTemplates(true))}>📋 TID Templates</button>
       </nav>
       <div className="sidebar-foot">Logged in as <strong>Support</strong></div>
       <div className="sidebar-key">
@@ -159,7 +196,9 @@ FD Buypass: (800) 733-3322`
             top: 0, left: 0, width: '100vw', height: '100vh',
             backgroundColor: 'rgba(0, 0, 0, 0.6)', 
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 10000 
+            zIndex: 10000,
+            padding: '16px',
+            boxSizing: 'border-box'
           }}
           onClick={() => setShowTemplates(false)} 
         >
@@ -169,10 +208,13 @@ FD Buypass: (800) 733-3322`
               color: 'var(--text-color, #333)',
               padding: '24px',
               borderRadius: '8px',
-              width: '90%',
+              width: 'min(100%, 650px)',
               maxWidth: '650px',
+              maxHeight: 'min(90vh, 800px)',
+              overflowY: 'auto',
               boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-              position: 'relative'
+              position: 'relative',
+              boxSizing: 'border-box'
             }}
             onClick={(e) => e.stopPropagation()} 
           >
