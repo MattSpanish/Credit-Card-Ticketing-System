@@ -487,16 +487,21 @@ export function initCreditcardApp() {
 
       const midEl = document.getElementById('creditcard-mid');
       const storeEl = document.getElementById('creditcard-store');
+      const supportEl = document.getElementById('creditcard-support'); // ✅ ISINAMA ANG SUPPORT NAME
+      
       let valid = true;
-      [midEl, storeEl].forEach(el => {
+      
+      // ✅ ISINAMA ANG supportEl SA PAG-CHECK KUNG MAY LAMAN
+      [midEl, storeEl, supportEl].forEach(el => {
         el.classList.remove('invalid');
         if (!el.value.trim()) {
           el.classList.add('invalid');
           valid = false;
         }
       });
+      
       if (!valid) {
-        showNotification('Please fill MID and STORE NAME!');
+        showNotification('Please fill SUPPORT NAME, MID, and STORE NAME!'); // ✅ INUPDATE ANG ERROR MESSAGE
         return;
       }
 

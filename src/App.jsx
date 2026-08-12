@@ -334,8 +334,34 @@ function LeftPanel() {
             </td>
           </tr>
           <tr>
-            <th><label htmlFor="creditcard-support">SUPPORT NAME</label></th>
-            <td><input type="text" id="creditcard-support" placeholder="Enter your name" /></td>
+            <th><label htmlFor="creditcard-support">SUPPORT NAME *</label></th>
+            <td>
+              <input 
+                type="text" 
+                id="creditcard-support" 
+                className="required-field no-uppercase" 
+                placeholder="Type or select name" 
+                list="support-names" 
+                autoComplete="off" 
+              />
+              {/* ✅ DATALIST PARA SA AUTO-SUGGEST DROPDOWN */}
+              <datalist id="support-names">
+                <option value="HANZ" />
+                <option value="CHARLES" />
+                <option value="KENNETH" />
+                <option value="ADI" />
+                <option value="TATI" />
+                <option value="RONIE" />
+                <option value="SEAN" />
+                <option value="MAT" />
+                <option value="ZEL" />
+                <option value="JR" />
+                <option value="YASMINE" />
+                <option value="GABRIEL" />
+                <option value="ERNEST" />
+                <option value="NICHOLLE" />
+              </datalist>
+            </td>
           </tr>
           <tr>
             <th><label htmlFor="creditcard-store">STORE NAME *</label></th>
