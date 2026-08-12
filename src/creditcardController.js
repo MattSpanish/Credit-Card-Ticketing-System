@@ -1626,7 +1626,77 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       }
     };
 
+    // ─── AUTO-FILL FROM TEXT ───
+    window.autoFillFromText = function(text) {
+      if (!text) return;
+      
+      let updated = false;
+
+      const parseField = (regex, id) => {
+        const match = text.match(regex);
+        if (match && match[1]) {
+          const el = document.getElementById(id);
+          if (el) {
+            el.value = match[1].trim();
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            updated = true;
+          }
+        }
+      };
+
+      parseField(/STORE NAME:\s*(.*)/i, 'creditcard-store');
+      parseField(/MID:\s*(.*)/i, 'creditcard-mid');
+      parseField(/PERSON NAME:\s*(.*)/i, 'creditcard-merchant');
+      parseField(/PHONE NUMBER:\s*(.*)/i, 'creditcard-contactNumber');
+      
+      const issueMatch = text.match(/ISSUE:\s*([\s\S]*?)(?=RESOLUTION:|$)/i);
+      if (issueMatch && issueMatch[1]) {
+         const el = document.getElementById('creditcard-issue');
+         if (el) { 
+           let val = issueMatch[1].trim().replace(/^[-•]\s*/, ''); 
+           el.value = val; 
+           el.dispatchEvent(new Event('input', { bubbles: true }));
+           updated = true; 
+         }
+      }
+
+      // ✅ FIXED: Inayos ang Resolution para hindi maputol kapag may dash (-) na bullet point
+      const resolutionMatch = text.match(/RESOLUTION:\s*([\s\S]*)/i);
+      if (resolutionMatch && resolutionMatch[1]) {
+         const el = document.getElementById('creditcard-resolution');
+         if (el) { 
+           let val = resolutionMatch[1];
+           // Tanggalin ang HRMS footer kung na-copy man ito
+           val = val.split(/TICKET IN HRMS/i)[0];
+           // Tanggalin ang sobrang dash separator sa ibaba
+           val = val.replace(/\n-\s*$/, '');
+           // Tanggalin ang unang bullet point at spaces
+           val = val.trim().replace(/^[-•]\s*/, ''); 
+           
+           el.value = val; 
+           el.dispatchEvent(new Event('input', { bubbles: true }));
+           updated = true; 
+         }
+      }
+
+      if (updated) {
+        creditcardUpdatePreview();
+        saveFormData('creditcard');
+        showNotification('✨ Form auto-filled from clipboard!');
+      }
+    };
+
     function init() {
+      // ✅ NEW: Global Paste Listener for Auto-Fill
+      document.addEventListener('paste', (e) => {
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        if (pastedText && /STORE NAME:/i.test(pastedText) && /MID:/i.test(pastedText)) {
+            setTimeout(() => {
+                window.autoFillFromText(pastedText);
+            }, 50);
+        }
+      });
+
       document.getElementById('creditcard-date').value = getLocalTodayString();
       loadFormData('creditcard');
       loadAllEntries();
