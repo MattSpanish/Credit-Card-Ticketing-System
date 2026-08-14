@@ -1594,8 +1594,14 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       try {
         const btn = document.getElementById(`ticketTab-${draftId}`);
         if (!btn) return;
+        
+        // Kukunin muna natin ang Store Name. Kung walang Store Name, fallback siya sa MID.
+        const storeName = (data && data.store) ? data.store : document.getElementById('creditcard-store')?.value || '';
         const mid = (data && data.mid) ? data.mid : document.getElementById('creditcard-mid')?.value || '';
-        let label = mid || 'Ticket';
+        
+        // Priority 1: Store Name | Priority 2: MID | Priority 3: 'Ticket'
+        let label = storeName || mid || 'Ticket';
+        
         btn.querySelector('.tab-label').textContent = label;
       } catch (e) {}
     }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { initCreditcardApp } from './creditcardController';
 
-// ✅ GLOBAL BREAK SCHEDULE DATA
+// ✅ GLOBAL DATA
 const BREAK_SCHEDULE = {
   "Monday": [
     { person: "YASMINE", time: "1:00–2:00 AM" },
@@ -36,71 +36,39 @@ const BREAK_SCHEDULE = {
     { person: "MAT", time: "3:30–4:30 AM" },
     { person: "RONIE / ADI", time: "4:45–5:45 AM" }
   ],
-
   "Saturday": [
     { person: "ERNEST", time: "1:30–2:30 AM" },
     { person: "YASMINE", time: "2:30–3:30 AM" },
     { person: "SEAN", time: "3:30–4:30 AM" },
     { person: "ADI", time: "4:45–5:45 AM" }
   ],
-
   "Sunday": [
     { person: "YASMINE", time: "1:30–2:30 AM" },
     { person: "SEAN", time: "2:30–3:30 AM" },
     { person: "ERNEST", time: "3:30–4:30 AM" },
     { person: "CHARLES", time: "4:45–5:45 AM" },
   ]
-  
 };
 
-function Sidebar() {
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [showBreakSchedule, setShowBreakSchedule] = useState(false);
+const TID_TEMPLATES = {
+  "PAX": `(PAX) - MSD\n /\n[]\nPAX BROADPOS [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001`,
+  "NEXGO": `(NEXGO)\n /\n[ADDRESS]\nNexgo MFE V201 DwSrsSs [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
+  "FD150": `(FD150) - FD150\n /\n[]\nFD150 [NASHVILLE] OR FD150 W/ RP10 [NASHVILLE]\nAUTO CLOSE - 12:23AM\nNMID -\nTID# , DLID#, RESET KEY:\nAPP: 751UN150\nD/L# 855-641-1001\nD/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
+  "FD130": `(FD130) - FD130\n /\n[]\nEQUIPMENT: FD130 [NASHVILLE]\nAUTO CLOSE - 12:00AM\nNMID -\nTID#, DLID# , RESET KEY:\nAPP: 751UN130\nD/L# 855-641-1001\nD/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
+  "VALOR": `(VALOR) -ValorPay GTW RC SRS\n /\n[]\nValorPay GTW RC SRS [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
+  "DEJAVOO": `(DEJAVOO) - DVC\n /\n[ ]\nDejavooDvCreditRC1.20 [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
+  "NMI": `(NMI) - Network Merchants Gateway\n /\n[]\nNetwork Merchants Gateway\nNMID#\nTID#\nGROUP ID# 30001`,
+  "AUTH.NET": `(AUTH.NET) - AUTHORIZENET(G/W)\nDBA Name:\nFirst Data Merchant ID Number:\n[,  - ]\nNashville Short MID:\nNetwork: FDC Nashville\nManufacturer: AUTHORIZE.NET\nEquipment Name: AUTHORIZENET(G/W)\nEquipment Type: TSOL\nProduct ID: 815300\nTerminal ID:\nTerminal PW:\nProgram ID: 000\nFD Data wire: (800) 704-4202`,
+  "VERIFONE COMMANDER / RUBY": `BUYPASS TID \nVERIFONE COMMANDER / RUBY 2 / RUBY CI\n\n /\n[]\nEQUIPMENT: VERIFONE COMMANDER / RUBY 2 / RUBY CI  \nBUYPASS ID: \nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`,
+  "GILBARCO PASSPORT": `GILBARCO PASSPORT\n[Address, City State - Zipcode]\nEQUIPMENT: GILBARCO PASSPORT\nBUYPASS ID: L3(State) (BuypassID) 001\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`,
+  "FD150 W/ RP10 (BUYPASS)": `FD150 W/ RP10 (BUYPASS)\n /\n[]\nEQUIPMENT: FD150 W/ RP10 (BUYPASS)\nBUYPASS ID: , DLID: [CALL BUYPASS]\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`
+};
 
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
+// ==========================================
+// ✅ EXTRACTED MODAL COMPONENTS 
+// ==========================================
 
-  useEffect(() => {
-    const updateView = () => setIsMobileView(window.innerWidth <= 1000);
-    updateView();
-    window.addEventListener('resize', updateView);
-    return () => window.removeEventListener('resize', updateView);
-  }, []);
-
-  useEffect(() => {
-    if (!isMobileView) {
-      setIsMobileNavOpen(false);
-    }
-  }, [isMobileView]);
-
-  const toggleTheme = () => {
-    const isDark = document.body.classList.toggle('dark-mode');
-    localStorage.setItem('theme_creditcard', isDark ? 'dark' : 'light');
-  };
-
-  const handleNavAction = (action) => {
-    if (typeof action === 'function') {
-      action();
-    }
-    if (isMobileView) {
-      setIsMobileNavOpen(false);
-    }
-  };
-
-  const TID_TEMPLATES = {
-    "PAX": `(PAX) - MSD\n /\n[]\nPAX BROADPOS [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001`,
-    "NEXGO": `(NEXGO)\n /\n[ADDRESS]\nNexgo MFE V201 DwSrsSs [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
-    "FD150": `(FD150) - FD150\n /\n[]\nFD150 [NASHVILLE] OR FD150 W/ RP10 [NASHVILLE]\nAUTO CLOSE - 12:23AM\nNMID -\nTID# , DLID#, RESET KEY:\nAPP: 751UN150\nD/L# 855-641-1001\nD/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
-    "FD130": `(FD130) - FD130\n /\n[]\nEQUIPMENT: FD130 [NASHVILLE]\nAUTO CLOSE - 12:00AM\nNMID -\nTID#, DLID# , RESET KEY:\nAPP: 751UN130\nD/L# 855-641-1001\nD/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
-    "VALOR": `(VALOR) -ValorPay GTW RC SRS\n /\n[]\nValorPay GTW RC SRS [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
-    "DEJAVOO": `(DEJAVOO) - DVC\n /\n[ ]\nDejavooDvCreditRC1.20 [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
-    "NMI": `(NMI) - Network Merchants Gateway\n /\n[]\nNetwork Merchants Gateway\nNMID#\nTID#\nGROUP ID# 30001`,
-    "AUTH.NET": `(AUTH.NET) - AUTHORIZENET(G/W)\nDBA Name:\nFirst Data Merchant ID Number:\n[,  - ]\nNashville Short MID:\nNetwork: FDC Nashville\nManufacturer: AUTHORIZE.NET\nEquipment Name: AUTHORIZENET(G/W)\nEquipment Type: TSOL\nProduct ID: 815300\nTerminal ID:\nTerminal PW:\nProgram ID: 000\nFD Data wire: (800) 704-4202`,
-    "VERIFONE COMMANDER / RUBY": `BUYPASS TID \nVERIFONE COMMANDER / RUBY 2 / RUBY CI\n\n /\n[]\nEQUIPMENT: VERIFONE COMMANDER / RUBY 2 / RUBY CI  \nBUYPASS ID: \nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`,
-    "GILBARCO PASSPORT": `GILBARCO PASSPORT\n[Address, City State - Zipcode]\nEQUIPMENT: GILBARCO PASSPORT\nBUYPASS ID: L3(State) (BuypassID) 001\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`,
-    "FD150 W/ RP10 (BUYPASS)": `FD150 W/ RP10 (BUYPASS)\n /\n[]\nEQUIPMENT: FD150 W/ RP10 (BUYPASS)\nBUYPASS ID: , DLID: [CALL BUYPASS]\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`
-  };
-
+function TidTemplatesModal({ onClose }) {
   const copySpecificTemplate = (device) => {
     const text = TID_TEMPLATES[device];
     navigator.clipboard.writeText(text).then(() => {
@@ -112,8 +80,125 @@ function Sidebar() {
       } else {
         alert(`${device} Template copied!`);
       }
-      setShowTemplates(false); 
+      onClose(); 
     });
+  };
+
+  return (
+    <div className="break-modal-overlay" onClick={onClose}>
+      <div className="break-modal-content" style={{ padding: '24px' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '20px' }}>
+          <h3 className="modal-title">Select a TID Template</h3>
+          <button onClick={onClose} className="break-close-btn">✖</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+          {Object.keys(TID_TEMPLATES).map((device) => (
+            <button 
+              key={device} 
+              onClick={() => copySpecificTemplate(device)}
+              style={{ padding: '12px 10px', backgroundColor: 'var(--accent-color, #1a6d9f)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', textAlign: 'center', transition: 'background-color 0.2s', fontSize: '0.85em' }}
+              onMouseOver={(e) => e.target.style.opacity = '0.8'}
+              onMouseOut={(e) => e.target.style.opacity = '1'}
+            >
+              {device}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BreakScheduleModal({ onClose }) {
+  const estDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const todayName = dayNames[estDate.getDay()];
+
+  return (
+    <div className="break-modal-overlay" onClick={onClose}>
+      <div className="break-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="break-modal-header">
+          <div>
+            <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.5rem' }}>
+              ☕ Break Schedule
+            </h2>
+            <p className="modal-subtitle">
+              9:00 PM - 6:00 AM Shift
+            </p>
+          </div>
+          <button onClick={onClose} className="break-close-btn" aria-label="Close">✖</button>
+        </div>
+        
+        <div style={{ padding: '24px' }}>
+          <div className="info-box">
+            <span style={{ fontSize: '18px' }}>💡</span>
+            <span>Regarding the short break you can use it anytime. If you have any concern just let us know. Thank you!</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            {Object.keys(BREAK_SCHEDULE).map(day => {
+              const isToday = day === todayName;
+              return (
+                <div key={day} className={`break-day-card ${isToday ? 'is-today' : ''}`}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                    <h4 className="day-title">
+                      {day}
+                    </h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {isToday && <span className="badge-today">Today</span>}
+                      <span className="people-count">
+                        {BREAK_SCHEDULE[day].length} People
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {BREAK_SCHEDULE[day].map((slot, i) => (
+                      <div key={i} className="break-slot">
+                        <strong className="slot-person">{slot.person}</strong> 
+                        <span className="slot-time">
+                          {slot.time}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// ✅ SIDEBAR
+// ==========================================
+
+function Sidebar({ onOpenTemplates, onOpenBreakSchedule }) {
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+
+  useEffect(() => {
+    const updateView = () => setIsMobileView(window.innerWidth <= 1000);
+    updateView();
+    window.addEventListener('resize', updateView);
+    return () => window.removeEventListener('resize', updateView);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileView) setIsMobileNavOpen(false);
+  }, [isMobileView]);
+
+  const toggleTheme = () => {
+    const isDark = document.body.classList.toggle('dark-mode');
+    localStorage.setItem('theme_creditcard', isDark ? 'dark' : 'light');
+  };
+
+  const handleNavAction = (action) => {
+    if (typeof action === 'function') action();
+    if (isMobileView) setIsMobileNavOpen(false);
   };
 
   return (
@@ -121,24 +206,9 @@ function Sidebar() {
       <div className="sidebar-top">
         <div className="logo">CC Tickets</div>
         <div className="sidebar-actions">
-          <button 
-            className="theme-toggle" 
-            id="themeToggle" 
-            title="Toggle dark mode"
-            onClick={toggleTheme}
-          >
-            🌙
-          </button>
+          <button className="theme-toggle" onClick={toggleTheme}>🌙</button>
           {isMobileView && (
-            <button
-              className="sidebar-toggle"
-              type="button"
-              aria-label="Toggle navigation"
-              aria-expanded={isMobileNavOpen}
-              onClick={() => setIsMobileNavOpen((prev) => !prev)}
-            >
-              ☰
-            </button>
+            <button className="sidebar-toggle" onClick={() => setIsMobileNavOpen((prev) => !prev)}>☰</button>
           )}
         </div>
       </div>
@@ -147,83 +217,14 @@ function Sidebar() {
         <button className="nav-item" onClick={() => handleNavAction(() => window.createNewTicket && window.createNewTicket())}>New Ticket</button>
         <button className="nav-item" onClick={() => handleNavAction(() => window.switchToTab && window.switchToTab('creditcard'))}>Tickets</button>
         
-        <button className="nav-item" onClick={() => handleNavAction(() => setShowTemplates(true))}>📋 TID Templates</button>
-        <button className="nav-item" onClick={() => handleNavAction(() => setShowBreakSchedule(true))}>☕ Break Schedule</button>
+        <button className="nav-item" onClick={() => handleNavAction(onOpenTemplates)}>📋 TID Templates</button>
+        <button className="nav-item" onClick={() => handleNavAction(onOpenBreakSchedule)}>☕ Break Schedule</button>
       </nav>
       
       <div className="sidebar-foot">Logged in as <strong>Support</strong></div>
       <div className="sidebar-key">
         <button id="saveGeminiKeyBtn" className="btn btn-sm btn-primary" style={{marginTop:8, width:'100%'}}>Set Gemini API Key</button>
       </div>
-
-      {showTemplates && (
-        <div 
-          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '16px', boxSizing: 'border-box' }}
-          onClick={() => setShowTemplates(false)} 
-        >
-          <div 
-            style={{ backgroundColor: 'var(--panel-bg, #fff)', color: 'var(--text-color, #333)', padding: '24px', borderRadius: '8px', width: 'min(100%, 650px)', maxWidth: '650px', maxHeight: 'min(90vh, 800px)', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', position: 'relative', boxSizing: 'border-box' }}
-            onClick={(e) => e.stopPropagation()} 
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ccc', paddingBottom: '10px', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0 }}>Select a TID Template</h3>
-              <button onClick={() => setShowTemplates(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', color: 'inherit', fontWeight: 'bold' }}>✖</button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
-              {Object.keys(TID_TEMPLATES).map((device) => (
-                <button 
-                  key={device} 
-                  onClick={() => copySpecificTemplate(device)}
-                  style={{ padding: '12px 10px', backgroundColor: 'var(--accent-color, #1a6d9f)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', textAlign: 'center', transition: 'background-color 0.2s', fontSize: '0.85em' }}
-                  onMouseOver={(e) => e.target.style.opacity = '0.8'}
-                  onMouseOut={(e) => e.target.style.opacity = '1'}
-                >
-                  {device}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showBreakSchedule && (
-        <div 
-          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '16px', boxSizing: 'border-box' }}
-          onClick={() => setShowBreakSchedule(false)} 
-        >
-          <div 
-            style={{ backgroundColor: 'var(--panel-bg, #fff)', color: 'var(--text-color, #333)', padding: '24px', borderRadius: '8px', width: 'min(100%, 650px)', maxWidth: '650px', maxHeight: 'min(90vh, 800px)', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', position: 'relative', boxSizing: 'border-box' }}
-            onClick={(e) => e.stopPropagation()} 
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ccc', paddingBottom: '10px', marginBottom: '15px' }}>
-              <h3 style={{ margin: 0, color: 'var(--accent-color)' }}>☕ Break Schedule (9:00 PM - 6:00 AM)</h3>
-              <button onClick={() => setShowBreakSchedule(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', color: 'inherit', fontWeight: 'bold' }}>✖</button>
-            </div>
-            
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px', fontStyle: 'italic' }}>
-              * Regarding the short break you can use it anytime. If you have any concern just let us know. Thank you!
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {Object.keys(BREAK_SCHEDULE).map(day => (
-                <div key={day} style={{ background: 'var(--bg-tertiary)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <h4 style={{ margin: '0 0 10px 0', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                    {day} — {BREAK_SCHEDULE[day].length} People
-                  </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
-                    {BREAK_SCHEDULE[day].map((slot, i) => (
-                      <div key={i} style={{ fontSize: '13.5px', display: 'flex', justifyContent: 'space-between' }}>
-                        <strong style={{ color: 'var(--text-secondary)' }}>{slot.person}:</strong> 
-                        <span style={{ fontWeight: '500' }}>{slot.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </aside>
   );
 }
@@ -246,15 +247,16 @@ function Header() {
   );
 }
 
-// ✅ DASHBOARD WITH FULL FORM SYNC (BOTH SUPPORT NAME & DATE)
+// ==========================================
+// ✅ DASHBOARD GRID
+// ==========================================
 function DashboardGrid() {
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   
   const [selectedPerson, setSelectedPerson] = useState(localStorage.getItem('myBreakPerson') || '');
   const [todayBreak, setTodayBreak] = useState('--:--');
-  const [selectedDateStr, setSelectedDateStr] = useState(''); // State para sa date galing sa form
+  const [selectedDateStr, setSelectedDateStr] = useState(''); 
 
-  // ✅ SYNC SUPPORT NAME GALING SA FORM
   useEffect(() => {
     const supportEl = document.getElementById('creditcard-support');
     
@@ -284,7 +286,6 @@ function DashboardGrid() {
     };
   }, []);
 
-  // ✅ SYNC DATE GALING SA FORM
   useEffect(() => {
     const dateEl = document.getElementById('creditcard-date');
     
@@ -311,12 +312,10 @@ function DashboardGrid() {
     };
   }, []);
 
-  // Compute ang Day at Date format
   let activeDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
   if (selectedDateStr) {
     const [y, m, d] = selectedDateStr.split('-');
     if (y && m && d) {
-      // Create new date specifically for the parsed YYYY-MM-DD
       activeDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
     }
   }
@@ -324,7 +323,6 @@ function DashboardGrid() {
   const currentDayName = dayNames[activeDate.getDay()];
   const currentDateString = activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  // ✅ CHECK ANG SCHEDULE BASE SA PANGALAN AT KUNG ANONG ARAW SA FORM
   useEffect(() => {
     if (selectedPerson && BREAK_SCHEDULE[currentDayName]) {
       const schedule = BREAK_SCHEDULE[currentDayName].find(s => {
@@ -338,7 +336,7 @@ function DashboardGrid() {
     } else {
       setTodayBreak('--:--');
     }
-  }, [selectedPerson, currentDayName]); // Mag-uupdate ito kapag nag-change ang person o ang araw
+  }, [selectedPerson, currentDayName]); 
 
   const handlePersonChange = (e) => {
     const val = e.target.value;
@@ -369,7 +367,7 @@ function DashboardGrid() {
         <div className="stat-value" id="dashboardPendingTickets">0</div>
       </div>
 
-      <div className="stat-card" style={{ borderLeft: '4px solid #8b5cf6', display: 'flex', flexDirection: 'column' }}>
+      <div className="stat-card" style={{ borderLeft: '4px solid var(--accent-color, #8b5cf6)', display: 'flex', flexDirection: 'column' }}>
         <div className="stat-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span>1 Hr Break</span>
@@ -404,7 +402,7 @@ function DashboardGrid() {
             <option value="ERNEST">EJ</option>
           </select>
         </div>
-        <div className="stat-value" style={{ fontSize: '1.25rem', marginTop: '12px', color: '#8b5cf6', whiteSpace: 'nowrap' }}>
+        <div className="stat-value" style={{ fontSize: '1.25rem', marginTop: '12px', color: 'var(--accent-color, #8b5cf6)', whiteSpace: 'nowrap' }}>
           {selectedPerson ? todayBreak : 'Select name ☝️'}
         </div>
       </div>
@@ -450,10 +448,7 @@ function LeftPanel() {
           <tr>
             <th><label htmlFor="creditcard-support">SUPPORT NAME *</label></th>
             <td>
-              <select 
-                id="creditcard-support" 
-                className="required-field no-uppercase"
-              >
+              <select id="creditcard-support" className="required-field no-uppercase">
                 <option value="">-- SELECT NAME --</option>
                 <option value="HANZ">HANZ</option>
                 <option value="CHARLES">CHARLES</option>
@@ -546,18 +541,9 @@ function LeftPanel() {
                   type="button"
                   title="Clear Status"
                   style={{
-                    position: 'absolute',
-                    right: '8px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    color: '#888',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    padding: '2px 4px',
-                    zIndex: 2
+                    position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', color: 'var(--text-muted, #888)', fontSize: '14px',
+                    fontWeight: 'bold', cursor: 'pointer', padding: '2px 4px', zIndex: 2
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -580,20 +566,20 @@ function LeftPanel() {
           <tr>
             <th>
               <label htmlFor="creditcard-remarks">Troubleshooting</label>
-              <div style={{ marginTop: '5px', fontSize: '0.85em', backgroundColor: 'var(--panel-bg, #f8f9fa)', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}>                
+              <div style={{ marginTop: '5px', fontSize: '0.85em', backgroundColor: 'var(--panel-bg, #f8f9fa)', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color, #ccc)' }}>                
                 <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer', marginBottom: '5px' }}>
                   <input type="radio" name="aiActionMode" value="summarize" defaultChecked style={{ margin: 0, width: 'auto' }} /> 
-                  <span style={{ color: '#673ab7', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Summarize</span>
+                  <span className="text-summarize" style={{ fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Summarize</span>
                 </label>
                 
                 <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer', marginBottom: '5px' }}>
                   <input type="radio" name="aiActionMode" value="grammar" style={{ margin: 0, width: 'auto' }} /> 
-                  <span style={{ color: '#009688', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Fix Grammar</span>
+                  <span className="text-grammar" style={{ fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Fix Grammar</span>
                 </label>
 
                 <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer' }}>
                   <input type="radio" name="aiActionMode" value="none" style={{ margin: 0, width: 'auto' }} /> 
-                  <span style={{ color: '#666', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Off (Raw Text)</span>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Off (Raw Text)</span>
                 </label>
               </div>
             </th>
@@ -651,13 +637,6 @@ function RightPanel() {
 }
 
 function HistoryPanel() {
-  const [notepadText, setNotepadText] = useState(localStorage.getItem('creditcard_notepad') || '');
-
-  const handleNotepadChange = (e) => {
-    setNotepadText(e.target.value);
-    localStorage.setItem('creditcard_notepad', e.target.value);
-  };
-
   return (
     <div className="history-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="panel-header panel-header-history" style={{ flexShrink: 0 }}>
@@ -672,7 +651,7 @@ function HistoryPanel() {
             <input 
               type="date" 
               id="workload-date-picker" 
-              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc' }}
+              style={{ padding: '4px', borderRadius: '4px', border: '1px solid var(--border-color, #ccc)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }}
             />
             <button 
               className="btn btn-sm btn-primary" 
@@ -683,10 +662,7 @@ function HistoryPanel() {
           </div>
         </div>
       </div>
-      
       <div id="creditcardHistoryContent" className="history-content" style={{ flexGrow: 1, overflowY: 'auto' }}></div>
-
-      
     </div>
   );
 }
@@ -732,33 +708,183 @@ function EntryTable() {
   );
 }
 
+// ==========================================
+// ✅ MAIN APP WRAPPER
+// ==========================================
+
 export default function App() {
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showBreakSchedule, setShowBreakSchedule] = useState(false);
+
   useEffect(() => {
     initCreditcardApp();
   }, []);
 
   return (
-    <div className="page-shell layout">
-      <Sidebar />
-      <main className="main-area">
-        <Header />
-        <DashboardGrid />
-        <Tabs />
-        <div className="app-container">
-          <div className="main-content">
-            <div id="tab-creditcard" style={{ display: 'block' }}>
-              <div className="three-panels">
-                <HistoryPanel />
-                <LeftPanel />
-                <RightPanel />
+    <>
+      {/* ✅ INJECTED STYLES WITH FULL DARK MODE OVERRIDES */}
+      <style>
+        {`
+          :root {
+            --color-summarize: #673ab7;
+            --color-grammar: #009688;
+          }
+          body.dark-mode {
+            --color-summarize: #a78bfa; 
+            --color-grammar: #2dd4bf;
+          }
+          
+          .text-summarize { color: var(--color-summarize); }
+          .text-grammar { color: var(--color-grammar); }
+
+          /* MODAL TYPOGRAPHY CLASSES (Cleans up inline styles) */
+          .modal-title { margin: 0; color: var(--text-primary, #333); }
+          .modal-subtitle { margin: 4px 0 0; font-size: 13px; color: var(--text-muted, #666); }
+          .day-title { margin: 0; font-size: 15px; color: var(--text-primary, #333); }
+          .people-count { font-size: 12px; padding: 2px 6px; border-radius: 12px; background: var(--bg-secondary, #e2e8f0); color: var(--text-muted, #666); }
+          .slot-person { color: var(--text-secondary, #555); }
+          .slot-time { font-weight: 500; font-family: monospace; font-size: 12.5px; color: var(--text-primary, #111); }
+          .badge-today { background: var(--accent-color, #8b5cf6); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+
+          .is-today .day-title { color: var(--accent-color, #8b5cf6); }
+
+          .info-box {
+            background: rgba(14, 165, 233, 0.1);
+            color: #0369a1;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+          }
+          body.dark-mode .info-box {
+            background: rgba(56, 189, 248, 0.15);
+            color: #7dd3fc;
+          }
+
+          /* --- DARK MODE SPECIFIC OVERRIDES --- */
+          body.dark-mode .break-modal-content {
+            background-color: var(--panel-bg, #1e293b);
+            border: 1px solid var(--border-color, #334155);
+          }
+          body.dark-mode .break-modal-header {
+            background-color: var(--panel-bg, #1e293b);
+            border-bottom: 1px solid var(--border-color, #334155);
+          }
+          
+          /* Force text colors in Dark Mode just in case variables fail */
+          body.dark-mode .modal-title,
+          body.dark-mode .day-title,
+          body.dark-mode .slot-time {
+            color: var(--text-primary, #f8fafc) !important;
+          }
+          body.dark-mode .modal-subtitle,
+          body.dark-mode .slot-person {
+            color: var(--text-muted, #cbd5e1) !important;
+          }
+          body.dark-mode .is-today .day-title { 
+            color: var(--accent-color, #a78bfa) !important; 
+          }
+          body.dark-mode .badge-today {
+            background: var(--accent-color, #a78bfa);
+            color: #1e1e1e;
+          }
+          body.dark-mode .people-count {
+            background: var(--bg-secondary, #334155);
+            color: var(--text-muted, #cbd5e1);
+          }
+
+          @keyframes overlayFadeIn {
+            from { opacity: 0; backdrop-filter: blur(0px); }
+            to { opacity: 1; backdrop-filter: blur(5px); }
+          }
+          @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          .break-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(15, 23, 42, 0.75);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 99999 !important; 
+            padding: 16px; box-sizing: border-box;
+            animation: overlayFadeIn 0.3s ease forwards;
+          }
+          .break-modal-content {
+            background-color: var(--panel-bg, #ffffff);
+            border-radius: 16px; width: min(100%, 750px); max-width: 750px;
+            max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative; box-sizing: border-box;
+            animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
+          .break-modal-header {
+            position: sticky; top: 0; background-color: var(--panel-bg, #ffffff);
+            padding: 24px 24px 16px; z-index: 10;
+            border-bottom: 1px solid var(--border-color, #eaeaea);
+            display: flex; justify-content: space-between; align-items: flex-start;
+          }
+          .break-close-btn {
+            background: var(--bg-tertiary, #f1f5f9); border: none; border-radius: 50%;
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 16px; color: var(--text-secondary); transition: all 0.2s;
+          }
+          .break-close-btn:hover { background: #fee2e2; color: #ef4444; transform: rotate(90deg); }
+          
+          body.dark-mode .break-close-btn { background: var(--bg-tertiary, #334155); color: #cbd5e1; }
+          body.dark-mode .break-close-btn:hover { background: #7f1d1d; color: #fca5a5; }
+
+          .break-day-card {
+            background: var(--bg-tertiary, #f8fafc);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 12px; padding: 16px; transition: all 0.2s ease;
+          }
+          .break-day-card:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.06); border-color: var(--border-color); }
+          .break-day-card.is-today { border: 2px solid var(--accent-color, #8b5cf6); background: rgba(139, 92, 246, 0.05); }
+          
+          body.dark-mode .break-day-card { background: var(--bg-tertiary, #0f172a); border-color: var(--border-color, #334155); }
+          body.dark-mode .break-day-card.is-today { background: rgba(139, 92, 246, 0.15); border-color: var(--accent-color, #a78bfa); }
+
+          .break-slot {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px; border-radius: 6px; transition: background-color 0.2s;
+          }
+          .break-slot:hover { background-color: rgba(0,0,0,0.04); }
+          body.dark-mode .break-slot:hover { background-color: rgba(255,255,255,0.06); }
+        `}
+      </style>
+
+      <div className="page-shell layout">
+        <Sidebar 
+          onOpenTemplates={() => setShowTemplates(true)} 
+          onOpenBreakSchedule={() => setShowBreakSchedule(true)} 
+        />
+        <main className="main-area">
+          <Header />
+          <DashboardGrid />
+          <Tabs />
+          <div className="app-container">
+            <div className="main-content">
+              <div id="tab-creditcard" style={{ display: 'block' }}>
+                <div className="three-panels">
+                  <HistoryPanel />
+                  <LeftPanel />
+                  <RightPanel />
+                </div>
               </div>
+              <BulkBar />
+              <EntryTable />
             </div>
-            <BulkBar />
-            <EntryTable />
           </div>
-        </div>
-        <div id="notification"></div>
-      </main>
-    </div>
+          <div id="notification"></div>
+        </main>
+      </div>
+
+      {/* MODALS OUTSIDE LAYOUT */}
+      {showTemplates && <TidTemplatesModal onClose={() => setShowTemplates(false)} />}
+      {showBreakSchedule && <BreakScheduleModal onClose={() => setShowBreakSchedule(false)} />}
+    </>
   );
 }
