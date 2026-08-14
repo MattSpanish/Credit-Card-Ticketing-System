@@ -686,30 +686,7 @@ function HistoryPanel() {
       
       <div id="creditcardHistoryContent" className="history-content" style={{ flexGrow: 1, overflowY: 'auto' }}></div>
 
-      <div style={{ padding: '15px', borderTop: '1px solid var(--border-color, #eee)', backgroundColor: 'var(--panel-bg, #fff)', flexShrink: 0 }}>
-        <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#888', textTransform: 'uppercase', marginBottom: '8px', display: 'block', letterSpacing: '0.5px' }}>
-          📝 Scratchpad
-        </label>
-        <textarea
-          value={notepadText}
-          onChange={handleNotepadChange}
-          placeholder="Paste messy notes here..."
-          style={{
-            width: '100%',
-            minHeight: '180px',
-            resize: 'vertical',
-            borderRadius: '6px',
-            border: '1px solid var(--border-color, #ccc)',
-            backgroundColor: 'var(--panel-bg, #fafafa)',
-            color: 'var(--text-color, #333)',
-            padding: '10px',
-            fontSize: '12px',
-            lineHeight: '1.4',
-            fontFamily: 'inherit',
-            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)'
-          }}
-        />
-      </div>
+      
     </div>
   );
 }
