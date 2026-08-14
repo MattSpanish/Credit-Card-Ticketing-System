@@ -1,9 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import { initCreditcardApp } from './creditcardController';
 
+// ✅ GLOBAL BREAK SCHEDULE DATA
+const BREAK_SCHEDULE = {
+  "Monday": [
+    { person: "YASMINE", time: "1:00–2:00 AM" },
+    { person: "MAT", time: "1:30–2:30 AM" },
+    { person: "ERNEST", time: "2:00–3:00 AM" },
+    { person: "SEAN", time: "2:30–3:30 AM" },
+    { person: "CHARLES", time: "3:30–4:30 AM" },
+    { person: "RONIE", time: "4:45–5:45 AM" }
+  ],
+  "Tuesday": [
+    { person: "MAT", time: "1:00–2:00 AM" },
+    { person: "ERNEST", time: "1:30–2:30 AM" },
+    { person: "SEAN", time: "2:00–3:00 AM" },
+    { person: "CHARLES", time: "3:30–4:30 AM" },
+    { person: "RONIE / ADI", time: "4:45–5:45 AM" }
+  ],
+  "Wednesday": [
+    { person: "SEAN", time: "1:30–2:30 AM" },
+    { person: "MAT", time: "2:30–3:30 AM" },
+    { person: "CHARLES", time: "3:30–4:30 AM" },
+    { person: "RONIE / ADI", time: "4:45–5:45 AM" }
+  ],
+  "Thursday": [
+    { person: "YASMINE", time: "1:30–2:30 AM" },
+    { person: "MAT", time: "2:30–3:30 AM" },
+    { person: "CHARLES", time: "3:30–4:30 AM" },
+    { person: "RONIE / ADI", time: "4:45–5:45 AM" }
+  ],
+  "Friday": [
+    { person: "ERNEST", time: "1:30–2:30 AM" },
+    { person: "YASMINE", time: "2:30–3:30 AM" },
+    { person: "MAT", time: "3:30–4:30 AM" },
+    { person: "RONIE / ADI", time: "4:45–5:45 AM" }
+  ],
+
+  "Saturday": [
+    { person: "ERNEST", time: "1:30–2:30 AM" },
+    { person: "YASMINE", time: "2:30–3:30 AM" },
+    { person: "SEAN", time: "3:30–4:30 AM" },
+    { person: "ADI", time: "4:45–5:45 AM" }
+  ],
+
+  "Sunday": [
+    { person: "YASMINE", time: "1:30–2:30 AM" },
+    { person: "SEAN", time: "2:30–3:30 AM" },
+    { person: "ERNEST", time: "3:30–4:30 AM" },
+    { person: "CHARLES", time: "4:45–5:45 AM" },
+  ]
+  
+};
+
 function Sidebar() {
-  // State to handle opening/closing the TID Template popup modal
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showBreakSchedule, setShowBreakSchedule] = useState(false);
+
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
 
@@ -20,7 +73,6 @@ function Sidebar() {
     }
   }, [isMobileView]);
 
-  // Native React handler for dark mode
   const toggleTheme = () => {
     const isDark = document.body.classList.toggle('dark-mode');
     localStorage.setItem('theme_creditcard', isDark ? 'dark' : 'light');
@@ -35,105 +87,20 @@ function Sidebar() {
     }
   };
 
-  // ✅ Dictionary of specific templates
   const TID_TEMPLATES = {
-    "PAX": `(PAX) - MSD
- / 
-[]
-PAX BROADPOS [NASHVILLE]
-NMID#
-TID#
-GROUP ID# 10001`,
-    "NEXGO": `(NEXGO)
- / 
-[ADDRESS]
-Nexgo MFE V201 DwSrsSs [NASHVILLE]
-NMID#
-TID#
-GROUP ID# 10001
-MCC#`,
-    "FD150": `(FD150) - FD150
- /
-[]
-FD150 [NASHVILLE] OR FD150 W/ RP10 [NASHVILLE]
-AUTO CLOSE - 12:23AM
-NMID -
-TID# , DLID#, RESET KEY:
-APP: 751UN150
-D/L# 855-641-1001
-D/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
-    "FD130": `(FD130) - FD130
- / 
-[]
-EQUIPMENT: FD130 [NASHVILLE]
-AUTO CLOSE - 12:00AM
-NMID -
-TID#, DLID# , RESET KEY:
-APP: 751UN130
-D/L# 855-641-1001
-D/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
-    "VALOR": `(VALOR) -ValorPay GTW RC SRS
- / 
-[]
-ValorPay GTW RC SRS [NASHVILLE]
-NMID#
-TID#
-GROUP ID# 10001
-MCC#`,
-    "DEJAVOO": `(DEJAVOO) - DVC
- / 
-[ ]
-DejavooDvCreditRC1.20 [NASHVILLE]
-NMID#
-TID#
-GROUP ID# 10001
-MCC#`,
-    "NMI": `(NMI) - Network Merchants Gateway
- / 
-[]
-Network Merchants Gateway
-NMID#
-TID#
-GROUP ID# 30001`,
-    "AUTH.NET": `(AUTH.NET) - AUTHORIZENET(G/W)
-DBA Name:
-First Data Merchant ID Number:
-[,  - ]
-Nashville Short MID:
-Network: FDC Nashville
-Manufacturer: AUTHORIZE.NET
-Equipment Name: AUTHORIZENET(G/W)
-Equipment Type: TSOL
-Product ID: 815300
-Terminal ID:
-Terminal PW:
-Program ID: 000
-FD Data wire: (800) 704-4202`,
-    "VERIFONE COMMANDER / RUBY": `BUYPASS TID 
-VERIFONE COMMANDER / RUBY 2 / RUBY CI
-
- /
-[]
-EQUIPMENT: VERIFONE COMMANDER / RUBY 2 / RUBY CI  
-BUYPASS ID: 
-FD Datawire: (800) 704-4202
-FD Buypass: (800) 733-3322`,
-    "GILBARCO PASSPORT": `GILBARCO PASSPORT
-[Address, City State - Zipcode]
-EQUIPMENT: GILBARCO PASSPORT
-BUYPASS ID: L3(State) (BuypassID) 001
-FD Datawire: (800) 704-4202
-FD Buypass: (800) 733-3322`,
-    "FD150 W/ RP10 (BUYPASS)": `FD150 W/ RP10 (BUYPASS)
- / 
-[]
-EQUIPMENT: FD150 W/ RP10 (BUYPASS)
-BUYPASS ID: , DLID: [CALL BUYPASS]
-FD Datawire: (800) 704-4202
-FD Buypass: (800) 733-3322`
+    "PAX": `(PAX) - MSD\n /\n[]\nPAX BROADPOS [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001`,
+    "NEXGO": `(NEXGO)\n /\n[ADDRESS]\nNexgo MFE V201 DwSrsSs [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
+    "FD150": `(FD150) - FD150\n /\n[]\nFD150 [NASHVILLE] OR FD150 W/ RP10 [NASHVILLE]\nAUTO CLOSE - 12:23AM\nNMID -\nTID# , DLID#, RESET KEY:\nAPP: 751UN150\nD/L# 855-641-1001\nD/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
+    "FD130": `(FD130) - FD130\n /\n[]\nEQUIPMENT: FD130 [NASHVILLE]\nAUTO CLOSE - 12:00AM\nNMID -\nTID#, DLID# , RESET KEY:\nAPP: 751UN130\nD/L# 855-641-1001\nD/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
+    "VALOR": `(VALOR) -ValorPay GTW RC SRS\n /\n[]\nValorPay GTW RC SRS [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
+    "DEJAVOO": `(DEJAVOO) - DVC\n /\n[ ]\nDejavooDvCreditRC1.20 [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
+    "NMI": `(NMI) - Network Merchants Gateway\n /\n[]\nNetwork Merchants Gateway\nNMID#\nTID#\nGROUP ID# 30001`,
+    "AUTH.NET": `(AUTH.NET) - AUTHORIZENET(G/W)\nDBA Name:\nFirst Data Merchant ID Number:\n[,  - ]\nNashville Short MID:\nNetwork: FDC Nashville\nManufacturer: AUTHORIZE.NET\nEquipment Name: AUTHORIZENET(G/W)\nEquipment Type: TSOL\nProduct ID: 815300\nTerminal ID:\nTerminal PW:\nProgram ID: 000\nFD Data wire: (800) 704-4202`,
+    "VERIFONE COMMANDER / RUBY": `BUYPASS TID \nVERIFONE COMMANDER / RUBY 2 / RUBY CI\n\n /\n[]\nEQUIPMENT: VERIFONE COMMANDER / RUBY 2 / RUBY CI  \nBUYPASS ID: \nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`,
+    "GILBARCO PASSPORT": `GILBARCO PASSPORT\n[Address, City State - Zipcode]\nEQUIPMENT: GILBARCO PASSPORT\nBUYPASS ID: L3(State) (BuypassID) 001\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`,
+    "FD150 W/ RP10 (BUYPASS)": `FD150 W/ RP10 (BUYPASS)\n /\n[]\nEQUIPMENT: FD150 W/ RP10 (BUYPASS)\nBUYPASS ID: , DLID: [CALL BUYPASS]\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`
   };
 
-  // ✅ Function to copy a specific template
   const copySpecificTemplate = (device) => {
     const text = TID_TEMPLATES[device];
     navigator.clipboard.writeText(text).then(() => {
@@ -145,7 +112,7 @@ FD Buypass: (800) 733-3322`
       } else {
         alert(`${device} Template copied!`);
       }
-      setShowTemplates(false); // Auto-close modal after copying
+      setShowTemplates(false); 
     });
   };
 
@@ -180,77 +147,78 @@ FD Buypass: (800) 733-3322`
         <button className="nav-item" onClick={() => handleNavAction(() => window.createNewTicket && window.createNewTicket())}>New Ticket</button>
         <button className="nav-item" onClick={() => handleNavAction(() => window.switchToTab && window.switchToTab('creditcard'))}>Tickets</button>
         
-        {/* ✅ Button that opens the Popup Modal */}
         <button className="nav-item" onClick={() => handleNavAction(() => setShowTemplates(true))}>📋 TID Templates</button>
+        <button className="nav-item" onClick={() => handleNavAction(() => setShowBreakSchedule(true))}>☕ Break Schedule</button>
       </nav>
+      
       <div className="sidebar-foot">Logged in as <strong>Support</strong></div>
       <div className="sidebar-key">
         <button id="saveGeminiKeyBtn" className="btn btn-sm btn-primary" style={{marginTop:8, width:'100%'}}>Set Gemini API Key</button>
       </div>
 
-      {/* ✅ Pop-up Box (Modal) for Templates */}
       {showTemplates && (
         <div 
-          style={{
-            position: 'fixed',
-            top: 0, left: 0, width: '100vw', height: '100vh',
-            backgroundColor: 'rgba(0, 0, 0, 0.6)', 
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 10000,
-            padding: '16px',
-            boxSizing: 'border-box'
-          }}
+          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '16px', boxSizing: 'border-box' }}
           onClick={() => setShowTemplates(false)} 
         >
           <div 
-            style={{
-              backgroundColor: 'var(--panel-bg, #fff)', 
-              color: 'var(--text-color, #333)',
-              padding: '24px',
-              borderRadius: '8px',
-              width: 'min(100%, 650px)',
-              maxWidth: '650px',
-              maxHeight: 'min(90vh, 800px)',
-              overflowY: 'auto',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-              position: 'relative',
-              boxSizing: 'border-box'
-            }}
+            style={{ backgroundColor: 'var(--panel-bg, #fff)', color: 'var(--text-color, #333)', padding: '24px', borderRadius: '8px', width: 'min(100%, 650px)', maxWidth: '650px', maxHeight: 'min(90vh, 800px)', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', position: 'relative', boxSizing: 'border-box' }}
             onClick={(e) => e.stopPropagation()} 
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ccc', paddingBottom: '10px', marginBottom: '20px' }}>
               <h3 style={{ margin: 0 }}>Select a TID Template</h3>
-              <button 
-                onClick={() => setShowTemplates(false)} 
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', color: 'inherit', fontWeight: 'bold' }}
-              >
-                ✖
-              </button>
+              <button onClick={() => setShowTemplates(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', color: 'inherit', fontWeight: 'bold' }}>✖</button>
             </div>
-            
-            {/* Grid Layout for the device buttons */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
               {Object.keys(TID_TEMPLATES).map((device) => (
                 <button 
                   key={device} 
                   onClick={() => copySpecificTemplate(device)}
-                  style={{
-                    padding: '12px 10px',
-                    backgroundColor: 'var(--accent-color, #1a6d9f)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    transition: 'background-color 0.2s',
-                    fontSize: '0.85em'
-                  }}
+                  style={{ padding: '12px 10px', backgroundColor: 'var(--accent-color, #1a6d9f)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', textAlign: 'center', transition: 'background-color 0.2s', fontSize: '0.85em' }}
                   onMouseOver={(e) => e.target.style.opacity = '0.8'}
                   onMouseOut={(e) => e.target.style.opacity = '1'}
                 >
                   {device}
                 </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBreakSchedule && (
+        <div 
+          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '16px', boxSizing: 'border-box' }}
+          onClick={() => setShowBreakSchedule(false)} 
+        >
+          <div 
+            style={{ backgroundColor: 'var(--panel-bg, #fff)', color: 'var(--text-color, #333)', padding: '24px', borderRadius: '8px', width: 'min(100%, 650px)', maxWidth: '650px', maxHeight: 'min(90vh, 800px)', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', position: 'relative', boxSizing: 'border-box' }}
+            onClick={(e) => e.stopPropagation()} 
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ccc', paddingBottom: '10px', marginBottom: '15px' }}>
+              <h3 style={{ margin: 0, color: 'var(--accent-color)' }}>☕ Break Schedule (9:00 PM - 6:00 AM)</h3>
+              <button onClick={() => setShowBreakSchedule(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', color: 'inherit', fontWeight: 'bold' }}>✖</button>
+            </div>
+            
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px', fontStyle: 'italic' }}>
+              * Regarding the short break you can use it anytime. If you have any concern just let us know. Thank you!
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {Object.keys(BREAK_SCHEDULE).map(day => (
+                <div key={day} style={{ background: 'var(--bg-tertiary)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                    {day} — {BREAK_SCHEDULE[day].length} People
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+                    {BREAK_SCHEDULE[day].map((slot, i) => (
+                      <div key={i} style={{ fontSize: '13.5px', display: 'flex', justifyContent: 'space-between' }}>
+                        <strong style={{ color: 'var(--text-secondary)' }}>{slot.person}:</strong> 
+                        <span style={{ fontWeight: '500' }}>{slot.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -278,7 +246,113 @@ function Header() {
   );
 }
 
+// ✅ DASHBOARD WITH FULL FORM SYNC (BOTH SUPPORT NAME & DATE)
 function DashboardGrid() {
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  
+  const [selectedPerson, setSelectedPerson] = useState(localStorage.getItem('myBreakPerson') || '');
+  const [todayBreak, setTodayBreak] = useState('--:--');
+  const [selectedDateStr, setSelectedDateStr] = useState(''); // State para sa date galing sa form
+
+  // ✅ SYNC SUPPORT NAME GALING SA FORM
+  useEffect(() => {
+    const supportEl = document.getElementById('creditcard-support');
+    
+    const syncFromForm = (e) => {
+      const val = e.target.value;
+      setSelectedPerson(val);
+      localStorage.setItem('myBreakPerson', val);
+    };
+
+    if (supportEl) {
+      setTimeout(() => {
+        if (supportEl.value && supportEl.value !== selectedPerson) {
+          setSelectedPerson(supportEl.value);
+          localStorage.setItem('myBreakPerson', supportEl.value);
+        }
+      }, 500); 
+
+      supportEl.addEventListener('input', syncFromForm);
+      supportEl.addEventListener('change', syncFromForm);
+    }
+
+    return () => {
+      if (supportEl) {
+        supportEl.removeEventListener('input', syncFromForm);
+        supportEl.removeEventListener('change', syncFromForm);
+      }
+    };
+  }, []);
+
+  // ✅ SYNC DATE GALING SA FORM
+  useEffect(() => {
+    const dateEl = document.getElementById('creditcard-date');
+    
+    const syncDateFromForm = (e) => {
+      setSelectedDateStr(e.target.value);
+    };
+
+    if (dateEl) {
+      setTimeout(() => {
+        if (dateEl.value) {
+          setSelectedDateStr(dateEl.value);
+        }
+      }, 500);
+
+      dateEl.addEventListener('input', syncDateFromForm);
+      dateEl.addEventListener('change', syncDateFromForm);
+    }
+
+    return () => {
+      if (dateEl) {
+        dateEl.removeEventListener('input', syncDateFromForm);
+        dateEl.removeEventListener('change', syncDateFromForm);
+      }
+    };
+  }, []);
+
+  // Compute ang Day at Date format
+  let activeDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  if (selectedDateStr) {
+    const [y, m, d] = selectedDateStr.split('-');
+    if (y && m && d) {
+      // Create new date specifically for the parsed YYYY-MM-DD
+      activeDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+    }
+  }
+  
+  const currentDayName = dayNames[activeDate.getDay()];
+  const currentDateString = activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  // ✅ CHECK ANG SCHEDULE BASE SA PANGALAN AT KUNG ANONG ARAW SA FORM
+  useEffect(() => {
+    if (selectedPerson && BREAK_SCHEDULE[currentDayName]) {
+      const schedule = BREAK_SCHEDULE[currentDayName].find(s => {
+        const schedName = s.person.toUpperCase();
+        const myName = selectedPerson.toUpperCase();
+        return schedName.includes(myName) || myName.includes(schedName);
+      });
+      setTodayBreak(schedule ? schedule.time : 'DAYOFF');
+    } else if (selectedPerson) {
+      setTodayBreak('Off / Weekend');
+    } else {
+      setTodayBreak('--:--');
+    }
+  }, [selectedPerson, currentDayName]); // Mag-uupdate ito kapag nag-change ang person o ang araw
+
+  const handlePersonChange = (e) => {
+    const val = e.target.value;
+    setSelectedPerson(val);
+    localStorage.setItem('myBreakPerson', val);
+    
+    const supportEl = document.getElementById('creditcard-support');
+    if (supportEl) {
+      supportEl.value = val;
+      supportEl.dispatchEvent(new Event('input', { bubbles: true }));
+      supportEl.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  };
+
   return (
     <section className="dashboard-grid compact" aria-label="Ticket dashboard summary">
       <div className="stat-card accent">
@@ -293,6 +367,46 @@ function DashboardGrid() {
       <div className="stat-card warning">
         <div className="stat-label">Pending</div>
         <div className="stat-value" id="dashboardPendingTickets">0</div>
+      </div>
+
+      <div className="stat-card" style={{ borderLeft: '4px solid #8b5cf6', display: 'flex', flexDirection: 'column' }}>
+        <div className="stat-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span>1 Hr Break</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'none', letterSpacing: 'normal' }}>
+              {currentDayName}, {currentDateString}
+            </span>
+          </div>
+          <select 
+            value={selectedPerson} 
+            onChange={handlePersonChange}
+            style={{ 
+              fontSize: '10px', padding: '2px 4px', height: 'auto', width: 'auto', 
+              background: 'transparent', border: '1px solid var(--border-color)', 
+              borderRadius: '4px', color: 'var(--text-secondary)' 
+            }}
+          >
+            <option value="">-- Name --</option>
+            <option value="HANZ">HANZ</option>
+            <option value="CHARLES">CHARLES</option>
+            <option value="KENNETH">KENNETH</option>
+            <option value="ADI">ADI</option>
+            <option value="TATI">TATI</option>
+            <option value="RONIE">RONIE</option>
+            <option value="SEAN">SEAN</option>
+            <option value="MAT">MAT</option>
+            <option value="ZEL">ZEL</option>
+            <option value="JR">JR</option>
+            <option value="YASMINE">YASMINE (YAS)</option>
+            <option value="GABRIEL">GABRIEL</option>
+            <option value="ERNEST">ERNEST</option>
+            <option value="NICHOLLE">NICHOLLE</option>
+            <option value="ERNEST">EJ</option>
+          </select>
+        </div>
+        <div className="stat-value" style={{ fontSize: '1.25rem', marginTop: '12px', color: '#8b5cf6', whiteSpace: 'nowrap' }}>
+          {selectedPerson ? todayBreak : 'Select name ☝️'}
+        </div>
       </div>
     </section>
   );
@@ -336,31 +450,26 @@ function LeftPanel() {
           <tr>
             <th><label htmlFor="creditcard-support">SUPPORT NAME *</label></th>
             <td>
-              <input 
-                type="text" 
+              <select 
                 id="creditcard-support" 
-                className="required-field no-uppercase" 
-                placeholder="Type or select name" 
-                list="support-names" 
-                autoComplete="off" 
-              />
-              {/* ✅ DATALIST PARA SA AUTO-SUGGEST DROPDOWN */}
-              <datalist id="support-names">
-                <option value="HANZ" />
-                <option value="CHARLES" />
-                <option value="KENNETH" />
-                <option value="ADI" />
-                <option value="TATI" />
-                <option value="RONIE" />
-                <option value="SEAN" />
-                <option value="MAT" />
-                <option value="ZEL" />
-                <option value="JR" />
-                <option value="YASMINE" />
-                <option value="GABRIEL" />
-                <option value="ERNEST" />
-                <option value="NICHOLLE" />
-              </datalist>
+                className="required-field no-uppercase"
+              >
+                <option value="">-- SELECT NAME --</option>
+                <option value="HANZ">HANZ</option>
+                <option value="CHARLES">CHARLES</option>
+                <option value="KENNETH">KENNETH</option>
+                <option value="ADI">ADI</option>
+                <option value="TATI">TATI</option>
+                <option value="RONIE">RONIE</option>
+                <option value="SEAN">SEAN</option>
+                <option value="MAT">MAT</option>
+                <option value="ZEL">ZEL</option>
+                <option value="JR">JR</option>
+                <option value="YASMINE">YASMINE</option>
+                <option value="GABRIEL">GABRIEL</option>
+                <option value="ERNEST">ERNEST</option>
+                <option value="NICHOLLE">NICHOLLE</option>
+              </select>
             </td>
           </tr>
           <tr>
@@ -430,7 +539,6 @@ function LeftPanel() {
                     <option value="RESET THE ACCESS FOR IRIS PORTAL">RESET THE ACCESS FOR IRIS PORTAL</option>
                     <option value="ACCESS FOR IRIS PORTAL">ACCESS FOR IRIS PORTAL</option>
                     <option value="BUYPASS TID CREATION">BUYPASS TID CREATION</option>
-
                   </select>
                 </div>
 
@@ -472,23 +580,22 @@ function LeftPanel() {
           <tr>
             <th>
               <label htmlFor="creditcard-remarks">Troubleshooting</label>
-              {/* ✅ NEW: Auto-AI Toggle Options (Gaps removed) */}
-          <div style={{ marginTop: '5px', fontSize: '0.85em', backgroundColor: 'var(--panel-bg, #f8f9fa)', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}>                
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer', marginBottom: '5px' }}>
-                <input type="radio" name="aiActionMode" value="summarize" defaultChecked style={{ margin: 0, width: 'auto' }} /> 
-                <span style={{ color: '#673ab7', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Summarize</span>
-              </label>
-              
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer', marginBottom: '5px' }}>
-                <input type="radio" name="aiActionMode" value="grammar" style={{ margin: 0, width: 'auto' }} /> 
-                <span style={{ color: '#009688', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Fix Grammar</span>
-              </label>
+              <div style={{ marginTop: '5px', fontSize: '0.85em', backgroundColor: 'var(--panel-bg, #f8f9fa)', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}>                
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer', marginBottom: '5px' }}>
+                  <input type="radio" name="aiActionMode" value="summarize" defaultChecked style={{ margin: 0, width: 'auto' }} /> 
+                  <span style={{ color: '#673ab7', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Summarize</span>
+                </label>
+                
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer', marginBottom: '5px' }}>
+                  <input type="radio" name="aiActionMode" value="grammar" style={{ margin: 0, width: 'auto' }} /> 
+                  <span style={{ color: '#009688', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Fix Grammar</span>
+                </label>
 
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer' }}>
-                <input type="radio" name="aiActionMode" value="none" style={{ margin: 0, width: 'auto' }} /> 
-                <span style={{ color: '#666', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Off (Raw Text)</span>
-              </label>
-            </div>
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer' }}>
+                  <input type="radio" name="aiActionMode" value="none" style={{ margin: 0, width: 'auto' }} /> 
+                  <span style={{ color: '#666', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Off (Raw Text)</span>
+                </label>
+              </div>
             </th>
             <td>
               <div id="creditcard-remarks-editor" style={{ height: 200 }}></div>
@@ -544,9 +651,16 @@ function RightPanel() {
 }
 
 function HistoryPanel() {
+  const [notepadText, setNotepadText] = useState(localStorage.getItem('creditcard_notepad') || '');
+
+  const handleNotepadChange = (e) => {
+    setNotepadText(e.target.value);
+    localStorage.setItem('creditcard_notepad', e.target.value);
+  };
+
   return (
-    <div className="history-panel">
-      <div className="panel-header panel-header-history">
+    <div className="history-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div className="panel-header panel-header-history" style={{ flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
           <div>
             <p className="panel-kicker">Activity feed</p>
@@ -567,10 +681,35 @@ function HistoryPanel() {
               Workload Tracker
             </button>
           </div>
-
         </div>
       </div>
-      <div id="creditcardHistoryContent" className="history-content"></div>
+      
+      <div id="creditcardHistoryContent" className="history-content" style={{ flexGrow: 1, overflowY: 'auto' }}></div>
+
+      <div style={{ padding: '15px', borderTop: '1px solid var(--border-color, #eee)', backgroundColor: 'var(--panel-bg, #fff)', flexShrink: 0 }}>
+        <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#888', textTransform: 'uppercase', marginBottom: '8px', display: 'block', letterSpacing: '0.5px' }}>
+          📝 Scratchpad
+        </label>
+        <textarea
+          value={notepadText}
+          onChange={handleNotepadChange}
+          placeholder="Paste messy notes here..."
+          style={{
+            width: '100%',
+            minHeight: '180px',
+            resize: 'vertical',
+            borderRadius: '6px',
+            border: '1px solid var(--border-color, #ccc)',
+            backgroundColor: 'var(--panel-bg, #fafafa)',
+            color: 'var(--text-color, #333)',
+            padding: '10px',
+            fontSize: '12px',
+            lineHeight: '1.4',
+            fontFamily: 'inherit',
+            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)'
+          }}
+        />
+      </div>
     </div>
   );
 }
