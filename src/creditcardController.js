@@ -376,7 +376,6 @@ export function initCreditcardApp() {
       return '';
     }
 
-    // ✅ FIXED: Now takes issueText to give AI full context
     async function generateRemarksSummary(issueText, remarksHtml, mode) {
       const rawText = htmlToPlainText(remarksHtml || '');
       if (!rawText.trim()) return '';
@@ -388,7 +387,6 @@ export function initCreditcardApp() {
         prompt = `Fix the grammar, spelling, and formatting of the following technical support troubleshooting notes. Keep the exact technical meaning, details, and steps intact. Format it cleanly as plain text:\n\n${rawText}`;
         systemText = 'You are a technical support editor. Fix grammar and spelling but do not remove any technical details or steps. Return plain text only.';
       } else {
-        // ✅ NEW: Passes both the ISSUE and the NOTES to the AI
         prompt = `Issue Reported: ${issueText}\n\nTroubleshooting Notes:\n${rawText}\n\nBased on the issue and notes above, summarize the specific steps taken to resolve the issue. Write a clear, 1 to 2 sentence resolution summary detailing exactly what actions were performed to fix the problem or what the final outcome was. Return plain text only, no labels, no bullet points, and no extra commentary.`;
         systemText = 'You are a merchant-support specialist. Your job is to read an issue and raw troubleshooting steps, and extract a concise, 1 to 2 sentence summary of the resolution (the actions taken to solve the ticket). Return plain text only.';
       }
@@ -487,21 +485,22 @@ export function initCreditcardApp() {
 
       const midEl = document.getElementById('creditcard-mid');
       const storeEl = document.getElementById('creditcard-store');
-      const supportEl = document.getElementById('creditcard-support'); // ✅ ISINAMA ANG SUPPORT NAME
+      const supportEl = document.getElementById('creditcard-support'); 
       
       let valid = true;
       
-      // ✅ ISINAMA ANG supportEl SA PAG-CHECK KUNG MAY LAMAN
       [midEl, storeEl, supportEl].forEach(el => {
-        el.classList.remove('invalid');
-        if (!el.value.trim()) {
-          el.classList.add('invalid');
-          valid = false;
+        if (el) {
+          el.classList.remove('invalid');
+          if (!el.value.trim()) {
+            el.classList.add('invalid');
+            valid = false;
+          }
         }
       });
       
       if (!valid) {
-        showNotification('Please fill SUPPORT NAME, MID, and STORE NAME!'); // ✅ INUPDATE ANG ERROR MESSAGE
+        showNotification('Please fill SUPPORT NAME, MID, and STORE NAME!'); 
         return;
       }
 
@@ -542,7 +541,6 @@ export function initCreditcardApp() {
       if (status.toUpperCase() !== 'OTHER TASK') {
         if (aiActionMode !== 'none') {
           showNotification(`Generating AI ${aiActionMode === 'grammar' ? 'Grammar Fix' : 'Summary'}...`);
-          // ✅ FIXED: Pass 'issue' to the function
           const aiResultHtml = await generateRemarksSummary(issue, rawRemarksHtml, aiActionMode);
           if (aiResultHtml) {
             remarksHtmlToSave = aiResultHtml; 
@@ -781,6 +779,7 @@ export function initCreditcardApp() {
       showNotification('Entry restored.');
     }
 
+    // ✅ PURE DATE FORMAT PARA SA EXCEL (DD/MM/YYYY)
     window.copyRow = function(button) {
       const row = button.closest('tr');
       const id = row.dataset.id;
@@ -788,12 +787,15 @@ export function initCreditcardApp() {
       if (!entry) return;
 
       let exportDate = entry.date || '';
-      const dateParts = exportDate.split('/');
-      if (dateParts.length === 3) {
-         const m = dateParts[0].padStart(2, '0');
-         const d = dateParts[1].padStart(2, '0');
-         const y = dateParts[2];
-         exportDate = `${d}/${m}/${y}`;
+      if (exportDate) {
+        const parts = exportDate.split('/');
+        if (parts.length === 3) {
+          // Binabasa bilang DD/MM/YYYY para pumasok ng tama sa Excel
+          const m = String(parseInt(parts[0], 10)).padStart(2, '0');
+          const d = String(parseInt(parts[1], 10)).padStart(2, '0');
+          const y = parts[2];
+          exportDate = `${d}/${m}/${y}`;
+        }
       }
 
       let combinedRemarks = '';
@@ -826,7 +828,6 @@ export function initCreditcardApp() {
       const values = rowData.map(f => escapeCSV(String(f ?? '')));
       navigator.clipboard.writeText(values.join('\t')).then(() => showNotification('Row copied!'));
     };
-
 
     window.handleGlobalSearch = function(query) {
       currentSearchQuery = (query || '').toLowerCase().trim();
@@ -1391,6 +1392,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       saveAllEntries(); renderTable(); renderSidebar();
     }
 
+    // ✅ PURE DATE FORMAT PARA SA EXCEL (DD/MM/YYYY)
     function bulkCopy() {
       const ids = getSelectedRowIds();
       if (ids.length === 0) { showNotification('No rows selected'); return; }
@@ -1399,12 +1401,15 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       
       const rows = selectedRows.map(entry => {
         let exportDate = entry.date || '';
-        const dateParts = exportDate.split('/');
-        if (dateParts.length === 3) {
-           const m = dateParts[0].padStart(2, '0');
-           const d = dateParts[1].padStart(2, '0');
-           const y = dateParts[2];
-           exportDate = `${d}/${m}/${y}`; 
+        if (exportDate) {
+          const parts = exportDate.split('/');
+          if (parts.length === 3) {
+            // Binabasa bilang DD/MM/YYYY para pumasok ng tama sa Excel
+            const m = String(parseInt(parts[0], 10)).padStart(2, '0');
+            const d = String(parseInt(parts[1], 10)).padStart(2, '0');
+            const y = parts[2];
+            exportDate = `${d}/${m}/${y}`;
+          }
         }
 
         let combinedRemarks = '';
@@ -1595,13 +1600,10 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         const btn = document.getElementById(`ticketTab-${draftId}`);
         if (!btn) return;
         
-        // Kukunin muna natin ang Store Name. Kung walang Store Name, fallback siya sa MID.
         const storeName = (data && data.store) ? data.store : document.getElementById('creditcard-store')?.value || '';
         const mid = (data && data.mid) ? data.mid : document.getElementById('creditcard-mid')?.value || '';
         
-        // Priority 1: Store Name | Priority 2: MID | Priority 3: 'Ticket'
         let label = storeName || mid || 'Ticket';
-        
         btn.querySelector('.tab-label').textContent = label;
       } catch (e) {}
     }
@@ -1671,17 +1673,13 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
          }
       }
 
-      // ✅ FIXED: Inayos ang Resolution para hindi maputol kapag may dash (-) na bullet point
       const resolutionMatch = text.match(/RESOLUTION:\s*([\s\S]*)/i);
       if (resolutionMatch && resolutionMatch[1]) {
          const el = document.getElementById('creditcard-resolution');
          if (el) { 
            let val = resolutionMatch[1];
-           // Tanggalin ang HRMS footer kung na-copy man ito
            val = val.split(/TICKET IN HRMS/i)[0];
-           // Tanggalin ang sobrang dash separator sa ibaba
            val = val.replace(/\n-\s*$/, '');
-           // Tanggalin ang unang bullet point at spaces
            val = val.trim().replace(/^[-•]\s*/, ''); 
            
            el.value = val; 
@@ -1698,7 +1696,6 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
     };
 
     function init() {
-      // ✅ NEW: Global Paste Listener for Auto-Fill
       document.addEventListener('paste', (e) => {
         const pastedText = (e.clipboardData || window.clipboardData).getData('text');
         if (pastedText && /STORE NAME:/i.test(pastedText) && /MID:/i.test(pastedText)) {
