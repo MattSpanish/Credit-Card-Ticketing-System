@@ -9,6 +9,7 @@ const BREAK_SCHEDULE = {
     { person: "ERNEST", time: "2:00–3:00 AM" },
     { person: "SEAN", time: "2:30–3:30 AM" },
     { person: "CHARLES", time: "3:30–4:30 AM" },
+    { person: "KENNETH", time: "NO SCHEDULE" },
     { person: "RONIE", time: "4:45–5:45 AM" }
   ],
   "Tuesday": [
@@ -16,24 +17,28 @@ const BREAK_SCHEDULE = {
     { person: "ERNEST", time: "1:30–2:30 AM" },
     { person: "SEAN", time: "2:00–3:00 AM" },
     { person: "CHARLES", time: "3:30–4:30 AM" },
+    { person: "KENNETH", time: "NO SCHEDULE" },
     { person: "RONIE / ADI", time: "4:45–5:45 AM" }
   ],
   "Wednesday": [
     { person: "SEAN", time: "1:30–2:30 AM" },
     { person: "MAT", time: "2:30–3:30 AM" },
     { person: "CHARLES", time: "3:30–4:30 AM" },
+    { person: "KENNETH", time: "NO SCHEDULE" },
     { person: "RONIE / ADI", time: "4:45–5:45 AM" }
   ],
   "Thursday": [
     { person: "YASMINE", time: "1:30–2:30 AM" },
     { person: "MAT", time: "2:30–3:30 AM" },
     { person: "CHARLES", time: "3:30–4:30 AM" },
+    { person: "KENNETH", time: "NO SCHEDULE" },
     { person: "RONIE / ADI", time: "4:45–5:45 AM" }
   ],
   "Friday": [
     { person: "ERNEST", time: "1:30–2:30 AM" },
     { person: "YASMINE", time: "2:30–3:30 AM" },
     { person: "MAT", time: "3:30–4:30 AM" },
+    { person: "KENNETH", time: "NO SCHEDULE" },
     { person: "RONIE / ADI", time: "4:45–5:45 AM" }
   ],
   "Saturday": [
