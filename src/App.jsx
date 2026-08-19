@@ -472,6 +472,22 @@ function LeftPanel() {
               </select>
             </td>
           </tr>
+          {/* ✅ NEW: SEARCH STORE FIELD */}
+          <tr>
+            <th><label htmlFor="creditcard-store-search">🔍 SEARCH STORE</label></th>
+            <td>
+              <div className="combobox-wrapper" style={{ position: 'relative' }}>
+                <input 
+                  type="text" 
+                  id="creditcard-store-search" 
+                  className="combobox-input no-uppercase" 
+                  placeholder="Type Store Name or MID..." 
+                  autoComplete="off" 
+                />
+                <div id="creditcard-store-search-suggestions" className="combobox-suggestions"></div>
+              </div>
+            </td>
+          </tr>
           <tr>
             <th><label htmlFor="creditcard-store">STORE NAME *</label></th>
             <td><input type="text" id="creditcard-store" className="required-field" /></td>
@@ -742,7 +758,7 @@ export default function App() {
           .text-summarize { color: var(--color-summarize); }
           .text-grammar { color: var(--color-grammar); }
 
-          /* MODAL TYPOGRAPHY CLASSES (Cleans up inline styles) */
+          /* MODAL TYPOGRAPHY CLASSES */
           .modal-title { margin: 0; color: var(--text-primary, #333); }
           .modal-subtitle { margin: 4px 0 0; font-size: 13px; color: var(--text-muted, #666); }
           .day-title { margin: 0; font-size: 15px; color: var(--text-primary, #333); }
@@ -779,7 +795,6 @@ export default function App() {
             border-bottom: 1px solid var(--border-color, #334155);
           }
           
-          /* Force text colors in Dark Mode just in case variables fail */
           body.dark-mode .modal-title,
           body.dark-mode .day-title,
           body.dark-mode .slot-time {

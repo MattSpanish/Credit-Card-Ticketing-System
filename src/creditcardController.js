@@ -13,6 +13,10 @@ export function initCreditcardApp() {
     let currentStatusFilter = null;
     let currentSearchQuery = ''; 
     let quillEditor = null;
+    let globalMerchantArray = []; // Memory cache para sa API
+
+    // ✅ GOOGLE SHEETS API LINK:
+    const MERCHANT_API_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ7Te8cSSVUsKh0Ms4xJvibikE9ZCj_lB0tkoZx-2mZv5jOKjEpSdqa436wFP72LdH3cm2AmbsoMFgq/pub?output=csv";
 
     const EDIT_STORAGE_KEY = 'editingEntryId_creditcard';
     const EDIT_DRAFT_KEY = 'editingDraft_creditcard_';
@@ -20,7 +24,7 @@ export function initCreditcardApp() {
     const collapseState = { months: {}, dates: {} };
     const STATUS_OPTIONS = ['RESOLVED', 'PENDING', 'OTHER TASK'];
 
-// ✅ NEW: OTHER TASK TEMPLATES DICTIONARY
+// ✅ OTHER TASK TEMPLATES DICTIONARY
     const OTHER_TASK_TEMPLATES = {
       "Program PAX A35 w/ P98": {
         issue: "Program PAX A35 w/ P98",
@@ -181,6 +185,7 @@ export function initCreditcardApp() {
     
     function showNotification(msg) {
       const el = document.getElementById('notification');
+      if (!el) return;
       el.textContent = msg;
       el.classList.add('show');
       setTimeout(() => el.classList.remove('show'), 2000);
@@ -322,6 +327,25 @@ export function initCreditcardApp() {
       saveFormData('creditcard');
     }
 
+    // ✅ NEW HELPER: FORMAT PHONE NUMBER (XXX) XXX - XXXX
+    function formatPhoneNumber(phoneStr) {
+      if (!phoneStr) return '';
+      // Tanggalin lahat ng hindi numbers
+      let digits = phoneStr.replace(/\D/g, '');
+      
+      // Tanggalin ang "1" sa unahan kung USA code ito
+      if (digits.length === 11 && digits.startsWith('1')) {
+        digits = digits.slice(1);
+      }
+      
+      // I-format kapag eksaktong 10 digits
+      if (digits.length === 10) {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+      }
+      
+      return phoneStr; // Kapag kulang o sobra, ibalik na lang ang original
+    }
+
     function getGeminiApiKey() {
       if (typeof window !== 'undefined' && window.GEMINI_API_KEY) {
         return String(window.GEMINI_API_KEY).trim();
@@ -414,6 +438,158 @@ export function initCreditcardApp() {
       navigator.clipboard.writeText(output).then(() => showNotification(`Clock ${type} copied!`));
     }
 
+    // ─── API FETCH & AUTOFILL ───
+    function parseCSV(text) {
+        let rows = [];
+        let currentRow = [];
+        let currentCell = "";
+        let inQuotes = false;
+
+        for (let i = 0; i < text.length; i++) {
+            let char = text[i];
+            let nextChar = text[i + 1];
+
+            if (char === '"') {
+                if (inQuotes && nextChar === '"') {
+                    currentCell += '"';
+                    i++; 
+                } else {
+                    inQuotes = !inQuotes; 
+                }
+            } else if (char === ',' && !inQuotes) {
+                currentRow.push(currentCell.trim());
+                currentCell = "";
+            } else if ((char === '\n' || char === '\r') && !inQuotes) {
+                if (char === '\r' && nextChar === '\n') i++; 
+                currentRow.push(currentCell.trim());
+                rows.push(currentRow);
+                currentRow = [];
+                currentCell = "";
+            } else {
+                currentCell += char;
+            }
+        }
+        if (currentCell || currentRow.length > 0) {
+            currentRow.push(currentCell.trim());
+            rows.push(currentRow);
+        }
+        return rows.filter(r => r.join('').trim() !== ''); 
+    }
+
+    async function fetchMerchantDatabase() {
+      if (!MERCHANT_API_URL || MERCHANT_API_URL === "I-PASTE_DITO_ANG_LINK_MULA_SA_GOOGLE_SHEETS") {
+        console.warn("No valid Merchant API URL provided.");
+        return;
+      }
+      
+      try {
+        const response = await fetch(MERCHANT_API_URL);
+        if (!response.ok) throw new Error("Failed to fetch CSV");
+        
+        const text = await response.text();
+        const rows = parseCSV(text);
+        
+        if (rows.length < 2) return;
+        
+        const headers = rows[0].map(h => (h || '').trim().toLowerCase());
+        
+        const midIdx = headers.findIndex(h => h === 'mid' || h.includes('merchant id'));
+        const storeIdx = headers.findIndex(h => h === 'merchant dba' || h.includes('dba') || h.includes('store'));
+        const contactIdx = headers.findIndex(h => h === 'contact name' || h.includes('contact') || h === 'merchant name');
+        const phoneIdx = headers.findIndex(h => h === 'phone number' || h.includes('phone'));
+        
+        if (midIdx === -1) {
+          console.error("Hindi mahanap ang 'MID' column sa CSV.");
+          return;
+        }
+
+        globalMerchantArray = []; 
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (row.length <= midIdx) continue;
+          
+          const midVal = (row[midIdx] || '').trim();
+          const storeVal = storeIdx !== -1 ? (row[storeIdx] || '').trim() : '';
+          const contactVal = contactIdx !== -1 ? (row[contactIdx] || '').trim() : '';
+          const phoneVal = phoneIdx !== -1 ? (row[phoneIdx] || '').trim() : '';
+
+          if (midVal || storeVal) {
+            globalMerchantArray.push({
+              mid: midVal,
+              store: storeVal,
+              merchant: contactVal,
+              phone: phoneVal
+            });
+          }
+        }
+        console.log(`✅ Loaded ${globalMerchantArray.length} merchants from API into Search Bar.`);
+      } catch (error) {
+        console.error("Merchant API Fetch Error:", error);
+      }
+    }
+
+    function initStoreSearch() {
+      const input = document.getElementById('creditcard-store-search');
+      const suggestionsDiv = document.getElementById('creditcard-store-search-suggestions');
+      if (!input || !suggestionsDiv) return;
+
+      input.addEventListener('input', function() {
+        const val = this.value.trim().toLowerCase();
+        suggestionsDiv.innerHTML = '';
+        
+        if (!val || val.length < 2) {
+          suggestionsDiv.style.display = 'none';
+          return;
+        }
+
+        const matches = globalMerchantArray.filter(m => 
+          (m.store && m.store.toLowerCase().includes(val)) || 
+          (m.mid && m.mid.toLowerCase().includes(val))
+        ).slice(0, 15); 
+
+        if (matches.length === 0) {
+          suggestionsDiv.style.display = 'none';
+          return;
+        }
+
+        matches.forEach(match => {
+          const div = document.createElement('div');
+          div.className = 'combobox-suggestion-item';
+          div.innerHTML = `<strong>${escapeHtml(match.store || 'Unknown Store')}</strong> <span style="color:var(--text-muted, #888); font-size:0.85em;">(${escapeHtml(match.mid)})</span>`;
+          
+          div.addEventListener('click', () => {
+            const storeField = document.getElementById('creditcard-store');
+            const midField = document.getElementById('creditcard-mid');
+            const merchantField = document.getElementById('creditcard-merchant');
+            const phoneField = document.getElementById('creditcard-contactNumber');
+
+            // ✅ APPLY PHONE NUMBER FORMATTING HERE
+            if (storeField) storeField.value = match.store || '';
+            if (midField) midField.value = match.mid || '';
+            if (merchantField) merchantField.value = match.merchant || '';
+            if (phoneField) phoneField.value = formatPhoneNumber(match.phone || '');
+
+            input.value = ''; 
+            suggestionsDiv.style.display = 'none';
+
+            showNotification('✅ Details Auto-filled!');
+            creditcardUpdatePreview();
+            saveFormData('creditcard');
+            if (window.currentDraftId) window.saveDraftData(window.currentDraftId);
+          });
+
+          suggestionsDiv.appendChild(div);
+        });
+        suggestionsDiv.style.display = 'block';
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+          suggestionsDiv.style.display = 'none';
+        }
+      });
+    }
+
     // ─── FORM DATA ───
     function saveFormData(prefix) {
       const fields = {
@@ -467,15 +643,24 @@ export function initCreditcardApp() {
 
     // ─── PREVIEW ───
     function creditcardUpdatePreview() {
-      document.getElementById('creditcard-preview-mid').textContent = document.getElementById('creditcard-mid').value || '';
-      document.getElementById('creditcard-preview-store').textContent = document.getElementById('creditcard-store').value || '';
-      document.getElementById('creditcard-preview-merchant').textContent = document.getElementById('creditcard-merchant').value || '';
-      document.getElementById('creditcard-preview-contactNumber').textContent = document.getElementById('creditcard-contactNumber').value || '';
-      document.getElementById('creditcard-preview-issue').innerHTML = formatMultilinePreview(document.getElementById('creditcard-issue').value);
-      document.getElementById('creditcard-preview-resolution').innerHTML = formatMultilinePreview(document.getElementById('creditcard-resolution').value);
+      const previewMid = document.getElementById('creditcard-preview-mid');
+      const previewStore = document.getElementById('creditcard-preview-store');
+      const previewMerchant = document.getElementById('creditcard-preview-merchant');
+      const previewContact = document.getElementById('creditcard-preview-contactNumber');
+      const previewIssue = document.getElementById('creditcard-preview-issue');
+      const previewRes = document.getElementById('creditcard-preview-resolution');
+      const previewRemarks = document.getElementById('creditcard-preview-remarks');
       
-      const remarksHtml = document.getElementById('creditcard-remarks').value;
-      document.getElementById('creditcard-preview-remarks').innerHTML = !isHtmlEmpty(remarksHtml) ? convertQuillLists(remarksHtml) : '';
+      if (previewMid) previewMid.textContent = document.getElementById('creditcard-mid')?.value || '';
+      if (previewStore) previewStore.textContent = document.getElementById('creditcard-store')?.value || '';
+      if (previewMerchant) previewMerchant.textContent = document.getElementById('creditcard-merchant')?.value || '';
+      if (previewContact) previewContact.textContent = document.getElementById('creditcard-contactNumber')?.value || '';
+      if (previewIssue) previewIssue.innerHTML = formatMultilinePreview(document.getElementById('creditcard-issue')?.value);
+      if (previewRes) previewRes.innerHTML = formatMultilinePreview(document.getElementById('creditcard-resolution')?.value);
+      
+      const remarksHtml = document.getElementById('creditcard-remarks')?.value;
+      if (previewRemarks) previewRemarks.innerHTML = !isHtmlEmpty(remarksHtml) ? convertQuillLists(remarksHtml) : '';
+      
       syncPreviewHeight();
     }
 
@@ -604,7 +789,7 @@ export function initCreditcardApp() {
 
     function clearFormFields(prefix) {
       if (prefix === 'creditcard') {
-        const fields = ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution'];
+        const fields = ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'store-search'];
         fields.forEach(id => {
           const el = document.getElementById(`creditcard-${id}`);
           if (el) el.value = '';
@@ -790,7 +975,6 @@ export function initCreditcardApp() {
       if (exportDate) {
         const parts = exportDate.split('/');
         if (parts.length === 3) {
-          // Binabasa bilang DD/MM/YYYY para pumasok ng tama sa Excel
           const m = String(parseInt(parts[0], 10)).padStart(2, '0');
           const d = String(parseInt(parts[1], 10)).padStart(2, '0');
           const y = parts[2];
@@ -864,6 +1048,7 @@ export function initCreditcardApp() {
     function renderTable() {
       const visibleEntries = getVisibleEntries();
       const tbody = document.querySelector('#entryTable tbody');
+      if (!tbody) return;
       tbody.innerHTML = '';
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -1645,12 +1830,14 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       
       let updated = false;
 
-      const parseField = (regex, id) => {
+      const parseField = (regex, id, formatter = null) => {
         const match = text.match(regex);
         if (match && match[1]) {
           const el = document.getElementById(id);
           if (el) {
-            el.value = match[1].trim();
+            let val = match[1].trim();
+            if (formatter) val = formatter(val);
+            el.value = val;
             el.dispatchEvent(new Event('input', { bubbles: true }));
             updated = true;
           }
@@ -1660,7 +1847,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       parseField(/STORE NAME:\s*(.*)/i, 'creditcard-store');
       parseField(/MID:\s*(.*)/i, 'creditcard-mid');
       parseField(/PERSON NAME:\s*(.*)/i, 'creditcard-merchant');
-      parseField(/PHONE NUMBER:\s*(.*)/i, 'creditcard-contactNumber');
+      parseField(/PHONE NUMBER:\s*(.*)/i, 'creditcard-contactNumber', formatPhoneNumber);
       
       const issueMatch = text.match(/ISSUE:\s*([\s\S]*?)(?=RESOLUTION:|$)/i);
       if (issueMatch && issueMatch[1]) {
@@ -1696,6 +1883,10 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
     };
 
     function init() {
+      // ✅ TATAWAGIN NA ANG API PAGKABUKAS NG APP
+      fetchMerchantDatabase();
+      initStoreSearch(); // ✅ INITIATE SEARCH DROPDOWN
+
       document.addEventListener('paste', (e) => {
         const pastedText = (e.clipboardData || window.clipboardData).getData('text');
         if (pastedText && /STORE NAME:/i.test(pastedText) && /MID:/i.test(pastedText)) {
