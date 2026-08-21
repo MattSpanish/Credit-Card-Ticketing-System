@@ -226,7 +226,7 @@ function Sidebar({ onOpenTemplates, onOpenBreakSchedule }) {
         <button className="nav-item" onClick={() => handleNavAction(onOpenBreakSchedule)}>☕ Break Schedule</button>
       </nav>
       
-      <div className="sidebar-foot">Logged in as <strong>Support</strong></div>
+      <div className="sidebar-foot" style={{ marginTop: 'auto' }}>Logged in as <strong>Support</strong></div>
       <div className="sidebar-key">
         <button id="saveGeminiKeyBtn" className="btn btn-sm btn-primary" style={{marginTop:8, width:'100%'}}>Set Gemini API Key</button>
       </div>
@@ -234,24 +234,59 @@ function Sidebar({ onOpenTemplates, onOpenBreakSchedule }) {
   );
 }
 
+// ==========================================
+// ✅ HEADER (KASAMA ANG SEARCH) & SEPARATE PIC DIV
+// ==========================================
+
+// ==========================================
+// ✅ HEADER (KASAMA ANG SEARCH) & SEPARATE PIC DIV
+// ==========================================
+
+// ==========================================
+// ✅ HEADER (KASAMA ANG SEARCH) & SEPARATE PIC DIV
+// ==========================================
+
+// ==========================================
+// ✅ HEADER (KASAMA ANG SEARCH) & SEPARATE PIC DIV
+// ==========================================
+
 function Header() {
   return (
-    <header className="app-header">
-      <div className="header-left">
-        <h1>Credit Card Support Center</h1>
-        <p className="small">Capture issues quickly and resolve faster.</p>
-      </div>
-      <div className="header-actions">
-        <input 
-          className="header-search" 
-          placeholder="Search tickets, stores, MID..." 
-          onChange={(e) => window.handleGlobalSearch && window.handleGlobalSearch(e.target.value)}
+    <>
+      {/* 1. ORIGINAL HEADER: Title sa kaliwa, Search bar sa kanan */}
+      <header className="app-header">
+        <div className="header-left">
+          <h1>Credit Card Support Center</h1>
+          <p className="small">Capture issues quickly and resolve faster.</p>
+        </div>
+        <div className="header-actions">
+          <input 
+            className="header-search" 
+            placeholder="Search tickets, stores, MID..." 
+            onChange={(e) => window.handleGlobalSearch && window.handleGlobalSearch(e.target.value)}
+          />
+        </div>
+      </header>
+
+      {/* 2. HIWALAY NA DIV PARA SA PICTURE (CROPPED ANG TAAS AT BABA) */}
+      <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+        <img 
+          src="https://lh3.googleusercontent.com/d/1bNuogEEjtyWMvy5vSu_pNHiji2T2vrTJ" 
+          alt="Support Team" 
+          style={{ 
+            width: '1000px', 
+            height: '325px', /* ✅ PINA-LIIT ANG HEIGHT PARA PUMUTOL SA TAAS AT BABA */
+            borderRadius: '8px', 
+            objectFit: 'cover', 
+            objectPosition: 'center', /* ✅ NAKA-GITNA PARA PANTAY ANG PUTOL */
+            border: '2px solid var(--border-color)',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+          }} 
         />
       </div>
-    </header>
+    </>
   );
 }
-
 // ==========================================
 // ✅ DASHBOARD GRID
 // ==========================================
@@ -403,6 +438,7 @@ function DashboardGrid() {
             <option value="YASMINE">YASMINE (YAS)</option>
             <option value="GABRIEL">GABRIEL</option>
             <option value="ERNEST">ERNEST</option>
+            <option value="REGS">REGS</option>
             <option value="NICHOLLE">NICHOLLE</option>
             <option value="ERNEST">EJ</option>
           </select>
@@ -468,11 +504,12 @@ function LeftPanel() {
                 <option value="YASMINE">YASMINE</option>
                 <option value="GABRIEL">GABRIEL</option>
                 <option value="ERNEST">ERNEST</option>
+                <option value="REGS">REGS</option>
                 <option value="NICHOLLE">NICHOLLE</option>
               </select>
             </td>
           </tr>
-          {/* ✅ NEW: SEARCH STORE FIELD */}
+          {/* ✅ SEARCH STORE FIELD */}
           <tr>
             <th><label htmlFor="creditcard-store-search">🔍 SEARCH STORE</label></th>
             <td>
