@@ -1,0 +1,1925 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Credit Card · Support System</title>
+    <link rel="icon" type="image/x-icon" href="./assets/icons/logo-256-vitreous-support-ticket.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-soft: #eff6ff;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --card-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+            --card-shadow-hover: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --transition: all 0.2s ease;
+        }
+        body.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --accent-soft: #1e293b;
+            --card-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --card-shadow-hover: 0 4px 6px -1px rgba(0,0,0,0.4);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Inter", system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 24px 16px;
+            transition: var(--transition);
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+        .app-container {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            max-width: 1873px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .main-content { flex: 1; min-width: 0; }
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+        .theme-toggle {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 40px;
+            transition: var(--transition);
+            line-height: 1;
+        }
+        .theme-toggle:hover { background: var(--accent-soft); transform: scale(1.05); }
+        .header-actions { display: flex; gap: 12px; align-items: center; }
+
+        .three-panels {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            width: 100%;
+        }
+        .history-panel {
+            flex: 0 0 clamp(250px, 20%, 400px);
+            min-width: 250px;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 20px 16px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            position: sticky;
+            top: 24px;
+            align-self: flex-start;
+        }
+        .left-panel {
+            flex: 0 0 clamp(300px, 40%, 800px);
+            min-width: 300px;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+        }
+        .right-panel {
+            flex: 0 0 clamp(300px, 35%, 625px);
+            min-width: 300px;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            position: sticky;
+            top: 24px;
+            align-self: flex-start;
+        }
+
+        /* Sidebar */
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .sidebar-header h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent-color);
+            margin: 0;
+        }
+        .month-header {
+            font-weight: 700;
+            font-size: 0.9rem;
+            padding: 8px 0 4px;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+            margin: 12px 0 8px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+        .month-header:hover { color: var(--accent-hover); }
+        .date-group { margin-bottom: 16px; }
+        .date-header {
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 4px 0;
+            color: var(--text-muted);
+            letter-spacing: 0.02em;
+            margin-top: 8px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+        .date-header:hover { color: var(--accent-color); }
+        .month-arrow, .date-arrow { font-size: 0.7rem; transition: transform 0.2s; }
+
+        .sidebar-card {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-left: 5px solid #bc8f00;
+            border-bottom: 6px solid #9d7900;
+            transition: var(--transition);
+            box-shadow: var(--card-shadow);
+        }
+        .sidebar-card:hover { transform: translateY(-2px); box-shadow: var(--card-shadow-hover); }
+        .sidebar-card .preview-item {
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            color: var(--text-secondary);
+        }
+        .sidebar-card .preview-item strong {
+            min-width: 70px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .sidebar-card .preview-item.issue-item {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .sidebar-card .stack-btn,
+        .sidebar-card .copy-store,
+        .sidebar-card .copy-details,
+        .sidebar-card .edit-entry,
+        .sidebar-card .return-entry,
+        .sidebar-card .delete-entry {
+            background: var(--bg-secondary) !important;
+            color: var(--text-secondary) !important;
+            border: 1px solid var(--border-color);
+        }
+        .sidebar-card .stack-btn:hover,
+        .sidebar-card .copy-store:hover,
+        .sidebar-card .copy-details:hover,
+        .sidebar-card .edit-entry:hover,
+        .sidebar-card .return-entry:hover,
+        .sidebar-card .delete-entry:hover {
+            background: var(--accent-color) !important;
+            color: white !important;
+            border-color: var(--accent-color);
+        }
+        .card-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .card-actions-row { display: flex; gap: 8px; justify-content: space-between; }
+        .card-actions-row.stack-row { flex-direction: column; gap: 6px; }
+        .stack-btn {
+            width: 100%;
+            text-align: center;
+            padding: 6px 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        .stack-btn:hover { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .card-actions button {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            flex: 1;
+        }
+        .card-actions button:hover { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+
+        /* Left Panel */
+        .left-panel table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            table-layout: fixed;
+        }
+        .left-panel table td {
+            padding: 8px 4px;
+            border: none;
+            vertical-align: top;
+            word-break: break-word;
+        }
+        .left-panel table td:first-child {
+            width: 38%;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        input, select, textarea {
+            font-size: 14px;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: var(--transition);
+            width: 100%;
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+        input[readonly], input:disabled, select:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        textarea { resize: none; overflow-y: hidden; min-height: 60px; }
+        .invalid { border-color: var(--danger) !important; background: rgba(239,68,68,0.1); }
+        .no-uppercase { text-transform: none !important; }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .button-row button {
+            flex: 1 0 auto;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            text-transform: uppercase;
+            letter-spacing: 0.01em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .button-row .add {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+        .button-row .clock {
+            background: var(--warning);
+            border-color: var(--warning);
+            color: white;
+        }
+        .button-row .form-clear-btn {
+            background: var(--text-muted);
+            border-color: var(--text-muted);
+            color: white;
+        }
+        .button-row button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Right Panel Preview */
+        .right-panel strong {
+            color: var(--accent-color);
+            display: inline-block;
+            min-width: 110px;
+            margin-right: 8px;
+        }
+        .preview-multiline {
+            white-space: normal;
+            display: inline-block;
+            background: var(--bg-tertiary);
+            padding: 6px 12px;
+            border-radius: 12px;
+            width: 100%;
+            margin-top: 4px;
+            border: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .preview-multiline ul, .preview-multiline ol { margin: 8px 0 8px 20px; padding-left: 0; }
+        .preview-multiline li { margin: 4px 0; word-wrap: break-word; overflow-wrap: break-word; }
+
+        /* Bulk Bar */
+        .bulk-bar {
+            width: 100%;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 24px 0;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-radius: 40px;
+            border: 1px solid var(--border-color);
+        }
+        .bulk-bar label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            color: var(--text-secondary);
+        }
+        .bulk-bar button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            text-transform: uppercase;
+            font-size: 12px;
+            border: 1px solid var(--border-color);
+        }
+        .bulk-bar button:hover { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .bulk-bar button.counter-badge {
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            text-transform: uppercase;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        .status-filter-btn.active {
+            background: var(--accent-color) !important;
+            color: white !important;
+            border-color: var(--accent-color) !important;
+        }
+        .bulk-bar .clear-all-btn { background: #dc3545; color: white; border-color: #dc3545; }
+        .bulk-bar .clear-all-btn:hover { background: #b02a37; color: white; border-color: #b02a37; }
+
+        /* Main Table */
+        #entryTable {
+            width: 100%;
+            min-width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            overflow-x: auto;
+            box-shadow: var(--card-shadow);
+        }
+        #entryTable th {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.7rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            padding: 12px 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        #entryTable td {
+            background: var(--bg-secondary);
+            padding: 12px 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            vertical-align: middle;
+            word-wrap: break-word;
+            max-width: 300px;
+            color: var(--text-primary);
+        }
+        #entryTable tbody tr:hover td { background: var(--bg-tertiary); }
+        .action-cell { padding: 0; }
+        .action-cell .action-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            justify-content: center;
+            align-items: center;
+            padding: 12px 4px;
+        }
+        .icon-btn {
+            border: none;
+            border-radius: 30px;
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 16px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+        .icon-btn:hover { transform: scale(1.05); filter: brightness(1.05); }
+        .icon-btn.delete-btn { background: var(--danger); color: white; border-color: var(--danger); }
+        .icon-btn.edit-btn { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .icon-btn.copy-btn { background: var(--success); color: white; border-color: var(--success); }
+
+        /* Combobox */
+        .combobox-wrapper { position: relative; width: 100%; }
+        .combobox-input { width: 100%; }
+        .combobox-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: var(--card-shadow);
+            margin-top: 4px;
+        }
+        .combobox-suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 14px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .combobox-suggestion-item:last-child { border-bottom: none; }
+        .combobox-suggestion-item:hover, .combobox-suggestion-item.selected {
+            background: var(--accent-soft);
+            color: var(--accent-color);
+        }
+
+        /* Quill */
+        .ql-toolbar.ql-snow {
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            background: var(--bg-tertiary);
+            border-color: var(--border-color);
+        }
+        .ql-container.ql-snow {
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            border-color: var(--border-color);
+            font-family: inherit;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        .ql-editor {
+            min-height: 120px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: black !important;
+        }
+        body.dark-mode .ql-editor { color: white !important; }
+
+        /* Notification */
+        #notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--accent-color);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 999;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+        }
+        #notification.show { opacity: 1; }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .three-panels { flex-wrap: wrap; max-width: 100%; }
+            .history-panel, .left-panel, .right-panel {
+                flex: 1 1 auto;
+                width: 100%;
+                max-height: none;
+                position: static;
+                min-width: 500px;
+            }
+        }
+        @media (max-width: 900px) {
+            body { padding: 16px; }
+            .button-row button { min-width: 120px; }
+            h1 { font-size: 1.4rem; }
+            .history-panel, .left-panel, .right-panel { min-width: 100% !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── MAIN APP ─── -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem;">
+        <h1 style="margin:0;">💳 Credit Card · Support System</h1>
+        <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+    </div>
+
+    <div class="app-container">
+        <div class="main-content">
+
+            <!-- ─── CREDIT CARD TAB ─── -->
+            <div id="tab-creditcard" style="display:block;">
+                <div class="three-panels">
+                    <!-- History Panel -->
+                    <div class="history-panel">
+                        <div class="sidebar-header">
+                            <h3><i class="bi bi-credit-card-fill"></i> CREDIT CARD HISTORY</h3>
+                        </div>
+                        <div id="creditcardHistoryContent" class="history-content"></div>
+                    </div>
+
+                    <!-- Left Panel: Form -->
+                    <div class="left-panel">
+                        <h3>📋 CREDIT CARD TICKET FORM</h3>
+                        <table>
+                            <tr>
+                                <th><label for="creditcard-date">DATE</label></th>
+                                <td><input type="date" id="creditcard-date" /></td>
+                            </tr>
+                            <tr>
+                                <th><label for="creditcard-shift">SHIFT SCHEDULE</label></th>
+                                <td>
+                                    <select id="creditcard-shift">
+                                        <option value="">-- SELECT --</option>
+                                        <option value="9PM - 6AM">9PM - 6AM</option>
+                                        <option value="5AM - 2PM">5AM - 2PM</option>
+                                        <option value="2PM - 11PM">2PM - 11PM</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><label for="creditcard-support">SUPPORT NAME</label></th>
+                                <td><input type="text" id="creditcard-support" placeholder="Enter your name" /></td>
+                            </tr>
+                            <tr>
+                                <th><label for="creditcard-mid">MID *</label></th>
+                                <td><input type="text" id="creditcard-mid" class="required-field" /></td>
+                            </tr>
+                            <tr>
+                                <th><label for="creditcard-store">STORE NAME *</label></th>
+                                <td><input type="text" id="creditcard-store" class="required-field" /></td>
+                            </tr>
+                            <tr>
+                                <th><label for="creditcard-merchant">MERCHANT NAME</label></th>
+                                <td><input type="text" id="creditcard-merchant" /></td>
+                            </tr>
+                            <tr>
+                                <th><label for="creditcard-contactNumber">CONTACT #</label></th>
+                                <td><input type="text" id="creditcard-contactNumber" class="no-uppercase" maxlength="14" /></td>
+                            </tr>
+                            <tr>
+                                <th><label for="creditcard-issue">ISSUE</label></th>
+                                <td><textarea id="creditcard-issue" class="no-uppercase" rows="2"></textarea></td>
+                            </tr>
+                            <tr>
+                                <th><label for="creditcard-escalated">ESCALATED</label></th>
+                                <td><input type="text" id="creditcard-escalated" class="no-uppercase" /></td>
+                            </tr>
+                            <tr>
+                                <th><label for="creditcard-status">STATUS</label></th>
+                                <td>
+                                    <div class="combobox-wrapper">
+                                        <input type="text" id="creditcard-status-combobox" class="combobox-input no-uppercase" autocomplete="off" placeholder="Type or select status" />
+                                        <input type="hidden" id="creditcard-status" />
+                                        <div id="creditcard-status-suggestions" class="combobox-suggestions"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><label for="creditcard-remarks">REMARKS (Resolution)</label></th>
+                                <td>
+                                    <div id="creditcard-remarks-editor" style="height:200px;"></div>
+                                    <textarea id="creditcard-remarks" style="display:none;"></textarea>
+                                </td>
+                            </tr>
+                        </table>
+                        <div class="button-row">
+                            <button class="add" onclick="addEntry('creditcard')"><i class="bi bi-plus-circle-fill"></i> ADD ENTRY</button>
+                            <button class="form-clear-btn" onclick="clearFormOnly('creditcard')"><i class="bi bi-eraser-fill"></i> CLEAR FORM</button>
+                            <button class="clock" onclick="clock('IN', 'creditcard')"><i class="bi bi-hourglass-top"></i> CLOCK IN</button>
+                            <button class="clock" onclick="clock('OUT', 'creditcard')"><i class="bi bi-hourglass-bottom"></i> CLOCK OUT</button>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Preview -->
+                    <div class="right-panel" id="creditcard-previewPanel">
+                        <h3>🔍 PREVIEW</h3>
+                        <div><strong>MID:</strong> <span id="creditcard-preview-mid"></span></div>
+                        <div><strong>STORE:</strong> <span id="creditcard-preview-store"></span></div>
+                        <div><strong>MERCHANT:</strong> <span id="creditcard-preview-merchant"></span></div>
+                        <div><strong>CONTACT #:</strong> <span id="creditcard-preview-contactNumber"></span></div>
+                        <br />
+                        <div><strong>ISSUE:</strong></div>
+                        <div><span id="creditcard-preview-issue" class="preview-multiline"></span></div>
+                        <br />
+                        <div><strong>REMARKS:</strong></div>
+                        <div><span id="creditcard-preview-remarks" class="preview-multiline"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── BULK BAR ─── -->
+            <div class="bulk-bar">
+                <label><input type="checkbox" id="selectAllCheckbox" /> Select All</label>
+                <button id="bulkDeleteBtn" title="Remove selected rows"><i class="bi bi-trash-fill"></i> REMOVE</button>
+                <button id="bulkCopyBtn" title="Copy selected rows"><i class="bi bi-copy"></i> COPY</button>
+                <button class="counter-badge status-filter-btn" data-status="RESOLVED" onclick="filterByStatus('RESOLVED')">✅ RESOLVED: <span id="counterResolved">0</span></button>
+                <button class="counter-badge status-filter-btn" data-status="PENDING" onclick="filterByStatus('PENDING')">⏳ PENDING: <span id="counterPending">0</span></button>
+                <button class="counter-badge status-filter-btn" data-status="OTHER TASK" onclick="filterByStatus('OTHER TASK')">📋 OTHER TASK: <span id="counterOther">0</span></button>
+                <button id="clearAllBtn" class="clear-all-btn" title="Delete all entries permanently"><i class="bi bi-trash3-fill"></i> CLEAR ALL</button>
+            </div>
+
+            <!-- ─── MAIN TABLE ─── -->
+            <div style="overflow-x:auto;">
+                <table id="entryTable">
+                    <thead>
+                        <tr>
+                            <th style="width:30px;"></th>
+                            <th>DATE</th>
+                            <th>SHIFT</th>
+                            <th>SUPPORT</th>
+                            <th>MID</th>
+                            <th>STORE NAME</th>
+                            <th>MERCHANT NAME</th>
+                            <th>CONTACT #</th>
+                            <th>ISSUE</th>
+                            <th>ESCALATED</th>
+                            <th>STATUS</th>
+                            <th>REMARKS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── NOTIFICATION ─── -->
+    <div id="notification"></div>
+
+    <!-- ─── SCRIPTS ─── -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.min.js"></script>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ─── STATE ───
+            let allEntries = [];
+            let editId = null;
+            let currentStatusFilter = null;
+            let quillEditor = null;
+            let undoStack = [];
+            let redoStack = [];
+
+            const EDIT_STORAGE_KEY = 'editingEntryId_creditcard';
+            const EDIT_DRAFT_KEY = 'editingDraft_creditcard_';
+            const collapseState = { months: {}, dates: {} };
+            const STATUS_OPTIONS = ['RESOLVED', 'PENDING', 'OTHER TASK', 'UNSOLVED'];
+            const SHIFT_OPTIONS = ['9PM - 6AM', '5AM - 2PM', '2PM - 11PM'];
+            const CLOCK_TIMES = {
+                '9PM - 6AM': ['09:00 PM', '06:00 AM'],
+                '5AM - 2PM': ['05:00 AM', '02:00 PM'],
+                '2PM - 11PM': ['02:00 PM', '11:00 PM'],
+            };
+
+            // ─── HELPERS ───
+            function showNotification(msg) {
+                const el = document.getElementById('notification');
+                el.textContent = msg;
+                el.classList.add('show');
+                setTimeout(() => el.classList.remove('show'), 2000);
+            }
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
+            function escapeCSV(text) {
+                if (text.includes('\n') || text.includes('"')) {
+                    text = text.replace(/"/g, '""');
+                    return `"${text}"`;
+                }
+                return text;
+            }
+
+            function formatMultilinePreview(text) {
+                if (!text) return '';
+                const escaped = text.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
+                return escaped.replace(/\n/g, '<br>');
+            }
+
+            function parseDateFromString(dateStr) {
+                const parts = dateStr.split('/');
+                if (parts.length !== 3) return null;
+                const month = parseInt(parts[0], 10);
+                const day = parseInt(parts[1], 10);
+                const year = parseInt(parts[2], 10);
+                return new Date(year, month - 1, day);
+            }
+
+            function getESTDateString() {
+                const now = new Date();
+                const estDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+                return estDate.toISOString().slice(0, 10);
+            }
+
+            function storeGetFormattedDateMinusOne() {
+                const now = new Date();
+                const estDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+                const mm = String(estDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(estDate.getDate()).padStart(2, '0');
+                const yyyy = estDate.getFullYear();
+                return `${mm}/${dd}/${yyyy}`;
+            }
+
+            function isHtmlEmpty(html) {
+                if (!html) return true;
+                const div = document.createElement('div');
+                div.innerHTML = html;
+                const text = div.textContent || div.innerText || '';
+                return text.trim() === '';
+            }
+
+            function convertQuillLists(html) {
+                const div = document.createElement('div');
+                div.innerHTML = html;
+                div.querySelectorAll('ol').forEach(ol => {
+                    const children = [...ol.children];
+                    if (children.length > 0 && children.every(li => li.dataset.list === 'bullet')) {
+                        const ul = document.createElement('ul');
+                        children.forEach(li => {
+                            li.removeAttribute('data-list');
+                            li.className = li.className.replace(/ql-indent-\d+/g, '');
+                            ul.appendChild(li);
+                        });
+                        ol.replaceWith(ul);
+                    }
+                });
+                return div.innerHTML;
+            }
+
+            function autoGrow(textarea) {
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            }
+
+            function syncPreviewHeight() {
+                const leftPanel = document.querySelector('.left-panel');
+                const rightPanel = document.querySelector('.right-panel');
+                if (!leftPanel || !rightPanel) return;
+                rightPanel.style.maxHeight = leftPanel.offsetHeight + 'px';
+                rightPanel.style.overflowY = 'auto';
+            }
+
+            function cloneEntries(entries) { return JSON.parse(JSON.stringify(entries)); }
+
+            function pushUndo() {
+                undoStack.push(cloneEntries(allEntries));
+                redoStack = [];
+            }
+
+            // ─── CLOCK ───
+            window.clock = function(type, prefix) {
+                const shift = document.getElementById(`${prefix}-shift`).value;
+                if (!shift) { showNotification('Set SHIFT'); return; }
+                if (!CLOCK_TIMES[shift]) { showNotification('Invalid SHIFT'); return; }
+                const now = new Date();
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const dateStr = now.toLocaleDateString('en-US');
+                const dayName = days[now.getDay()];
+                const timeStr = CLOCK_TIMES[shift][type === 'IN' ? 0 : 1];
+                const output = `${dateStr} - ${dayName} Shift\nClock ${type} - ${timeStr}`;
+                navigator.clipboard.writeText(output).then(() => showNotification(`Clock ${type} copied!`));
+            };
+
+            // ─── UNDO / REDO ───
+            window.undo = function() {
+                if (undoStack.length === 0) { showNotification('Nothing to undo'); return; }
+                const previous = undoStack.pop();
+                redoStack.push(cloneEntries(allEntries));
+                allEntries = previous;
+                saveAllEntries();
+                renderTable();
+                renderSidebar();
+                showNotification('Undo successful');
+            };
+
+            window.redo = function() {
+                if (redoStack.length === 0) { showNotification('Nothing to redo'); return; }
+                const next = redoStack.pop();
+                undoStack.push(cloneEntries(allEntries));
+                allEntries = next;
+                saveAllEntries();
+                renderTable();
+                renderSidebar();
+                showNotification('Redo successful');
+            };
+
+            // ─── FORM DATA ───
+            function saveFormData(prefix) {
+                const fields = {
+                    creditcard: ['shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'remarks', 'date']
+                };
+                const formData = {};
+                fields[prefix].forEach(id => {
+                    const el = document.getElementById(`${prefix}-${id}`);
+                    if (el) formData[id] = el.value;
+                });
+                localStorage.setItem(`${prefix}FormData_creditcard`, JSON.stringify(formData));
+            }
+
+            function loadFormData(prefix) {
+                const saved = localStorage.getItem(`${prefix}FormData_creditcard`);
+                if (saved) {
+                    try {
+                        const formData = JSON.parse(saved);
+                        Object.keys(formData).forEach(id => {
+                            const el = document.getElementById(`${prefix}-${id}`);
+                            if (el && formData[id] !== undefined) {
+                                el.value = formData[id];
+                                if (el.tagName === 'TEXTAREA') autoGrow(el);
+                            }
+                        });
+                    } catch (e) {}
+                }
+                creditcardUpdatePreview();
+            }
+
+            // ─── ENTRIES ───
+            function saveAllEntries() {
+                localStorage.setItem('unifiedEntries_creditcard', JSON.stringify(allEntries));
+                updateStatusCounters();
+            }
+
+            function loadAllEntries() {
+                const saved = localStorage.getItem('unifiedEntries_creditcard');
+                if (saved) {
+                    try {
+                        allEntries = JSON.parse(saved);
+                        allEntries.forEach(entry => {
+                            if (entry.deleted === undefined) entry.deleted = false;
+                            if (entry.imported === undefined) entry.imported = false;
+                        });
+                    } catch (e) {}
+                }
+                renderTable();
+                renderSidebar();
+            }
+
+            // ─── PREVIEW ───
+            function creditcardUpdatePreview() {
+                document.getElementById('creditcard-preview-mid').textContent = document.getElementById('creditcard-mid').value || '';
+                document.getElementById('creditcard-preview-store').textContent = document.getElementById('creditcard-store').value || '';
+                document.getElementById('creditcard-preview-merchant').textContent = document.getElementById('creditcard-merchant').value || '';
+                document.getElementById('creditcard-preview-contactNumber').textContent = document.getElementById('creditcard-contactNumber').value || '';
+                document.getElementById('creditcard-preview-issue').innerHTML = formatMultilinePreview(document.getElementById('creditcard-issue').value);
+                const remarksHtml = document.getElementById('creditcard-remarks').value;
+                document.getElementById('creditcard-preview-remarks').innerHTML = !isHtmlEmpty(remarksHtml) ? convertQuillLists(remarksHtml) : '';
+                syncPreviewHeight();
+            }
+
+            // ─── ADD / EDIT / DELETE ───
+            window.addEntry = function(prefix) {
+                if (prefix !== 'creditcard') return;
+
+                const midEl = document.getElementById('creditcard-mid');
+                const storeEl = document.getElementById('creditcard-store');
+                let valid = true;
+                [midEl, storeEl].forEach(el => {
+                    el.classList.remove('invalid');
+                    if (!el.value.trim()) {
+                        el.classList.add('invalid');
+                        valid = false;
+                    }
+                });
+                if (!valid) {
+                    showNotification('Please fill MID and STORE NAME!');
+                    return;
+                }
+
+                pushUndo();
+
+                const dateStr = document.getElementById('creditcard-date').value;
+                const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US') : storeGetFormattedDateMinusOne();
+                const shift = document.getElementById('creditcard-shift').value;
+                const support = document.getElementById('creditcard-support').value.toUpperCase() || 'AGENT';
+                const mid = midEl.value.trim();
+                const store = storeEl.value.trim();
+                const merchant = document.getElementById('creditcard-merchant').value.trim();
+                const contactNumber = document.getElementById('creditcard-contactNumber').value.trim();
+                const issue = document.getElementById('creditcard-issue').value.trim();
+                const escalated = document.getElementById('creditcard-escalated').value.trim();
+                const status = document.getElementById('creditcard-status').value.trim();
+                const remarks = document.getElementById('creditcard-remarks').value;
+
+                const newEntry = {
+                    id: Date.now(),
+                    date: formattedDate,
+                    shift,
+                    support,
+                    mid,
+                    store,
+                    merchant,
+                    contactNumber,
+                    issue,
+                    escalated,
+                    status,
+                    remarks,
+                    source: 'creditcard',
+                    deleted: false,
+                    imported: false,
+                };
+
+                if (editId) {
+                    const index = allEntries.findIndex(e => e.id === editId && e.source === 'creditcard');
+                    if (index !== -1) {
+                        allEntries[index] = { ...allEntries[index], ...newEntry, id: editId };
+                        showNotification('Credit Card entry updated!');
+                        localStorage.removeItem(EDIT_DRAFT_KEY + editId);
+                        editId = null;
+                        localStorage.removeItem(EDIT_STORAGE_KEY);
+                        const addBtn = document.querySelector('#tab-creditcard .add');
+                        if (addBtn) {
+                            addBtn.textContent = 'ADD ENTRY';
+                            addBtn.classList.remove('editing');
+                        }
+                    } else {
+                        allEntries.unshift(newEntry);
+                        showNotification('Credit Card entry added (edit target missing)!');
+                        localStorage.removeItem(EDIT_DRAFT_KEY + editId);
+                        editId = null;
+                        localStorage.removeItem(EDIT_STORAGE_KEY);
+                        const addBtn = document.querySelector('#tab-creditcard .add');
+                        if (addBtn) {
+                            addBtn.textContent = 'ADD ENTRY';
+                            addBtn.classList.remove('editing');
+                        }
+                    }
+                } else {
+                    allEntries.unshift(newEntry);
+                    showNotification('Credit Card entry added!');
+                }
+
+                // Clear form
+                ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status'].forEach(id => {
+                    document.getElementById(`creditcard-${id}`).value = '';
+                });
+                if (quillEditor) {
+                    quillEditor.root.innerHTML = '';
+                    document.getElementById('creditcard-remarks').value = '';
+                }
+
+                saveAllEntries();
+                updateStatusCounters();
+                renderTable();
+                renderSidebar();
+                syncPreviewHeight();
+            };
+
+            function clearFormFields(prefix) {
+                if (prefix === 'creditcard') {
+                    const fields = ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status'];
+                    fields.forEach(id => {
+                        const el = document.getElementById(`creditcard-${id}`);
+                        if (el) el.value = '';
+                    });
+                    if (quillEditor) {
+                        quillEditor.root.innerHTML = '';
+                        document.getElementById('creditcard-remarks').value = '';
+                    }
+                }
+                creditcardUpdatePreview();
+                saveFormData(prefix);
+            }
+
+            window.clearFormOnly = function(prefix) {
+                if (editId) {
+                    localStorage.removeItem(EDIT_DRAFT_KEY + editId);
+                    editId = null;
+                    localStorage.removeItem(EDIT_STORAGE_KEY);
+                    document.querySelectorAll('.add').forEach(btn => {
+                        btn.textContent = 'ADD ENTRY';
+                        btn.classList.remove('editing');
+                    });
+                    showNotification('Edit cancelled. Form cleared.');
+                }
+                clearFormFields(prefix);
+                showNotification('Form cleared!');
+                syncPreviewHeight();
+            };
+
+            function populateFormFromEntry(entry) {
+                const dateParts = entry.date.split('/');
+                if (dateParts.length === 3) {
+                    const month = dateParts[0].padStart(2, '0');
+                    const day = dateParts[1].padStart(2, '0');
+                    const year = dateParts[2];
+                    document.getElementById('creditcard-date').value = `${year}-${month}-${day}`;
+                }
+                document.getElementById('creditcard-shift').value = entry.shift || '';
+                document.getElementById('creditcard-support').value = entry.support || '';
+                document.getElementById('creditcard-mid').value = entry.mid || '';
+                document.getElementById('creditcard-store').value = entry.store || '';
+                document.getElementById('creditcard-merchant').value = entry.merchant || '';
+                document.getElementById('creditcard-contactNumber').value = entry.contactNumber || '';
+                document.getElementById('creditcard-issue').value = entry.issue || '';
+                document.getElementById('creditcard-escalated').value = entry.escalated || '';
+                document.getElementById('creditcard-status').value = entry.status || '';
+                if (quillEditor && entry.remarks) {
+                    quillEditor.root.innerHTML = entry.remarks;
+                    document.getElementById('creditcard-remarks').value = entry.remarks;
+                }
+            }
+
+            function attachDraftAutoSave(entryId) {
+                const draftKey = EDIT_DRAFT_KEY + entryId;
+                const saveDraft = () => {
+                    if (!editId || editId !== entryId) return;
+                    const formData = {};
+                    const fields = ['shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'remarks', 'date'];
+                    fields.forEach(id => {
+                        const el = document.getElementById(`creditcard-${id}`);
+                        if (el) formData[id] = el.value;
+                    });
+                    if (quillEditor) {
+                        formData.remarks = quillEditor.root.innerHTML;
+                    }
+                    formData.id = entryId;
+                    localStorage.setItem(draftKey, JSON.stringify(formData));
+                };
+                const elements = document.querySelectorAll('#tab-creditcard input, #tab-creditcard textarea, #tab-creditcard select');
+                elements.forEach(el => {
+                    el.removeEventListener('input', saveDraft);
+                    el.addEventListener('input', saveDraft);
+                });
+                if (quillEditor) {
+                    quillEditor.off('text-change', saveDraft);
+                    quillEditor.on('text-change', saveDraft);
+                }
+                saveDraft();
+            }
+
+            window.editEntry = function(buttonOrId) {
+                let entryId, entry;
+                if (typeof buttonOrId === 'object' && buttonOrId !== null) {
+                    const id = buttonOrId.closest ? buttonOrId.closest('tr')?.dataset.id || buttonOrId.dataset.id : buttonOrId.dataset.id;
+                    if (!id) return;
+                    entryId = parseInt(id);
+                } else if (typeof buttonOrId === 'number') {
+                    entryId = buttonOrId;
+                } else {
+                    return;
+                }
+                entry = allEntries.find(e => e.id === entryId);
+                if (!entry || entry.source !== 'creditcard') return;
+
+                editId = entry.id;
+                localStorage.setItem(EDIT_STORAGE_KEY, editId);
+
+                const draftKey = EDIT_DRAFT_KEY + editId;
+                localStorage.removeItem(draftKey);
+
+                populateFormFromEntry(entry);
+                creditcardUpdatePreview();
+
+                const addBtn = document.querySelector('#tab-creditcard .add');
+                if (addBtn) {
+                    addBtn.textContent = 'EDIT ENTRY';
+                    addBtn.classList.add('editing');
+                }
+
+                if (entry.imported) {
+                    entry.imported = false;
+                    saveAllEntries();
+                }
+
+                attachDraftAutoSave(editId);
+
+                document.querySelectorAll('#tab-creditcard input, #tab-creditcard textarea, #tab-creditcard select').forEach(el => {
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                });
+                document.querySelectorAll('#tab-creditcard textarea').forEach(ta => autoGrow(ta));
+                syncPreviewHeight();
+            };
+
+            window.softDeleteEntry = function(button) {
+                const row = button.closest('tr');
+                const id = row.dataset.id;
+                pushUndo();
+                const entry = allEntries.find(e => e.id == id);
+                if (entry) {
+                    entry.deleted = true;
+                    saveAllEntries();
+                    renderTable();
+                    renderSidebar();
+                    showNotification('Entry removed from main table (still in history)');
+                    if (editId == id) {
+                        editId = null;
+                        localStorage.removeItem(EDIT_STORAGE_KEY);
+                        document.querySelectorAll('.add').forEach(btn => {
+                            btn.textContent = 'ADD ENTRY';
+                            btn.classList.remove('editing');
+                        });
+                    }
+                }
+            };
+
+            function hardDeleteEntry(entryId) {
+                const entry = allEntries.find(e => e.id == entryId);
+                if (!entry) { showNotification('Entry not found.'); return; }
+                if (confirm('Delete this entry permanently? This action cannot be undone.')) {
+                    pushUndo();
+                    const index = allEntries.findIndex(e => e.id == entryId);
+                    if (index !== -1) {
+                        allEntries.splice(index, 1);
+                        saveAllEntries();
+                        renderTable();
+                        renderSidebar();
+                        if (editId == entryId) {
+                            editId = null;
+                            localStorage.removeItem(EDIT_STORAGE_KEY);
+                            document.querySelectorAll('.add').forEach(btn => {
+                                btn.textContent = 'ADD ENTRY';
+                                btn.classList.remove('editing');
+                            });
+                        }
+                        showNotification('Entry permanently deleted.');
+                    }
+                }
+            }
+
+            function restoreEntry(entryId) {
+                const entry = allEntries.find(e => e.id == entryId);
+                if (!entry) { showNotification('Entry not found.'); return; }
+                if (!entry.deleted) { showNotification('Entry is already visible.'); return; }
+                pushUndo();
+                entry.deleted = false;
+                saveAllEntries();
+                renderTable();
+                renderSidebar();
+                showNotification('Entry restored to main table.');
+            }
+
+            window.copyRow = function(button) {
+                const tds = button.closest('tr').querySelectorAll('td');
+                const dataTds = [...tds].slice(1, -1);
+                const values = dataTds.map(td => escapeCSV(td.textContent || ''));
+                navigator.clipboard.writeText(values.join('\t')).then(() => showNotification('Row copied!'));
+            };
+
+            // ─── TABLE ───
+            function getVisibleEntries() {
+                const todayEST = getESTDateString();
+                let entries = allEntries.filter(entry => {
+                    if (entry.deleted) return false;
+                    const dateObj = parseDateFromString(entry.date);
+                    if (!dateObj) return false;
+                    const entryDateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+                    return entryDateStr <= todayEST && entry.source === 'creditcard';
+                });
+                if (currentStatusFilter) {
+                    entries = entries.filter(entry => (entry.status || '').toUpperCase() === currentStatusFilter);
+                }
+                return entries;
+            }
+
+            function renderTable() {
+                const visibleEntries = getVisibleEntries();
+                const tbody = document.querySelector('#entryTable tbody');
+                tbody.innerHTML = '';
+                visibleEntries.forEach(entry => {
+                    const row = document.createElement('tr');
+                    row.dataset.id = entry.id;
+                    row.innerHTML = `
+                        <td><input type="checkbox" class="row-checkbox" value="${entry.id}"></td>
+                        <td>${entry.date}</td>
+                        <td>${entry.shift}</td>
+                        <td>${entry.support}</td>
+                        <td>${entry.mid}</td>
+                        <td>${entry.store}</td>
+                        <td>${entry.merchant || ''}</td>
+                        <td>${entry.contactNumber}</td>
+                        <td style="white-space:pre-wrap;">${entry.issue || ''}</td>
+                        <td>${entry.escalated}</td>
+                        <td>${entry.status}</td>
+                        <td style="white-space:pre-wrap;">${entry.remarks || ''}</td>
+                        <td class="action-cell">
+                            <div class="action-container">
+                                <button class="icon-btn copy-btn" onclick="copyRow(this)" title="Copy"><i class="bi bi-clipboard-fill"></i></button>
+                                <button class="icon-btn edit-btn" onclick="editEntry(this)" title="Edit"><i class="bi bi-pencil-square"></i></button>
+                                <button class="icon-btn delete-btn" onclick="softDeleteEntry(this)" title="Remove"><i class="bi bi-trash3-fill"></i></button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                updateSelectAllCheckboxState();
+                updateStatusCounters();
+            }
+
+            function updateStatusCounters() {
+                const todayEST = getESTDateString();
+                const baseEntries = allEntries.filter(entry => {
+                    if (entry.deleted) return false;
+                    const dateObj = parseDateFromString(entry.date);
+                    if (!dateObj) return false;
+                    const entryDateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+                    return entryDateStr <= todayEST && entry.source === 'creditcard';
+                });
+                let resolved = 0, pending = 0, other = 0;
+                baseEntries.forEach(entry => {
+                    const status = (entry.status || '').toUpperCase();
+                    if (status === 'RESOLVED') resolved++;
+                    else if (status === 'PENDING') pending++;
+                    else if (status === 'OTHER TASK') other++;
+                });
+                document.getElementById('counterResolved').innerText = resolved;
+                document.getElementById('counterPending').innerText = pending;
+                document.getElementById('counterOther').innerText = other;
+            }
+
+            function updateSelectAllCheckboxState() {
+                const selectAllBar = document.getElementById('selectAllCheckbox');
+                const rowCheckboxes = document.querySelectorAll('#entryTable tbody .row-checkbox');
+                const allChecked = rowCheckboxes.length > 0 && Array.from(rowCheckboxes).every(cb => cb.checked);
+                selectAllBar.checked = allChecked;
+            }
+
+            function handleSelectAll(checkbox) {
+                const checked = checkbox.checked;
+                document.querySelectorAll('#entryTable tbody .row-checkbox').forEach(cb => cb.checked = checked);
+                updateSelectAllCheckboxState();
+            }
+
+            window.filterByStatus = function(status) {
+                if (currentStatusFilter === status) {
+                    currentStatusFilter = null;
+                } else {
+                    currentStatusFilter = status;
+                }
+                document.querySelectorAll('.status-filter-btn').forEach(btn => {
+                    if (btn.dataset.status === currentStatusFilter) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                renderTable();
+            };
+
+            // ─── CLEAR ALL ───
+            function clearAllEntries() {
+                if (!confirm('Delete ALL entries permanently? This cannot be undone.')) return;
+                pushUndo();
+                allEntries = [];
+                saveAllEntries();
+                renderTable();
+                renderSidebar();
+                showNotification('All entries cleared.');
+            }
+
+            // ─── SIDEBAR ───
+            function getYesterdayFormatted() {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                return yesterday.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            }
+
+            function renderSidebar() {
+                const container = document.getElementById('creditcardHistoryContent');
+                if (!container) return;
+
+                const now = new Date();
+                const currentMonthKey = `${now.toLocaleString('default', { month: 'long' })} ${now.getFullYear()}`;
+                const todayEST = getESTDateString();
+                const todayFormatted = new Date(todayEST).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+                const historyEntries = allEntries.filter(entry => !entry.imported && entry.source === 'creditcard');
+
+                const grouped = {};
+                historyEntries.forEach(entry => {
+                    if (!entry.date) return;
+                    const parts = entry.date.split('/');
+                    if (parts.length !== 3) return;
+                    const month = parseInt(parts[0], 10);
+                    const day = parseInt(parts[1], 10);
+                    const year = parseInt(parts[2], 10);
+                    const dateObj = new Date(year, month - 1, day);
+                    const monthKey = `${dateObj.toLocaleString('default', { month: 'long' })} ${year}`;
+                    const dateKey = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    if (!grouped[monthKey]) grouped[monthKey] = {};
+                    if (!grouped[monthKey][dateKey]) grouped[monthKey][dateKey] = [];
+                    grouped[monthKey][dateKey].push(entry);
+                });
+
+                const sortedMonths = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+
+                let html = '';
+                for (const month of sortedMonths) {
+                    if (collapseState.months[month] === undefined) {
+                        collapseState.months[month] = month !== currentMonthKey;
+                    }
+                    const isMonthCollapsed = collapseState.months[month];
+                    const monthArrow = isMonthCollapsed ? '▶' : '▼';
+                    html += `<div class="sidebar-group">
+                        <div class="month-header" onclick="toggleMonth('${month.replace(/'/g, "\\'")}')">
+                            <span class="month-arrow">${monthArrow}</span> ${month}
+                        </div>`;
+                    if (!isMonthCollapsed) {
+                        const dates = grouped[month];
+                        const sortedDates = Object.keys(dates).sort((a, b) => new Date(b) - new Date(a));
+                        for (const dateKey of sortedDates) {
+                            if (collapseState.dates[dateKey] === undefined) {
+                                collapseState.dates[dateKey] = dateKey !== todayFormatted;
+                            }
+                            const isDateCollapsed = collapseState.dates[dateKey];
+                            const dateArrow = isDateCollapsed ? '▶' : '▼';
+                            html += `<div class="date-group">
+                                <div class="date-header" onclick="toggleDate('${dateKey.replace(/'/g, "\\'")}')">
+                                    <span class="date-arrow">${dateArrow}</span> ${dateKey}
+                                </div>`;
+                            if (!isDateCollapsed) {
+                                html += `<div class="date-entries">`;
+                                for (const entry of dates[dateKey]) {
+                                    let issueDisplay = (entry.issue || '-').toUpperCase();
+                                    if (entry.status && entry.status.toUpperCase() === 'OTHER TASK') {
+                                        issueDisplay = 'OTHER TASK';
+                                    }
+                                    let issueTextColor = '';
+                                    switch ((entry.status || '').toUpperCase()) {
+                                        case 'RESOLVED': issueTextColor = '#11734b'; break;
+                                        case 'PENDING': issueTextColor = '#b10202'; break;
+                                        case 'OTHER TASK': issueTextColor = '#1a6d9f'; break;
+                                        default: issueTextColor = '';
+                                    }
+                                    const styleIssue = issueTextColor ? `style="color:${issueTextColor};"` : '';
+                                    html += `
+                                        <div class="sidebar-card" data-id="${entry.id}">
+                                            <div class="preview-item issue-item" ${styleIssue}>${escapeHtml(issueDisplay)}</div>
+                                            <div class="preview-item"><strong>MID:</strong> ${escapeHtml(entry.mid || '-')}</div>
+                                            <div class="preview-item"><strong>Store:</strong> ${escapeHtml(entry.store || '-')}</div>
+                                            <div class="preview-item"><strong>Merchant:</strong> ${escapeHtml(entry.merchant || '-')}</div>
+                                            <div class="card-actions">
+                                                <div class="card-actions-row stack-row">
+                                                    <button class="copy-store" data-id="${entry.id}">📋 DETAILS</button>
+                                                    <button class="copy-details" data-id="${entry.id}">📋 HRMS</button>
+                                                </div>
+                                                <div class="card-actions-row">
+                                                    <button class="edit-entry stack-btn" data-id="${entry.id}">✏️<br>EDIT</button>
+                                                    <button class="return-entry stack-btn" data-id="${entry.id}">↩️<br>RETURN</button>
+                                                    <button class="delete-entry stack-btn" data-id="${entry.id}">🗑️<br>DELETE</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                                html += `</div>`;
+                            }
+                            html += `</div>`;
+                        }
+                    }
+                    html += `</div>`;
+                }
+
+                if (historyEntries.length === 0) {
+                    html = '<div style="padding:20px; text-align:center; color:#64748b;">No entries yet.</div>';
+                }
+
+                container.innerHTML = html;
+                attachSidebarEvents(container);
+            }
+
+            function saveCollapseState() {
+                localStorage.setItem('sidebarCollapseState_creditcard', JSON.stringify({ months: collapseState.months, dates: collapseState.dates }));
+            }
+
+            window.toggleMonth = function(monthKey) {
+                collapseState.months[monthKey] = !collapseState.months[monthKey];
+                saveCollapseState();
+                renderSidebar();
+            };
+
+            window.toggleDate = function(dateKey) {
+                collapseState.dates[dateKey] = !collapseState.dates[dateKey];
+                saveCollapseState();
+                renderSidebar();
+            };
+
+            function attachSidebarEvents(container) {
+                container.querySelectorAll('.copy-store').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const id = btn.dataset.id;
+                        const entry = allEntries.find(e => e.id == id);
+                        if (entry) {
+                            const plainText =
+                                `MID: ${entry.mid}\nSTORE NAME: ${entry.store}\nMERCHANT: ${entry.merchant || ''}\nCONTACT #: ${entry.contactNumber}\n\nISSUE:\n${entry.issue || ''}`;
+                            const htmlContent =
+                                `<strong>MID: </strong>${escapeHtml(entry.mid)}<br><strong>STORE NAME: </strong>${escapeHtml(entry.store)}<br><strong>MERCHANT: </strong>${escapeHtml(entry.merchant || '')}<br><strong>CONTACT #: </strong>${escapeHtml(entry.contactNumber)}<br><br><strong>ISSUE:</strong><br>${escapeHtml(entry.issue || '').replace(/\n/g, '<br>')}`;
+                            try {
+                                const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+                                const blobPlain = new Blob([plainText], { type: 'text/plain' });
+                                await navigator.clipboard.write([
+                                    new ClipboardItem({ 'text/plain': blobPlain, 'text/html': blobHtml })
+                                ]);
+                                showNotification('Details copied (rich format)');
+                            } catch (err) {
+                                navigator.clipboard.writeText(plainText);
+                                showNotification('Details copied (plain text)');
+                            }
+                        }
+                    });
+                });
+
+                container.querySelectorAll('.copy-details').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const id = btn.dataset.id;
+                        const entry = allEntries.find(e => e.id == id);
+                        if (entry) {
+                            const plainText = `📞 CONTACT:\nCALLER NAME: ${entry.merchant || ''}\nCONTACT NUMBER: ${entry.contactNumber}\n\n🔧 ISSUE:\n${entry.issue || ''}\n\n✅ RESOLUTION:\n${entry.remarks || ''}`;
+                            const htmlContent =
+                                `<strong>📞 CONTACT: </strong><br><strong>MERCHANT: </strong> ${escapeHtml(entry.merchant || '')}<br><strong>CONTACT NUMBER: </strong> ${escapeHtml(entry.contactNumber)}<br><br><strong>🔧 ISSUE: </strong><br>${escapeHtml(entry.issue || '').replace(/\n/g, '<br>')}<br><br><strong>✅ RESOLUTION: </strong><br>${escapeHtml(entry.remarks || '').replace(/\n/g, '<br>')}`;
+                            try {
+                                const blob = new Blob([htmlContent], { type: 'text/html' });
+                                const plainBlob = new Blob([plainText], { type: 'text/plain' });
+                                await navigator.clipboard.write([
+                                    new ClipboardItem({ 'text/plain': plainBlob, 'text/html': blob })
+                                ]);
+                                showNotification('HRMS details copied (rich format)');
+                            } catch (err) {
+                                navigator.clipboard.writeText(plainText);
+                                showNotification('HRMS details copied (plain text)');
+                            }
+                        }
+                    });
+                });
+
+                container.querySelectorAll('.edit-entry').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = parseInt(btn.dataset.id);
+                        window.editEntry(id);
+                    });
+                });
+
+                container.querySelectorAll('.return-entry').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = btn.dataset.id;
+                        restoreEntry(Number(id));
+                    });
+                });
+
+                container.querySelectorAll('.delete-entry').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = btn.dataset.id;
+                        hardDeleteEntry(Number(id));
+                    });
+                });
+            }
+
+            // ─── BULK OPERATIONS ───
+            function getSelectedRowIds() {
+                const checkboxes = document.querySelectorAll('#entryTable tbody .row-checkbox:checked');
+                return Array.from(checkboxes).map(cb => cb.value);
+            }
+
+            function bulkDelete() {
+                const ids = getSelectedRowIds();
+                if (ids.length === 0) { showNotification('No rows selected'); return; }
+                if (!confirm(`Remove ${ids.length} selected entries?`)) return;
+                pushUndo();
+                ids.forEach(id => {
+                    const entry = allEntries.find(e => e.id == id);
+                    if (entry) entry.deleted = true;
+                });
+                saveAllEntries();
+                renderTable();
+                renderSidebar();
+                showNotification(`${ids.length} entries removed.`);
+            }
+
+            function bulkCopy() {
+                const ids = getSelectedRowIds();
+                if (ids.length === 0) { showNotification('No rows selected'); return; }
+                const selectedRows = allEntries.filter(entry => ids.includes(entry.id.toString()));
+                selectedRows.reverse();
+                const rows = selectedRows.map(entry =>
+                    [entry.date, entry.shift, entry.support, entry.mid, entry.store, entry.merchant || '', entry.contactNumber, entry.issue || '', entry.escalated || '', entry.status || '', entry.remarks || '']
+                    .map(f => escapeCSV(String(f ?? ''))).join('\t')
+                );
+                navigator.clipboard.writeText(rows.join('\n')).then(() => showNotification(`Copied ${rows.length} rows`));
+            }
+
+            // ─── COMBOBOX ───
+            function initCombobox(comboboxId, hiddenId, optionsArray, suggestionsId, onSelectCallback) {
+                const input = document.getElementById(comboboxId);
+                const hidden = document.getElementById(hiddenId);
+                const suggestionsDiv = document.getElementById(suggestionsId);
+                if (!input || !hidden || !suggestionsDiv) return;
+                let currentFocus = -1;
+                let currentOptions = [];
+                let ignoreNextRender = false;
+
+                function renderSuggestions(filterText) {
+                    if (ignoreNextRender) return;
+                    const filter = filterText.trim().toLowerCase();
+                    currentOptions = filter === '' ? [...optionsArray] : optionsArray.filter(opt => opt.toLowerCase().includes(filter));
+                    suggestionsDiv.innerHTML = '';
+                    if (currentOptions.length === 0) { suggestionsDiv.style.display = 'none'; return; }
+                    currentOptions.forEach((opt, idx) => {
+                        const div = document.createElement('div');
+                        div.className = 'combobox-suggestion-item';
+                        div.textContent = opt;
+                        div.setAttribute('data-value', opt);
+                        div.addEventListener('click', (e) => { e.stopPropagation();
+                            selectOption(opt); });
+                        div.addEventListener('mouseenter', () => { setFocus(idx); });
+                        suggestionsDiv.appendChild(div);
+                    });
+                    suggestionsDiv.style.display = 'block';
+                    currentFocus = -1;
+                }
+
+                function selectOption(value) {
+                    input.value = value;
+                    hidden.value = value;
+                    suggestionsDiv.style.display = 'none';
+                    ignoreNextRender = true;
+                    if (onSelectCallback) onSelectCallback(value);
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    setTimeout(() => { ignoreNextRender = false; }, 100);
+                }
+
+                function setFocus(index) {
+                    const items = suggestionsDiv.querySelectorAll('.combobox-suggestion-item');
+                    items.forEach((item, i) => {
+                        if (i === index) item.classList.add('selected');
+                        else item.classList.remove('selected');
+                    });
+                    currentFocus = index;
+                    if (index >= 0 && items[index]) items[index].scrollIntoView({ block: 'nearest' });
+                }
+
+                input.addEventListener('input', (e) => {
+                    if (input._skipNextInput) { delete input._skipNextInput; return; }
+                    if (ignoreNextRender) return;
+                    const val = e.target.value;
+                    hidden.value = val;
+                    renderSuggestions(val);
+                    if (onSelectCallback) onSelectCallback(val);
+                });
+
+                input.addEventListener('focus', () => {
+                    if (ignoreNextRender) return;
+                    renderSuggestions(input.value);
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    const items = suggestionsDiv.querySelectorAll('.combobox-suggestion-item');
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (currentFocus < items.length - 1) setFocus(currentFocus + 1);
+                        else if (items.length > 0) setFocus(0);
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (currentFocus > 0) setFocus(currentFocus - 1);
+                        else if (items.length > 0) setFocus(items.length - 1);
+                    } else if (e.key === 'Enter' && currentFocus >= 0 && items[currentFocus]) {
+                        e.preventDefault();
+                        selectOption(items[currentFocus].textContent);
+                    } else if (e.key === 'Escape') {
+                        suggestionsDiv.style.display = 'none';
+                    }
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!input.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                        suggestionsDiv.style.display = 'none';
+                        ignoreNextRender = false;
+                    }
+                });
+
+                if (hidden.value) input.value = hidden.value;
+            }
+
+            // ─── THEME ───
+            function initTheme() {
+                const savedTheme = localStorage.getItem('theme_creditcard');
+                if (savedTheme === 'dark') {
+                    document.body.classList.add('dark-mode');
+                    document.getElementById('themeToggle').textContent = '☀️';
+                } else {
+                    document.body.classList.remove('dark-mode');
+                    document.getElementById('themeToggle').textContent = '🌙';
+                }
+            }
+
+            function toggleTheme() {
+                const isDark = document.body.classList.toggle('dark-mode');
+                localStorage.setItem('theme_creditcard', isDark ? 'dark' : 'light');
+                document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
+                syncPreviewHeight();
+            }
+
+            // ─── INIT ───
+            function init() {
+                // Set date
+                const todayEST = getESTDateString();
+                document.getElementById('creditcard-date').value = todayEST;
+
+                // Load saved collapse state
+                const savedCollapse = localStorage.getItem('sidebarCollapseState_creditcard');
+                if (savedCollapse) {
+                    try {
+                        const parsed = JSON.parse(savedCollapse);
+                        collapseState.months = parsed.months || {};
+                        collapseState.dates = parsed.dates || {};
+                    } catch (e) {}
+                }
+
+                // Load form data
+                loadFormData('creditcard');
+
+                // Load entries
+                loadAllEntries();
+
+                // Restore edit mode
+                const storedEditId = localStorage.getItem(EDIT_STORAGE_KEY);
+                if (storedEditId) {
+                    const id = parseInt(storedEditId);
+                    const entryToEdit = allEntries.find(e => e.id === id && !e.deleted);
+                    if (entryToEdit) {
+                        setTimeout(() => { window.editEntry(id); }, 100);
+                    } else {
+                        localStorage.removeItem(EDIT_STORAGE_KEY);
+                        localStorage.removeItem(EDIT_DRAFT_KEY + id);
+                    }
+                }
+
+                // Archive old entries
+                archiveOldEntries();
+                saveAllEntries();
+
+                // Theme
+                initTheme();
+                document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+                // Clear All button
+                document.getElementById('clearAllBtn').addEventListener('click', clearAllEntries);
+
+                // Bulk actions
+                document.getElementById('bulkDeleteBtn').addEventListener('click', bulkDelete);
+                document.getElementById('bulkCopyBtn').addEventListener('click', bulkCopy);
+                document.getElementById('selectAllCheckbox').addEventListener('change', (e) => handleSelectAll(e.target));
+                document.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('row-checkbox')) {
+                        updateSelectAllCheckboxState();
+                    }
+                });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 'z') { e.preventDefault(); window.undo(); }
+                    if (e.ctrlKey && e.key === 'y') { e.preventDefault(); window.redo(); }
+                });
+
+                // Form input listeners
+                const fields = ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status'];
+                fields.forEach(id => {
+                    const el = document.getElementById(`creditcard-${id}`);
+                    if (el) {
+                        el.addEventListener('input', () => {
+                            creditcardUpdatePreview();
+                            saveFormData('creditcard');
+                        });
+                    }
+                });
+                document.getElementById('creditcard-shift').addEventListener('change', () => saveFormData('creditcard'));
+
+                // ─── Contact number formatting ───
+                const creditcardContactNumber = document.getElementById('creditcard-contactNumber');
+                if (creditcardContactNumber) {
+                    creditcardContactNumber.addEventListener('input', function() {
+                        let digits = this.value.replace(/\D/g, '');
+                        if (digits.length > 10) digits = digits.slice(0, 10);
+                        let formatted = '';
+                        if (digits.length > 0) {
+                            if (digits.length <= 3) formatted = `(${digits}`;
+                            else if (digits.length <= 6) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+                            else formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+                        }
+                        this.value = formatted;
+                        saveFormData('creditcard');
+                        creditcardUpdatePreview();
+                    });
+                    creditcardContactNumber.addEventListener('blur', function() {
+                        let digits = this.value.replace(/\D/g, '');
+                        if (digits.length > 0 && digits.length < 10) {
+                            digits = digits.padStart(10, '0');
+                            let formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+                            this.value = formatted;
+                            saveFormData('creditcard');
+                            creditcardUpdatePreview();
+                        }
+                    });
+                }
+
+                // ─── Quill Editor ───
+                quillEditor = new Quill('#creditcard-remarks-editor', {
+                    theme: 'snow',
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ list: 'ordered' }, { list: 'bullet' }],
+                            ['clean']
+                        ]
+                    },
+                });
+
+                if (quillEditor && document.getElementById('creditcard-remarks').value) {
+                    quillEditor.root.innerHTML = document.getElementById('creditcard-remarks').value;
+                }
+
+                quillEditor.root.addEventListener('input', function() {
+                    const htmlContent = quillEditor.root.innerHTML;
+                    document.getElementById('creditcard-remarks').value = htmlContent;
+                    creditcardUpdatePreview();
+                    saveFormData('creditcard');
+                });
+
+                // ─── Status Combobox ───
+                initCombobox('creditcard-status-combobox', 'creditcard-status', STATUS_OPTIONS, 'creditcard-status-suggestions', () => {
+                    creditcardUpdatePreview();
+                    saveFormData('creditcard');
+                });
+
+                // ─── Window resize ───
+                window.addEventListener('resize', syncPreviewHeight);
+
+                // ─── Auto-archive old entries ───
+                function archiveOldEntries() {
+                    const today = getESTDateString();
+                    allEntries.forEach(entry => {
+                        if (entry.deleted) return;
+                        const dateObj = parseDateFromString(entry.date);
+                        if (!dateObj) return;
+                        const yyyy = dateObj.getFullYear();
+                        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+                        const dd = String(dateObj.getDate()).padStart(2, '0');
+                        const entryDate = `${yyyy}-${mm}-${dd}`;
+                        if (entryDate < today) {
+                            entry.deleted = true;
+                        }
+                    });
+                }
+
+                function checkAndRefreshTable() {
+                    const todayEST = getESTDateString();
+                    const storedDate = localStorage.getItem('lastClearDate_creditcard');
+                    if (storedDate !== todayEST) {
+                        archiveOldEntries();
+                        saveAllEntries();
+                        renderTable();
+                        renderSidebar();
+                        showNotification('New day detected. Previous entries moved to history.');
+                        setTimeout(() => { window.location.reload(); }, 2000);
+                        localStorage.setItem('lastClearDate_creditcard', todayEST);
+                    }
+                }
+                if (!localStorage.getItem('lastClearDate_creditcard')) {
+                    localStorage.setItem('lastClearDate_creditcard', getESTDateString());
+                }
+                setInterval(checkAndRefreshTable, 60000);
+
+                // ─── Idle reload ───
+                const IDLE_REFRESH_DELAY = 900000;
+                let idleTimeout;
+                function idleReload() { window.location.reload(); }
+                function resetIdleTimer() { if (idleTimeout) clearTimeout(idleTimeout);
+                    idleTimeout = setTimeout(idleReload, IDLE_REFRESH_DELAY); }
+                ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click', 'focusin', 'input'].forEach(eventName => {
+                    window.addEventListener(eventName, resetIdleTimer, { passive: true });
+                });
+                resetIdleTimer();
+
+                // ─── Counter refresh ───
+                setInterval(() => { updateStatusCounters(); }, 30000);
+
+                // ─── Save drafts before unload ───
+                window.addEventListener('beforeunload', () => {
+                    saveFormData('creditcard');
+                    if (editId) {
+                        attachDraftAutoSave(editId);
+                    }
+                });
+
+                // ─── Initial preview ───
+                creditcardUpdatePreview();
+                syncPreviewHeight();
+            }
+
+            document.addEventListener('DOMContentLoaded', init);
+        })();
+    </script>
+</body>
+</html>
