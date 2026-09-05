@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { initCreditcardApp } from './creditcardController';
 import teamPhoto from './group-photo.jpeg';
+import teamBanner from './groupcc.jpeg';
 
 // ✅ GLOBAL DATA
 const BREAK_SCHEDULE = {
@@ -965,6 +966,12 @@ export default function App() {
           onOpenBreakSchedule={() => setShowBreakSchedule(true)} 
         />
         <main className="main-area">
+          <div
+            className="app-banner"
+            style={{ backgroundImage: `url(${teamBanner})` }}
+            role="img"
+            aria-label="Credit Card support team"
+          ></div>
           <Header />
           <DashboardGrid />
           <Tabs />
