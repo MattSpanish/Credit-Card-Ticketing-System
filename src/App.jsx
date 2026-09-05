@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { initCreditcardApp } from './creditcardController';
+import teamPhoto from './group-photo.jpeg';
 
 // ✅ GLOBAL DATA
 const BREAK_SCHEDULE = {
@@ -94,7 +95,7 @@ function TidTemplatesModal({ onClose }) {
       <div className="break-modal-content" style={{ padding: '24px' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '20px' }}>
           <h3 className="modal-title">Select a TID Template</h3>
-          <button onClick={onClose} className="break-close-btn">✖</button>
+          <button onClick={onClose} className="break-close-btn" aria-label="Close TID templates" title="Close"><i className="bi bi-x-lg" aria-hidden="true"></i></button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
           {Object.keys(TID_TEMPLATES).map((device) => (
@@ -124,19 +125,19 @@ function BreakScheduleModal({ onClose }) {
       <div className="break-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="break-modal-header">
           <div>
-            <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.5rem' }}>
-              ☕ Break Schedule
+            <h2 className="modal-title modal-title-row">
+              <i className="bi bi-cup-hot" aria-hidden="true"></i> Break Schedule
             </h2>
             <p className="modal-subtitle">
               9:00 PM - 6:00 AM Shift
             </p>
           </div>
-          <button onClick={onClose} className="break-close-btn" aria-label="Close">✖</button>
+          <button onClick={onClose} className="break-close-btn icon-close" aria-label="Close break schedule" title="Close"><i className="bi bi-x-lg" aria-hidden="true"></i></button>
         </div>
         
         <div style={{ padding: '24px' }}>
           <div className="info-box">
-            <span style={{ fontSize: '18px' }}>💡</span>
+            <i className="bi bi-lightbulb info-box-icon" aria-hidden="true"></i>
             <span>Regarding the short break you can use it anytime. If you have any concern just let us know. Thank you!</span>
           </div>
 
@@ -211,19 +212,19 @@ function Sidebar({ onOpenTemplates, onOpenBreakSchedule }) {
       <div className="sidebar-top">
         <div className="logo">CC Tickets</div>
         <div className="sidebar-actions">
-          <button className="theme-toggle" onClick={toggleTheme}>🌙</button>
+          <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle dark mode" title="Toggle theme"><i className="bi bi-moon-stars-fill" aria-hidden="true"></i></button>
           {isMobileView && (
-            <button className="sidebar-toggle" onClick={() => setIsMobileNavOpen((prev) => !prev)}>☰</button>
+            <button className="sidebar-toggle" onClick={() => setIsMobileNavOpen((prev) => !prev)} aria-label="Toggle navigation" title="Toggle navigation"><i className="bi bi-list" aria-hidden="true"></i></button>
           )}
         </div>
       </div>
-      <nav className={`nav-list ${isMobileView && !isMobileNavOpen ? 'nav-list-collapsed' : 'nav-list-open'}`}>
-        <button className="nav-item active" onClick={() => handleNavAction(() => window.switchToTab && window.switchToTab('creditcard'))}>Dashboard</button>
-        <button className="nav-item" onClick={() => handleNavAction(() => window.createNewTicket && window.createNewTicket())}>New Ticket</button>
-        <button className="nav-item" onClick={() => handleNavAction(() => window.switchToTab && window.switchToTab('creditcard'))}>Tickets</button>
-        
-        <button className="nav-item" onClick={() => handleNavAction(onOpenTemplates)}>📋 TID Templates</button>
-        <button className="nav-item" onClick={() => handleNavAction(onOpenBreakSchedule)}>☕ Break Schedule</button>
+      <nav className={`nav-list ${isMobileView && !isMobileNavOpen ? 'nav-list-collapsed' : 'nav-list-open'}`} aria-label="Primary">
+        <button className="nav-item active" onClick={() => handleNavAction(() => window.switchToTab && window.switchToTab('creditcard'))} aria-current="page"><i className="bi bi-speedometer2 me-2" aria-hidden="true"></i>Dashboard</button>
+        <button className="nav-item" onClick={() => handleNavAction(() => window.createNewTicket && window.createNewTicket())}><i className="bi bi-plus-circle me-2" aria-hidden="true"></i>New Ticket</button>
+        <button className="nav-item" onClick={() => handleNavAction(() => window.switchToTab && window.switchToTab('creditcard'))}><i className="bi bi-card-list me-2" aria-hidden="true"></i>Tickets</button>
+
+        <button className="nav-item" onClick={() => handleNavAction(onOpenTemplates)}><i className="bi bi-clipboard-data me-2" aria-hidden="true"></i>TID Templates</button>
+        <button className="nav-item" onClick={() => handleNavAction(onOpenBreakSchedule)}><i className="bi bi-cup-hot me-2" aria-hidden="true"></i>Break Schedule</button>
       </nav>
       
       <div className="sidebar-foot" style={{ marginTop: 'auto' }}>Logged in as <strong>Support</strong></div>
@@ -252,39 +253,33 @@ function Sidebar({ onOpenTemplates, onOpenBreakSchedule }) {
 
 function Header() {
   return (
-    <>
-      {/* 1. ORIGINAL HEADER: Title sa kaliwa, Search bar sa kanan */}
-      <header className="app-header">
-        <div className="header-left">
-          <h1>Credit Card Support Center</h1>
-          <p className="small">Capture issues quickly and resolve faster.</p>
-        </div>
-        <div className="header-actions">
-          <input 
-            className="header-search" 
-            placeholder="Search tickets, stores, MID..." 
+    <header className="app-header">
+      <div className="header-left">
+        <h1>Credit Card Support Center</h1>
+        <p className="small">Capture issues quickly and resolve faster.</p>
+      </div>
+      <div className="header-actions">
+        <div className="header-search-wrap">
+          <i className="bi bi-search header-search-icon" aria-hidden="true"></i>
+          <input
+            className="header-search"
+            placeholder="Search tickets, stores, MID..."
+            aria-label="Search tickets, stores, or MID"
             onChange={(e) => window.handleGlobalSearch && window.handleGlobalSearch(e.target.value)}
           />
+          <span className="header-search-kbd" aria-hidden="true">⌘K</span>
         </div>
-      </header>
-
-      {/* 2. HIWALAY NA DIV PARA SA PICTURE (CROPPED ANG TAAS AT BABA) */}
-      <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-        <img 
-          src="https://lh3.googleusercontent.com/d/1bNuogEEjtyWMvy5vSu_pNHiji2T2vrTJ" 
-          alt="Support Team" 
-          style={{ 
-            width: '1000px', 
-            height: '325px', /* ✅ PINA-LIIT ANG HEIGHT PARA PUMUTOL SA TAAS AT BABA */
-            borderRadius: '8px', 
-            objectFit: 'cover', 
-            objectPosition: 'center', /* ✅ NAKA-GITNA PARA PANTAY ANG PUTOL */
-            border: '2px solid var(--border-color)',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-          }} 
-        />
+        <button
+          className="team-chip"
+          onClick={() => window.openTeamPhoto && window.openTeamPhoto()}
+          title="View team photo"
+          type="button"
+        >
+          <span className="team-chip-avatar" aria-hidden="true">CC</span>
+          <span className="team-chip-label">Team</span>
+        </button>
       </div>
-    </>
+    </header>
   );
 }
 // ==========================================
@@ -393,36 +388,43 @@ function DashboardGrid() {
 
   return (
     <section className="dashboard-grid compact" aria-label="Ticket dashboard summary">
-      <div className="stat-card accent">
-        <div className="stat-label">Total</div>
+      <div className="stat-card hero">
+        <div className="stat-label">Total tickets today</div>
         <div className="stat-value" id="dashboardTotalTickets">0</div>
-      </div>
-      
-      <div className="stat-card success">
-        <div className="stat-label">Resolved</div>
-        <div className="stat-value" id="dashboardResolvedTickets">0</div>
-      </div>
-      <div className="stat-card warning">
-        <div className="stat-label">Pending</div>
-        <div className="stat-value" id="dashboardPendingTickets">0</div>
+        <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,18 12,14 24,16 36,8 48,12 60,5 72,9 84,3 100,7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
 
-      <div className="stat-card" style={{ borderLeft: '4px solid var(--accent-color, #8b5cf6)', display: 'flex', flexDirection: 'column' }}>
-        <div className="stat-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span>1 Hr Break</span>
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'none', letterSpacing: 'normal' }}>
+      <div className="stat-card success">
+        <div className="stat-label"><i className="bi bi-check-circle-fill" aria-hidden="true"></i> Resolved</div>
+        <div className="stat-value" id="dashboardResolvedTickets">0</div>
+        <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,16 12,12 24,14 36,10 48,12 60,7 72,9 84,4 100,6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      <div className="stat-card warning">
+        <div className="stat-label"><i className="bi bi-hourglass-split" aria-hidden="true"></i> Pending</div>
+        <div className="stat-value" id="dashboardPendingTickets">0</div>
+        <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,20 12,18 24,16 36,14 48,16 60,12 72,14 84,10 100,12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      <div className="stat-card violet stat-card-break">
+        <div className="stat-label stat-label-row">
+          <div className="stat-label-stack">
+            <span><i className="bi bi-cup-hot" aria-hidden="true"></i> 1 Hr Break</span>
+            <span className="stat-label-sub">
               {currentDayName}, {currentDateString}
             </span>
           </div>
-          <select 
-            value={selectedPerson} 
+          <select
+            value={selectedPerson}
             onChange={handlePersonChange}
-            style={{ 
-              fontSize: '10px', padding: '2px 4px', height: 'auto', width: 'auto', 
-              background: 'transparent', border: '1px solid var(--border-color)', 
-              borderRadius: '4px', color: 'var(--text-secondary)' 
-            }}
+            className="break-name-select"
+            aria-label="Select your name"
           >
             <option value="">-- Name --</option>
             <option value="HANZ">HANZ</option>
@@ -443,8 +445,8 @@ function DashboardGrid() {
             <option value="ERNEST">EJ</option>
           </select>
         </div>
-        <div className="stat-value" style={{ fontSize: '1.25rem', marginTop: '12px', color: 'var(--accent-color, #8b5cf6)', whiteSpace: 'nowrap' }}>
-          {selectedPerson ? todayBreak : 'Select name ☝️'}
+        <div className="stat-value stat-value-break">
+          {selectedPerson ? todayBreak : (<>Select name <i className="bi bi-hand-index stat-select-arrow" aria-hidden="true"></i></>)}
         </div>
       </div>
     </section>
@@ -511,15 +513,16 @@ function LeftPanel() {
           </tr>
           {/* ✅ SEARCH STORE FIELD */}
           <tr>
-            <th><label htmlFor="creditcard-store-search">🔍 SEARCH STORE</label></th>
+            <th><label htmlFor="creditcard-store-search"><i className="bi bi-search" aria-hidden="true"></i> SEARCH STORE</label></th>
             <td>
               <div className="combobox-wrapper" style={{ position: 'relative' }}>
-                <input 
-                  type="text" 
-                  id="creditcard-store-search" 
-                  className="combobox-input no-uppercase" 
-                  placeholder="Type Store Name or MID..." 
-                  autoComplete="off" 
+                <input
+                  type="text"
+                  id="creditcard-store-search"
+                  className="combobox-input no-uppercase"
+                  placeholder="Type Store Name or MID..."
+                  autoComplete="off"
+                  aria-label="Search store or MID"
                 />
                 <div id="creditcard-store-search-suggestions" className="combobox-suggestions"></div>
               </div>
@@ -553,12 +556,13 @@ function LeftPanel() {
             <th><label htmlFor="creditcard-status">STATUS</label></th>
             <td>
               <div className="combobox-wrapper" style={{ position: 'relative' }}>
-                <input 
-                  type="text" 
-                  id="creditcard-status-combobox" 
-                  className="combobox-input no-uppercase" 
-                  autoComplete="off" 
-                  placeholder="Type or select status" 
+                <input
+                  type="text"
+                  id="creditcard-status-combobox"
+                  className="combobox-input no-uppercase"
+                  autoComplete="off"
+                  placeholder="Type or select status"
+                  aria-label="Status"
                   style={{ paddingRight: '28px' }}
                   onClick={() => {
                     const suggestions = document.getElementById('creditcard-status-suggestions');
@@ -568,7 +572,7 @@ function LeftPanel() {
                 <input type="hidden" id="creditcard-status" />
                 
                 <div className="form-group" id="creditcard-other-task-container" style={{ display: 'none', marginTop: '10px' }}>
-                  <label>Select Other Task:</label>
+                  <label htmlFor="creditcard-other-task-select">Select Other Task:</label>
                   <select id="creditcard-other-task-select" className="form-control">
                     <option value="">Choose a task</option>
                     <option value="Program PAX A35 w/ P98">Program PAX A35 w/ P98</option>
@@ -583,7 +587,7 @@ function LeftPanel() {
                     <option value="DISPUTE LETTER">DISPUTE LETTER</option>
                     <option value="FILLING TSYS V2">FILLING TSYS V2</option>
                     <option value="1099-K REPORT">1099-K REPORT</option>
-                    <option value="RETURN LABEL">RETURN LABEL</option>  
+                    <option value="RETURN LABEL">RETURN LABEL</option>
                     <option value="CLOSE ACCOUNT FISERV">CLOSE ACCOUNT FISERV</option>
                     <option value="CLOVER PROVISION">CLOVER PROVISION</option>
                     <option value="CLOVER DEPROVISIONED">CLOVER DEPROVISIONED</option>
@@ -598,11 +602,8 @@ function LeftPanel() {
                 <button
                   type="button"
                   title="Clear Status"
-                  style={{
-                    position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', color: 'var(--text-muted, #888)', fontSize: '14px',
-                    fontWeight: 'bold', cursor: 'pointer', padding: '2px 4px', zIndex: 2
-                  }}
+                  aria-label="Clear status"
+                  className="combobox-clear-btn"
                   onClick={(e) => {
                     e.stopPropagation();
                     const combo = document.getElementById('creditcard-status-combobox');
@@ -614,7 +615,7 @@ function LeftPanel() {
                     if (suggestions) suggestions.style.display = 'block';
                   }}
                 >
-                  ✖
+                  <i className="bi bi-x-lg" aria-hidden="true"></i>
                 </button>
                     
                 <div id="creditcard-status-suggestions" className="combobox-suggestions"></div>
@@ -624,25 +625,28 @@ function LeftPanel() {
           <tr>
             <th>
               <label htmlFor="creditcard-remarks">Troubleshooting</label>
-              <div style={{ marginTop: '5px', fontSize: '0.85em', backgroundColor: 'var(--panel-bg, #f8f9fa)', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color, #ccc)' }}>                
-                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer', marginBottom: '5px' }}>
-                  <input type="radio" name="aiActionMode" value="summarize" defaultChecked style={{ margin: 0, width: 'auto' }} /> 
-                  <span className="text-summarize" style={{ fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Summarize</span>
-                </label>
-                
-                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer', marginBottom: '5px' }}>
-                  <input type="radio" name="aiActionMode" value="grammar" style={{ margin: 0, width: 'auto' }} /> 
-                  <span className="text-grammar" style={{ fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Fix Grammar</span>
-                </label>
-
-                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', cursor: 'pointer' }}>
-                  <input type="radio" name="aiActionMode" value="none" style={{ margin: 0, width: 'auto' }} /> 
-                  <span style={{ color: 'var(--text-muted)', fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'left' }}>Off (Raw Text)</span>
-                </label>
-              </div>
             </th>
             <td>
-              <div id="creditcard-remarks-editor" style={{ height: 200 }}></div>
+              <div className="ai-mode-panel" role="radiogroup" aria-label="AI action mode">
+                <label>
+                  <input type="radio" name="aiActionMode" value="summarize" defaultChecked />
+                  <i className="bi bi-stars" aria-hidden="true"></i>
+                  <span className="text-summarize ai-mode-label">Summarize</span>
+                </label>
+
+                <label>
+                  <input type="radio" name="aiActionMode" value="grammar" />
+                  <i className="bi bi-spellcheck" aria-hidden="true"></i>
+                  <span className="text-grammar ai-mode-label">Fix Grammar</span>
+                </label>
+
+                <label>
+                  <input type="radio" name="aiActionMode" value="none" />
+                  <i className="bi bi-pencil" aria-hidden="true"></i>
+                  <span className="ai-mode-label ai-mode-label-muted">Off</span>
+                </label>
+              </div>
+              <div id="creditcard-remarks-editor" className="remarks-editor" style={{ marginTop: 10 }}></div>
               <textarea id="creditcard-remarks" style={{ display: 'none' }}></textarea>
             </td>
           </tr>
@@ -696,26 +700,27 @@ function RightPanel() {
 
 function HistoryPanel() {
   return (
-    <div className="history-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div className="panel-header panel-header-history" style={{ flexShrink: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+    <div className="history-panel history-panel-flex">
+      <div className="panel-header panel-header-history history-panel-header">
+        <div className="history-panel-header-inner">
           <div>
             <p className="panel-kicker">Activity feed</p>
             <h3>Credit Card History</h3>
             <p className="panel-subtitle">Recent tickets, grouped by date.</p>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-end' }}>
-            <input 
-              type="date" 
-              id="workload-date-picker" 
-              style={{ padding: '4px', borderRadius: '4px', border: '1px solid var(--border-color, #ccc)', background: 'var(--panel-bg)', color: 'var(--text-primary)' }}
+          <div className="history-panel-actions">
+            <label htmlFor="workload-date-picker" className="sr-only">Workload date</label>
+            <input
+              type="date"
+              id="workload-date-picker"
+              className="history-date-picker"
             />
-            <button 
-              className="btn btn-sm btn-primary" 
+            <button
+              className="btn btn-sm btn-primary"
               onClick={() => window.generateWorkload && window.generateWorkload()}
             >
-              Workload Tracker
+              <i className="bi bi-bar-chart-line me-1" aria-hidden="true"></i> Workload Tracker
             </button>
           </div>
         </div>
@@ -731,9 +736,9 @@ function BulkBar() {
       <label><input type="checkbox" id="selectAllCheckbox" /> Select all</label>
       <button id="bulkDeleteBtn">Remove</button>
       <button id="bulkCopyBtn">Copy</button>
-      <button className="counter-badge status-filter-btn" data-status="RESOLVED" onClick={() => window.filterByStatus && window.filterByStatus('RESOLVED')}>✅ Resolved: <span id="counterResolved">0</span></button>
-      <button className="counter-badge status-filter-btn" data-status="PENDING" onClick={() => window.filterByStatus && window.filterByStatus('PENDING')}>⏳ Pending: <span id="counterPending">0</span></button>
-      <button className="counter-badge status-filter-btn" data-status="OTHER TASK" onClick={() => window.filterByStatus && window.filterByStatus('OTHER TASK')}>📋 Other task: <span id="counterOther">0</span></button>
+      <button className="counter-badge status-filter-btn" data-status="RESOLVED" onClick={() => window.filterByStatus && window.filterByStatus('RESOLVED')}><i className="bi bi-check-circle-fill" aria-hidden="true"></i> Resolved: <span id="counterResolved">0</span></button>
+      <button className="counter-badge status-filter-btn" data-status="PENDING" onClick={() => window.filterByStatus && window.filterByStatus('PENDING')}><i className="bi bi-hourglass-split" aria-hidden="true"></i> Pending: <span id="counterPending">0</span></button>
+      <button className="counter-badge status-filter-btn" data-status="OTHER TASK" onClick={() => window.filterByStatus && window.filterByStatus('OTHER TASK')}><i className="bi bi-card-list" aria-hidden="true"></i> Other task: <span id="counterOther">0</span></button>
       <button id="clearAllBtn" className="clear-all-btn">Clear all</button>
     </div>
   );
@@ -741,27 +746,64 @@ function BulkBar() {
 
 function EntryTable() {
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table id="entryTable">
-        <thead>
-          <tr>
-            <th></th>
-            <th>DATE</th>
-            <th>SHIFT SCHEDULE</th>
-            <th>SUPPORT NAME</th>
-            <th>MID</th>
-            <th>STORE NAME</th>
-            <th>MERCHANT NAME</th>
-            <th>CONTACT #</th>
-            <th>ISSUE</th>
-            <th>ESCALATED</th>
-            <th>STATUS</th>
-            <th>REMARKS</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <div id="entryTable-wrap">
+      <div style={{ overflowX: 'auto' }}>
+        <table id="entryTable">
+          <thead>
+            <tr>
+              <th></th>
+              <th>DATE</th>
+              <th>SHIFT SCHEDULE</th>
+              <th>SUPPORT NAME</th>
+              <th>MID</th>
+              <th>STORE NAME</th>
+              <th>MERCHANT NAME</th>
+              <th>CONTACT #</th>
+              <th>ISSUE</th>
+              <th>ESCALATED</th>
+              <th>STATUS</th>
+              <th>REMARKS</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function TeamPhotoModal({ onClose }) {
+  return (
+    <div className="break-modal-overlay" onClick={onClose}>
+      <div className="break-modal-content" style={{ maxWidth: 1040 }} onClick={(e) => e.stopPropagation()}>
+        <div className="break-modal-header">
+          <div>
+            <h2 className="modal-title modal-title-row">
+              <i className="bi bi-people-fill" aria-hidden="true"></i> Support Team
+            </h2>
+            <p className="modal-subtitle">Nashville credit-card support, 9 PM – 6 AM shift</p>
+          </div>
+          <button onClick={onClose} className="icon-close" aria-label="Close team photo" title="Close">
+            <i className="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div style={{ padding: 20 }}>
+          <img
+            src={teamPhoto}
+            alt="Credit Card support team"
+            style={{
+              width: '100%',
+              maxHeight: '70vh',
+              objectFit: 'cover',
+              borderRadius: 'var(--r-md)',
+              border: '1px solid var(--line)'
+            }}
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -773,9 +815,13 @@ function EntryTable() {
 export default function App() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showBreakSchedule, setShowBreakSchedule] = useState(false);
+  const [showTeamPhoto, setShowTeamPhoto] = useState(false);
 
   useEffect(() => {
+    // Expose a global so the Header's team chip can open the modal
+    window.openTeamPhoto = () => setShowTeamPhoto(true);
     initCreditcardApp();
+    return () => { delete window.openTeamPhoto; };
   }, []);
 
   return (
@@ -942,6 +988,7 @@ export default function App() {
       {/* MODALS OUTSIDE LAYOUT */}
       {showTemplates && <TidTemplatesModal onClose={() => setShowTemplates(false)} />}
       {showBreakSchedule && <BreakScheduleModal onClose={() => setShowBreakSchedule(false)} />}
+      {showTeamPhoto && <TeamPhotoModal onClose={() => setShowTeamPhoto(false)} />}
     </>
   );
 }

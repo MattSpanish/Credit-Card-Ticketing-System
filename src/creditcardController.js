@@ -1078,6 +1078,7 @@ export function initCreditcardApp() {
 
         const row = document.createElement('tr');
         row.dataset.id = entry.id;
+        row.dataset.status = (entry.status || '').toUpperCase();
         row.innerHTML = `
             <td><input type="checkbox" class="row-checkbox" value="${entry.id}"></td>
             <td>${displayDate}</td>
@@ -1089,7 +1090,7 @@ export function initCreditcardApp() {
             <td>${entry.contactNumber || ''}</td>
             <td style="white-space:pre-wrap;">${entry.issue || ''}</td>
             <td>${entry.escalated || ''}</td>
-            <td>${entry.status || ''}</td>
+            <td data-status="${(entry.status || '').toUpperCase()}" class="status-pill-cell"><span class="status-pill">${escapeHtml(entry.status || '—')}</span></td>
             <td style="white-space:pre-wrap;">${combinedRemarks}</td>
             <td class="action-cell">
               <div class="action-container">
@@ -1213,7 +1214,7 @@ export function initCreditcardApp() {
         const isMonthCollapsed = collapseState.months[month];
         html += `<div class="sidebar-group">
                   <div class="month-header" onclick="toggleMonth('${month.replace(/'/g, "\\'")}')">
-                      <span class="month-arrow">${isMonthCollapsed ? '▶' : '▼'}</span> ${month}
+                      <i class="bi bi-chevron-down collapse-caret ${isMonthCollapsed ? 'is-collapsed' : ''}" aria-hidden="true"></i> ${month}
                   </div>`;
         if (!isMonthCollapsed) {
           const dates = grouped[month];
@@ -1223,7 +1224,7 @@ export function initCreditcardApp() {
             const isDateCollapsed = collapseState.dates[dateKey];
             html += `<div class="date-group">
                       <div class="date-header" onclick="toggleDate('${dateKey.replace(/'/g, "\\'")}')">
-                          <span class="date-arrow">${isDateCollapsed ? '▶' : '▼'}</span> ${dateKey}
+                          <i class="bi bi-chevron-down collapse-caret ${isDateCollapsed ? 'is-collapsed' : ''}" aria-hidden="true"></i> ${dateKey}
                       </div>`;
             if (!isDateCollapsed) {
               html += `<div class="date-entries">`;
@@ -1245,12 +1246,12 @@ export function initCreditcardApp() {
                       <div class="preview-item"><strong>MID:</strong> ${escapeHtml(entry.mid || '-')}</div>
                       <div class="card-actions">
                           <div class="card-actions-row stack-row">
-                              <button class="copy-store" data-id="${entry.id}">📋 DETAILS</button>
-                              <button class="copy-details" data-id="${entry.id}">📋 HRMS</button>
-                              <button class="add-ticket-btn" data-id="${entry.id}">🎫 TICKET #</button>
+                              <button class="copy-store" data-id="${entry.id}"><i class="bi bi-clipboard" aria-hidden="true"></i> DETAILS</button>
+                              <button class="copy-details" data-id="${entry.id}"><i class="bi bi-clipboard-data" aria-hidden="true"></i> HRMS</button>
+                              <button class="add-ticket-btn" data-id="${entry.id}"><i class="bi bi-ticket-perforated" aria-hidden="true"></i> TICKET #</button>
                           </div>
                           <div class="card-actions-row">
-                              <button class="edit-entry stack-btn" data-id="${entry.id}">✏️<br>EDIT</button>
+                              <button class="edit-entry stack-btn" data-id="${entry.id}"><i class="bi bi-pencil-square" aria-hidden="true"></i> EDIT</button>
                           </div>
                       </div>
                   </div>`;
