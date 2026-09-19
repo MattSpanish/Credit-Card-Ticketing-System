@@ -10,3 +10,6 @@ export function ensureDraftForSaving({ currentDraftId, createNewDraft, saveDraft
   saveDraftData(createdDraftId);
   return createdDraftId;
 }
+
+export const saveCurrentDraftState = ensureDraftForSaving;
+
