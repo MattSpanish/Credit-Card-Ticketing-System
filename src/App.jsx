@@ -1199,7 +1199,23 @@ function DashboardGrid() {
         </svg>
       </div>
 
-      {/* 5. PENDING */}
+      {/* 5. BACKEND */}
+      <div 
+        className="stat-card violet is-clickable" 
+        title="Click to filter by Backend (Other Task)" 
+        onClick={() => window.filterByStatus && window.filterByStatus('OTHER TASK')}
+      >
+        <div className="stat-label">
+          <i className="bi bi-cpu-fill" aria-hidden="true"></i> Backend
+        </div>
+        <div className="stat-value" id="dashboardBackendTickets">0</div>
+        <div className="stat-meta">Other task tickets</div>
+        <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,15 12,18 24,10 36,14 48,9 60,13 72,8 84,11 100,6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      {/* 6. PENDING */}
       <div 
         className="stat-card warning is-clickable pending-card-wrap" 
         title="Click to filter by Pending · Hover to view pending ticket numbers" 
@@ -1313,22 +1329,6 @@ function DashboardGrid() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* 6. BACKEND */}
-      <div 
-        className="stat-card violet is-clickable" 
-        title="Click to filter by Backend (Other Task)" 
-        onClick={() => window.filterByStatus && window.filterByStatus('OTHER TASK')}
-      >
-        <div className="stat-label">
-          <i className="bi bi-cpu-fill" aria-hidden="true"></i> Backend
-        </div>
-        <div className="stat-value" id="dashboardBackendTickets">0</div>
-        <div className="stat-meta">Other task tickets</div>
-        <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
-          <polyline points="0,15 12,18 24,10 36,14 48,9 60,13 72,8 84,11 100,6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
       </div>
     </section>
   );
