@@ -452,6 +452,81 @@ export async function deleteShiftReport(id) {
   return { success: true };
 }
 
+// Update an existing shift report
+export async function updateShiftReport(id, { content, author = '', reportDate = '', images = [] }) {
+  if (!content || !content.trim()) {
+    throw new Error('Report content cannot be empty');
+  }
+
+  const trimmedContent = content.trim();
+  const trimmedAuthor = (author || '').trim();
+  const config = getSupabaseConfig();
+
+  // Normalize images (ensure array of dataUrl strings)
+  const normalizedImages = Array.isArray(images)
+    ? images.map((img) => (typeof img === 'string' ? img : (img.dataUrl || ''))).filter(Boolean)
+    : [];
+
+  const updatedAt = new Date().toISOString();
+
+  if (config.isConfigured && !id.startsWith('local_')) {
+    try {
+      let res = await fetch(`${config.url}/rest/v1/shift_reports?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: {
+          apikey: config.key,
+          Authorization: `Bearer ${config.key}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify({
+          content: trimmedContent,
+          author: trimmedAuthor,
+          report_date: reportDate,
+          images: normalizedImages,
+        }),
+      });
+
+      // If Supabase table is missing images or report_date columns, fallback to base columns
+      if (!res.ok && res.status === 400) {
+        res = await fetch(`${config.url}/rest/v1/shift_reports?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          headers: {
+            apikey: config.key,
+            Authorization: `Bearer ${config.key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: trimmedContent,
+            author: trimmedAuthor,
+          }),
+        });
+      }
+    } catch (err) {
+      console.warn('Supabase update failed, saving locally', err);
+    }
+  }
+
+  // Update in local cache
+  const current = getLocalReports();
+  const updated = current.map((r) => {
+    if (r.id === id) {
+      return {
+        ...r,
+        content: trimmedContent,
+        author: trimmedAuthor,
+        report_date: reportDate,
+        images: normalizedImages,
+        updated_at: updatedAt,
+      };
+    }
+    return r;
+  });
+  saveLocalReports(updated);
+
+  return { success: true };
+}
+
 // SQL schema generator
 export const SUPABASE_SQL_SCRIPT = `-- Run this in your Supabase SQL Editor:
 create table if not exists shift_reports (

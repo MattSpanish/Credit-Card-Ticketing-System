@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   fetchShiftReports,
   addShiftReport,
+  updateShiftReport,
   deleteShiftReport,
   getSupabaseConfig,
   saveSupabaseConfig,
@@ -49,6 +50,14 @@ export default function ShiftReportPage({ onBackToDashboard }) {
 
   // Lightbox modal state
   const [previewImageUrl, setPreviewImageUrl] = useState(null);
+
+  // Edit Shift Report modal state
+  const [editingReport, setEditingReport] = useState(null);
+  const [editContent, setEditContent] = useState('');
+  const [editAuthor, setEditAuthor] = useState('');
+  const [editReportDate, setEditReportDate] = useState('');
+  const [editImages, setEditImages] = useState([]);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Supabase modal state
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -276,6 +285,53 @@ export default function ShiftReportPage({ onBackToDashboard }) {
       await loadReports();
     } catch (err) {
       showToast('❌ Failed to delete report.');
+    }
+  }
+
+  // Edit modal handlers
+  function handleOpenEditModal(report) {
+    setEditingReport(report);
+    setEditContent(report.content || '');
+    setEditAuthor(report.author || '');
+    setEditReportDate(report.report_date || report.created_at?.slice(0, 10) || getTodayDateISO());
+    const normalizedImgs = Array.isArray(report.images)
+      ? report.images.map((img, idx) => (typeof img === 'string' ? { id: `img_${idx}`, dataUrl: img } : img))
+      : [];
+    setEditImages(normalizedImgs);
+  }
+
+  function handleEditContentChange(e) {
+    const raw = e.target.value;
+    const updated = recalculateMorningReportText(raw, reports, editReportDate);
+    setEditContent(updated);
+  }
+
+  async function handleSaveEdit(e) {
+    if (e) e.preventDefault();
+    if (!editingReport) return;
+    if (!editContent.trim() && editImages.length === 0) {
+      showToast('⚠️ Report content cannot be empty.');
+      return;
+    }
+
+    setIsSavingEdit(true);
+    try {
+      const res = await updateShiftReport(editingReport.id, {
+        content: editContent,
+        author: editAuthor.trim(),
+        reportDate: editReportDate,
+        images: editImages,
+      });
+
+      if (res.success) {
+        showToast('✅ Shift report updated successfully!');
+        setEditingReport(null);
+        await loadReports();
+      }
+    } catch (err) {
+      showToast(`❌ Failed to update report: ${err.message}`);
+    } finally {
+      setIsSavingEdit(false);
     }
   }
 
@@ -782,17 +838,15 @@ OTHER - 0`}
                       </div>
 
                       <div className="report-item-actions">
-                        {report.content && (
-                          <button
-                            type="button"
-                            className={`btn-copy-report ${isCopied ? 'copied' : ''}`}
-                            onClick={() => handleCopyText(report.content, report.id)}
-                            title="Copy full report text to clipboard"
-                          >
-                            <i className={`bi ${isCopied ? 'bi-check2' : 'bi-clipboard'} me-1`}></i>
-                            {isCopied ? 'Copied Text!' : 'Copy Text'}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className="btn-edit-report"
+                          onClick={() => handleOpenEditModal(report)}
+                          title="Edit shift report"
+                          aria-label="Edit shift report"
+                        >
+                          <i className="bi bi-pencil-square"></i>
+                        </button>
                         <button
                           type="button"
                           className="btn-delete-report"
@@ -897,6 +951,145 @@ OTHER - 0`}
             <div className="image-lightbox-body">
               <img src={previewImageUrl} alt="Full resolution preview" className="image-lightbox-img" />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Shift Report Modal */}
+      {editingReport && (
+        <div className="break-modal-overlay" onClick={() => setEditingReport(null)}>
+          <div className="shift-edit-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="break-modal-header">
+              <div>
+                <h2 className="modal-title modal-title-row">
+                  <i className="bi bi-pencil-square me-2"></i>
+                  Edit Shift Report
+                </h2>
+                <p className="modal-subtitle">
+                  Update report text, author, date, or screenshots.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingReport(null)}
+                className="break-close-btn icon-close"
+                aria-label="Close"
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="config-modal-body">
+              {/* Metadata row */}
+              <div className="composer-meta-row composer-meta-row-3col mb-3">
+                <div className="composer-meta-field">
+                  <label htmlFor="editReportDateInput">
+                    <i className="bi bi-calendar-event me-1"></i> Date:
+                  </label>
+                  <input
+                    id="editReportDateInput"
+                    type="date"
+                    className="composer-input"
+                    value={editReportDate}
+                    onChange={(e) => setEditReportDate(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="composer-meta-field">
+                  <label htmlFor="editAuthorInput">
+                    <i className="bi bi-person me-1"></i> Posted By:
+                  </label>
+                  <input
+                    id="editAuthorInput"
+                    type="text"
+                    className="composer-input"
+                    placeholder="Author name"
+                    value={editAuthor}
+                    onChange={(e) => setEditAuthor(e.target.value)}
+                    list="supportNamesList"
+                  />
+                </div>
+
+                <div className="composer-meta-field">
+                  <label>
+                    <i className="bi bi-clock me-1"></i> Detected Shift:
+                  </label>
+                  <span className="composer-input d-flex align-items-center" style={{ background: 'var(--bg-elevated, #f8fafc)', cursor: 'default' }}>
+                    {detectShiftFromContent(editContent) || 'Standard Shift'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Textarea */}
+              <div className="composer-textarea-wrap mb-3">
+                <label className="form-label fw-semibold" htmlFor="editReportContentTextarea">
+                  Report Content:
+                </label>
+                <textarea
+                  id="editReportContentTextarea"
+                  className="shift-paste-textarea"
+                  rows={11}
+                  value={editContent}
+                  onChange={handleEditContentChange}
+                  placeholder="Edit report content..."
+                  required
+                ></textarea>
+              </div>
+
+              {/* Attached Images in Modal */}
+              {editImages.length > 0 && (
+                <div className="mb-3">
+                  <div className="attached-images-title mb-2">
+                    <i className="bi bi-images me-1"></i>
+                    <span>Attached Screenshots ({editImages.length})</span>
+                  </div>
+                  <div className="attached-images-list">
+                    {editImages.map((img, idx) => {
+                      const src = typeof img === 'string' ? img : img.dataUrl;
+                      const imgId = img.id || `img_${idx}`;
+                      return (
+                        <div key={imgId} className="attached-image-card">
+                          <img
+                            src={src}
+                            alt={`Screenshot ${idx + 1}`}
+                            className="attached-image-thumb"
+                            onClick={() => setPreviewImageUrl(src)}
+                            title="Click to preview"
+                          />
+                          <button
+                            type="button"
+                            className="btn-remove-attached-img"
+                            onClick={() => setEditImages((prev) => prev.filter((_, i) => i !== idx))}
+                            title="Remove image"
+                          >
+                            <i className="bi bi-x"></i>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="edit-modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setEditingReport(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSavingEdit}
+                >
+                  <i className={`bi ${isSavingEdit ? 'bi-hourglass-split' : 'bi-check2'} me-1`}></i>
+                  {isSavingEdit ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
