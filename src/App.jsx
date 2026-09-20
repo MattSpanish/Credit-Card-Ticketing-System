@@ -72,6 +72,133 @@ const TID_TEMPLATES = {
 };
 
 // ==========================================
+// ✅ ANNOUNCEMENTS & SYSTEM CHANGELOG DATA
+// ==========================================
+
+const ANNOUNCEMENTS_DATA = [
+  {
+    id: "rel-2026-09-18",
+    version: "v2.5.0",
+    date: "September 18, 2026",
+    isLatest: true,
+    badge: "TODAY'S RELEASE",
+    title: "One-Click 'Copy All', Direct Ticket # Intake, Midnight Tab Reset & Revamped Dashboard",
+    summary: "A major usability update featuring one-click 'Copy all', streamlined ticket creation, automated tab resets, non-scrolling table grid, and upgraded productivity metrics.",
+    items: [
+      {
+        type: "warning",
+        icon: "bi-shield-exclamation",
+        title: "CRITICAL: Do Not Delete or Erase Browser Cache (Chrome & Edge)",
+        desc: "Important reminder: Please DO NOT delete or erase your browser cache or browsing data in Google Chrome or Microsoft Edge because your data and tickets are currently saved in your browser cache. If you delete your cache or site data, your tickets and saved records will be permanently deleted and cannot be recovered.",
+        tag: "Critical Reminder"
+      },
+      {
+        type: "feature",
+        icon: "bi-clipboard2-check-fill",
+        title: "One-Click 'Copy All' Quick Action",
+        desc: "Added a 'Copy all' button directly next to 'Copy' on the bulk bar. Export every ticket in your current view to your clipboard formatted for Google Sheets with a single click—no need to check 'Select all' first. Automatically respects your active date, status, and search filters.",
+        tag: "New Feature"
+      },
+      {
+        type: "feature",
+        icon: "bi-ticket-perforated-fill",
+        title: "Direct 'Ticket #' Intake Field",
+        desc: "Added a Ticket # input field directly at the top of the intake form. Any entered ticket number is automatically assigned to the ticket, saved across drafts and localStorage, and displayed prominently in the activity feed card header (TICKET #: <number>). Editing tickets automatically populates this field for seamless updates.",
+        tag: "New Feature"
+      },
+      {
+        type: "improvement",
+        icon: "bi-clock-history",
+        title: "Automated Midnight Ticket Tab Reset",
+        desc: "Ticket draft tabs now automatically clear when a new calendar day begins (at midnight EST). Overnight tickets from yesterday will no longer linger on your tab bar, providing a fresh start for every support shift.",
+        tag: "Automation"
+      },
+      {
+        type: "improvement",
+        icon: "bi-speedometer2",
+        title: "Revamped Dashboard Metrics Cards",
+        desc: "Redesigned the top stat cards to display: Your Tickets (overall system total), Yesterday Tickets (with date-based comparison), Today Tickets (real-time daily count), Resolved, Pending, and a compact 1-Hour Break Card with an inline agent selector.",
+        tag: "Dashboard"
+      },
+      {
+        type: "ui",
+        icon: "bi-layout-sidebar-inset",
+        title: "Collapsible Left Sidebar with Edge Toggle",
+        desc: "The left navigation sidebar is now fully collapsible with an interactive edge pill button centered directly on the dividing line. Collapses down to an icon-only rail to give you maximum screen width for forms and tables.",
+        tag: "UI / UX"
+      },
+      {
+        type: "feature",
+        icon: "bi-megaphone-fill",
+        title: "Dedicated Announcements & News Center",
+        desc: "Added this standalone Announcements page to keep the entire support team informed on recent releases, workflow improvements, and upcoming features.",
+        tag: "New Page"
+      },
+      {
+        type: "improvement",
+        icon: "bi-table",
+        title: "Zero Horizontal Scrolling & Responsive Grid",
+        desc: "Refined the credit card history table layout to fit 100% of your screen width without horizontal scrollbars. Stacked date badges, pixel-perfect column alignment, and compact action controls ensure clean readability.",
+        tag: "UI / UX"
+      },
+      {
+        type: "improvement",
+        icon: "bi-magic",
+        title: "Live Preview & Clipboard Auto-Fill",
+        desc: "The Live Preview panel now displays the entered Ticket # in real time, and the smart clipboard parser automatically recognizes 'TICKET NUMBER:' or 'TICKET #:' when pasting ticket details.",
+        tag: "Quality of Life"
+      },
+      {
+        type: "improvement",
+        icon: "bi-file-earmark-spreadsheet-fill",
+        title: "Updated Google Sheet Copy/Paste Order",
+        desc: "Updated clipboard copy and paste ordering so Store Name is positioned before MID (Date, Shift Schedule, Support Name, Store Name, MID, Merchant Name, Contact #, Issue, Escalated, Status, Remarks). Both single-row Copy, Copy All, and Bulk Copy now match this exact sequence.",
+        tag: "Google Sheets"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-09-15",
+    version: "v2.4.0",
+    date: "September 15, 2026",
+    isLatest: false,
+    badge: "WORKFLOW PACK",
+    title: "AI Troubleshooting Modes, TID Quick Templates & Shift Schedule",
+    summary: "Empowered the Nashville credit-card support team with automated AI remark summaries and fast-copy terminal templates.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-stars",
+        title: "AI-Powered Remark Actions",
+        desc: "Select between Summarize, Fix Grammar, or Off to auto-polish ticket troubleshooting notes before saving or escalating.",
+        tag: "AI Integration"
+      },
+      {
+        type: "feature",
+        icon: "bi-clipboard-check",
+        title: "TID Quick Copy Templates",
+        desc: "Instant one-click clipboard copying for PAX, NEXGO, FD150, FD130, Valor, Dejavoo, NMI, and Authorize.Net configurations.",
+        tag: "Templates"
+      },
+      {
+        type: "feature",
+        icon: "bi-cup-hot",
+        title: "Interactive Shift Break Schedule",
+        desc: "Full Mon–Sun break schedule modal highlighting today's active schedule for the 9 PM – 6 AM shift team.",
+        tag: "Schedule"
+      },
+      {
+        type: "improvement",
+        icon: "bi-bar-chart-line",
+        title: "Workload Tracker & HRMS Formatter",
+        desc: "Quickly export clean formatted ticket logs ready for HRMS submission and shift handoffs.",
+        tag: "Reporting"
+      }
+    ]
+  }
+];
+
+// ==========================================
 // ✅ EXTRACTED MODAL COMPONENTS 
 // ==========================================
 
@@ -179,19 +306,409 @@ function BreakScheduleModal({ onClose }) {
   );
 }
 
+function AnnouncementPanel({ onOpenModal, hideHeader = false }) {
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+
+  const filteredAnnouncements = ANNOUNCEMENTS_DATA.map(rel => {
+    const matchingItems = rel.items.filter(item => {
+      const matchesFilter = filter === 'all' || item.type === filter;
+      const matchesSearch = !search.trim() || 
+        item.title.toLowerCase().includes(search.toLowerCase()) || 
+        item.desc.toLowerCase().includes(search.toLowerCase()) || 
+        rel.title.toLowerCase().includes(search.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+    return { ...rel, items: matchingItems };
+  }).filter(rel => rel.items.length > 0);
+
+  return (
+    <div className="announcement-feed">
+      {!hideHeader && (
+        <div className="panel-header panel-header-form">
+          <div>
+            <p className="panel-kicker"><i className="bi bi-broadcast" aria-hidden="true"></i> System News & Updates</p>
+            <h3>Announcements</h3>
+            <p className="panel-subtitle">Explore latest features, enhancements, and workflow improvements.</p>
+          </div>
+          {onOpenModal && (
+            <button 
+              type="button" 
+              className="btn btn-sm btn-outline-secondary"
+              onClick={onOpenModal}
+              title="Open in Fullscreen Modal"
+              style={{ fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
+            >
+              <i className="bi bi-arrows-fullscreen" aria-hidden="true"></i> Full View
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ⚠️ CRITICAL BROWSER CACHE ADVISORY BANNER */}
+      <div className="announcement-cache-warning" role="alert">
+        <div className="cache-warning-icon">
+          <i className="bi bi-shield-exclamation" aria-hidden="true"></i>
+        </div>
+        <div className="cache-warning-content">
+          <h4 className="cache-warning-title">
+            ⚠️ Critical Reminder: Do Not Delete or Erase Browser Cache (Chrome & Edge)
+          </h4>
+          <p className="cache-warning-text">
+            Your tickets and drafts are currently saved in your browser cache. Please <strong>do not delete or erase the cache in Google Chrome or Microsoft Edge</strong>. If you delete your cache or site data, <strong>your saved data and tickets will be permanently deleted</strong>.
+          </p>
+        </div>
+      </div>
+
+      <div className="announcement-toolbar">
+        <div className="announcement-search-wrap">
+          <i className="bi bi-search" aria-hidden="true"></i>
+          <input
+            type="text"
+            className="announcement-search-input"
+            placeholder="Search updates, features, improvements..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search announcements"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              title="Clear search"
+            >
+              <i className="bi bi-x-circle-fill" aria-hidden="true"></i>
+            </button>
+          )}
+        </div>
+
+        <div className="announcement-filter-chips" role="group" aria-label="Filter updates by category">
+          <button 
+            type="button" 
+            className={`filter-chip ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            All Updates
+          </button>
+          <button 
+            type="button" 
+            className={`filter-chip ${filter === 'warning' ? 'active' : ''}`}
+            onClick={() => setFilter('warning')}
+          >
+            ⚠️ Notices
+          </button>
+          <button 
+            type="button" 
+            className={`filter-chip ${filter === 'feature' ? 'active' : ''}`}
+            onClick={() => setFilter('feature')}
+          >
+            ✨ New Features
+          </button>
+          <button 
+            type="button" 
+            className={`filter-chip ${filter === 'improvement' ? 'active' : ''}`}
+            onClick={() => setFilter('improvement')}
+          >
+            🚀 Improvements
+          </button>
+          <button 
+            type="button" 
+            className={`filter-chip ${filter === 'ui' ? 'active' : ''}`}
+            onClick={() => setFilter('ui')}
+          >
+            🎨 UI / UX
+          </button>
+        </div>
+      </div>
+
+      {filteredAnnouncements.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '30px 16px', color: 'var(--text-muted)', background: 'var(--bg-soft)', borderRadius: 'var(--r-md)', border: '1px dashed var(--line)' }}>
+          <i className="bi bi-search" style={{ fontSize: '1.8rem', display: 'block', marginBottom: '8px', opacity: 0.5 }}></i>
+          No updates found matching "<strong>{search}</strong>".
+        </div>
+      ) : (
+        filteredAnnouncements.map(rel => (
+          <article key={rel.id} className={`announcement-release-card ${rel.isLatest ? 'is-latest' : ''}`}>
+            <div className="release-card-top">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="release-version-tag">{rel.version}</span>
+                <span className="release-date-text">{rel.date}</span>
+              </div>
+              {rel.isLatest && (
+                <span className="release-badge-latest">
+                  <i className="bi bi-stars me-1" aria-hidden="true"></i> {rel.badge}
+                </span>
+              )}
+            </div>
+
+            <div>
+              <h4 className="release-title">{rel.title}</h4>
+              <p className="release-summary">{rel.summary}</p>
+            </div>
+
+            <div className="release-items-list">
+              {rel.items.map((item, idx) => (
+                <div key={idx} className={`release-item-row ${item.type === 'warning' ? 'is-warning' : ''}`}>
+                  <div className="release-item-icon">
+                    <i className={`bi ${item.icon}`} aria-hidden="true"></i>
+                  </div>
+                  <div className="release-item-content">
+                    <div className="release-item-header">
+                      <h5 className="release-item-title">{item.title}</h5>
+                      <span className="release-item-tag">{item.tag}</span>
+                    </div>
+                    <p className="release-item-desc">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))
+      )}
+    </div>
+  );
+}
+
+function AnnouncementPage({ onBackToDashboard }) {
+  return (
+    <div className="announcement-page">
+      <div className="announcement-page-header">
+        <div>
+          <div className="announcement-kicker">
+            <span className="kicker-pill"><i className="bi bi-broadcast me-1" aria-hidden="true"></i> System News & Updates</span>
+            <span className="kicker-release">Nashville CC Support</span>
+          </div>
+          <h1>System Announcements</h1>
+          <p className="panel-subtitle">Official release updates, new tools, and upcoming platform improvements.</p>
+        </div>
+        <button 
+          type="button" 
+          className="announcement-back-btn" 
+          onClick={onBackToDashboard}
+          title="Return to Ticketing Dashboard"
+        >
+          <i className="bi bi-arrow-left" aria-hidden="true"></i> Back to Dashboard
+        </button>
+      </div>
+
+      {/* Quick stats strip */}
+      <div className="announcement-stats-strip">
+        <div className="announcement-stat-box">
+          <span className="announcement-stat-label">Current Version</span>
+          <span className="announcement-stat-val">v2.5.0</span>
+        </div>
+        <div className="announcement-stat-box">
+          <span className="announcement-stat-label">Latest Release</span>
+          <span className="announcement-stat-val">Sep 18, 2026</span>
+        </div>
+        <div className="announcement-stat-box">
+          <span className="announcement-stat-label">New Features</span>
+          <span className="announcement-stat-val">9 Updates</span>
+        </div>
+        <div className="announcement-stat-box">
+          <span className="announcement-stat-label">System Status</span>
+          <span className="announcement-stat-val" style={{ color: 'var(--teal-600)' }}>● Operational</span>
+        </div>
+      </div>
+
+      {/* Announcement feed with search & category filters */}
+      <AnnouncementPanel hideHeader={true} />
+    </div>
+  );
+}
+
+function AnnouncementModal({ onClose }) {
+  return (
+    <div className="break-modal-overlay" onClick={onClose}>
+      <div className="announcement-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="break-modal-header">
+          <div>
+            <h2 className="modal-title modal-title-row">
+              <i className="bi bi-megaphone-fill text-teal" aria-hidden="true"></i> System Announcements & Changelog
+            </h2>
+            <p className="modal-subtitle">
+              Official update log, feature additions, and platform improvements
+            </p>
+          </div>
+          <button onClick={onClose} className="break-close-btn icon-close" aria-label="Close announcements modal" title="Close">
+            <i className="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </div>
+        
+        <div style={{ padding: '24px' }}>
+          <AnnouncementPanel />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ==========================================
-// ✅ SIDEBAR
+// ✅ SIDEBAR BREAK CARD (DAYOFF / 1 HR BREAK)
 // ==========================================
 
-function Sidebar({ onOpenTemplates, onOpenBreakSchedule }) {
+function SidebarBreakCard() {
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const [selectedPerson, setSelectedPerson] = useState(localStorage.getItem('myBreakPerson') || '');
+  const [todayBreak, setTodayBreak] = useState('--:--');
+  const [selectedDateStr, setSelectedDateStr] = useState('');
+
+  useEffect(() => {
+    const supportEl = document.getElementById('creditcard-support');
+    const syncFromForm = (e) => {
+      const val = e.target.value;
+      setSelectedPerson(val);
+      localStorage.setItem('myBreakPerson', val);
+    };
+
+    if (supportEl) {
+      setTimeout(() => {
+        if (supportEl.value && supportEl.value !== selectedPerson) {
+          setSelectedPerson(supportEl.value);
+          localStorage.setItem('myBreakPerson', supportEl.value);
+        }
+      }, 500);
+
+      supportEl.addEventListener('input', syncFromForm);
+      supportEl.addEventListener('change', syncFromForm);
+    }
+
+    return () => {
+      if (supportEl) {
+        supportEl.removeEventListener('input', syncFromForm);
+        supportEl.removeEventListener('change', syncFromForm);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const dateEl = document.getElementById('creditcard-date');
+    const syncDateFromForm = (e) => {
+      setSelectedDateStr(e.target.value);
+    };
+
+    if (dateEl) {
+      setTimeout(() => {
+        if (dateEl.value) {
+          setSelectedDateStr(dateEl.value);
+        }
+      }, 500);
+
+      dateEl.addEventListener('input', syncDateFromForm);
+      dateEl.addEventListener('change', syncDateFromForm);
+    }
+
+    return () => {
+      if (dateEl) {
+        dateEl.removeEventListener('input', syncDateFromForm);
+        dateEl.removeEventListener('change', syncDateFromForm);
+      }
+    };
+  }, []);
+
+  let activeDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  if (selectedDateStr) {
+    const [y, m, d] = selectedDateStr.split('-');
+    if (y && m && d) {
+      activeDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+    }
+  }
+
+  const currentDayName = dayNames[activeDate.getDay()];
+  const currentDateString = activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  useEffect(() => {
+    if (selectedPerson && BREAK_SCHEDULE[currentDayName]) {
+      const schedule = BREAK_SCHEDULE[currentDayName].find(s => {
+        const schedName = s.person.toUpperCase();
+        const myName = selectedPerson.toUpperCase();
+        return schedName.includes(myName) || myName.includes(schedName);
+      });
+      setTodayBreak(schedule ? schedule.time : 'DAYOFF');
+    } else if (selectedPerson) {
+      setTodayBreak('Off / Weekend');
+    } else {
+      setTodayBreak('--:--');
+    }
+  }, [selectedPerson, currentDayName]);
+
+  const handlePersonChange = (e) => {
+    const val = e.target.value;
+    setSelectedPerson(val);
+    localStorage.setItem('myBreakPerson', val);
+
+    const supportEl = document.getElementById('creditcard-support');
+    if (supportEl) {
+      supportEl.value = val;
+      supportEl.dispatchEvent(new Event('input', { bubbles: true }));
+      supportEl.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  };
+
+  return (
+    <div className="sidebar-break-card stat-card violet stat-card-break" title="1 Hour Break Schedule">
+      <div className="sidebar-break-top">
+        <span className="sidebar-break-title">
+          <i className="bi bi-cup-hot" aria-hidden="true"></i> 1 HR BREAK
+        </span>
+        <select
+          value={selectedPerson}
+          onChange={handlePersonChange}
+          className="break-name-select"
+          aria-label="Select your name"
+        >
+          <option value="">-- Name --</option>
+          <option value="HANZ">HANZ</option>
+          <option value="CHARLES">CHARLES</option>
+          <option value="KENNETH">KENNETH</option>
+          <option value="ADI">ADI</option>
+          <option value="TATI">TATI</option>
+          <option value="RONIE">RONIE</option>
+          <option value="SEAN">SEAN</option>
+          <option value="MAT">MAT</option>
+          <option value="ZEL">ZEL</option>
+          <option value="JR">JR</option>
+          <option value="YASMINE">YASMINE</option>
+          <option value="GABRIEL">GABRIEL</option>
+          <option value="ERNEST">ERNEST</option>
+          <option value="REGS">REGS</option>
+          <option value="NICHOLLE">NICHOLLE</option>
+          <option value="EJ">EJ</option>
+        </select>
+      </div>
+      <div className="sidebar-break-date">
+        {currentDayName}, {currentDateString}
+      </div>
+      <div className="stat-value stat-value-break">
+        {selectedPerson ? todayBreak : (<>Select name <i className="bi bi-hand-index stat-select-arrow" aria-hidden="true"></i></>)}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// ✅ SIDEBAR & NAVIGATION
+// ==========================================
+
+function Sidebar({ 
+  isCollapsed, 
+  onToggleCollapse, 
+  onOpenTemplates, 
+  onOpenBreakSchedule,
+  currentView = 'dashboard',
+  onSelectView
+}) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
 
   useEffect(() => {
-    const updateView = () => setIsMobileView(window.innerWidth <= 1000);
-    updateView();
-    window.addEventListener('resize', updateView);
-    return () => window.removeEventListener('resize', updateView);
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth <= 1100);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
@@ -209,28 +726,101 @@ function Sidebar({ onOpenTemplates, onOpenBreakSchedule }) {
   };
 
   return (
-    <aside className="sidebar" aria-label="Primary navigation">
-      <div className="sidebar-top">
-        <div className="logo">CC Tickets</div>
-        <div className="sidebar-actions">
-          <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle dark mode" title="Toggle theme"><i className="bi bi-moon-stars-fill" aria-hidden="true"></i></button>
-          {isMobileView && (
-            <button className="sidebar-toggle" onClick={() => setIsMobileNavOpen((prev) => !prev)} aria-label="Toggle navigation" title="Toggle navigation"><i className="bi bi-list" aria-hidden="true"></i></button>
-          )}
-        </div>
-      </div>
-      <nav className={`nav-list ${isMobileView && !isMobileNavOpen ? 'nav-list-collapsed' : 'nav-list-open'}`} aria-label="Primary">
-        <button className="nav-item active" onClick={() => handleNavAction(() => window.switchToTab && window.switchToTab('creditcard'))} aria-current="page"><i className="bi bi-speedometer2 me-2" aria-hidden="true"></i>Dashboard</button>
-        <button className="nav-item" onClick={() => handleNavAction(() => window.createNewTicket && window.createNewTicket())}><i className="bi bi-plus-circle me-2" aria-hidden="true"></i>New Ticket</button>
-        <button className="nav-item" onClick={() => handleNavAction(() => window.switchToTab && window.switchToTab('creditcard'))}><i className="bi bi-card-list me-2" aria-hidden="true"></i>Tickets</button>
+    <aside className={`sidebar ${isCollapsed ? 'is-collapsed' : ''}`} aria-label="Primary navigation">
+      {/* Edge toggle pill button on the middle of the dividing line */}
+      <button
+        type="button"
+        className="sidebar-edge-toggle"
+        onClick={onToggleCollapse}
+        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        <i className={`bi ${isCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'}`} aria-hidden="true"></i>
+      </button>
 
-        <button className="nav-item" onClick={() => handleNavAction(onOpenTemplates)}><i className="bi bi-clipboard-data me-2" aria-hidden="true"></i>TID Templates</button>
-        <button className="nav-item" onClick={() => handleNavAction(onOpenBreakSchedule)}><i className="bi bi-cup-hot me-2" aria-hidden="true"></i>Break Schedule</button>
-      </nav>
-      
-      <div className="sidebar-foot" style={{ marginTop: 'auto' }}>Logged in as <strong>Support</strong></div>
-      <div className="sidebar-key">
-        <button id="saveGeminiKeyBtn" className="btn btn-sm btn-primary" style={{marginTop:8, width:'100%'}}>Set Gemini API Key</button>
+      <div className="sidebar-inner">
+        <div className="sidebar-top">
+          <div className="logo" title="CC Tickets v2.5.0">
+            <div className="logo-content">
+              <span className="logo-text">CC Tickets</span>
+              <span className="logo-version">v2.5.0</span>
+            </div>
+          </div>
+          <div className="sidebar-actions">
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label="Toggle dark mode"
+              title="Toggle theme"
+            >
+              <i className="bi bi-moon-stars-fill" aria-hidden="true"></i>
+            </button>
+            {isMobileView && (
+              <button
+                type="button"
+                className="sidebar-toggle"
+                onClick={() => setIsMobileNavOpen((prev) => !prev)}
+                aria-label="Toggle navigation"
+                title="Toggle navigation"
+              >
+                <i className="bi bi-list" aria-hidden="true"></i>
+              </button>
+            )}
+          </div>
+        </div>
+        <nav className={`nav-list ${isMobileView && !isMobileNavOpen ? 'nav-list-collapsed' : 'nav-list-open'}`} aria-label="Primary">
+          <button 
+            className={`nav-item ${currentView === 'dashboard' ? 'active' : ''}`} 
+            onClick={() => handleNavAction(() => {
+              onSelectView && onSelectView('dashboard');
+              window.switchToTab && window.switchToTab('creditcard');
+            })} 
+            aria-current={currentView === 'dashboard' ? 'page' : undefined} 
+            title="Dashboard"
+          >
+            <i className="bi bi-speedometer2 me-2" aria-hidden="true"></i>
+            <span className="nav-text">Dashboard</span>
+          </button>
+
+          <button className="nav-item" onClick={() => handleNavAction(onOpenTemplates)} title="TID Templates">
+            <i className="bi bi-clipboard-data me-2" aria-hidden="true"></i>
+            <span className="nav-text">TID Templates</span>
+          </button>
+          <button className="nav-item" onClick={() => handleNavAction(onOpenBreakSchedule)} title="Break Schedule">
+            <i className="bi bi-cup-hot me-2" aria-hidden="true"></i>
+            <span className="nav-text">Break Schedule</span>
+          </button>
+
+          {/* Dedicated Announcement Tab */}
+          <button 
+            className={`nav-item ${currentView === 'announcement' ? 'active' : ''}`}
+            onClick={() => handleNavAction(() => {
+              onSelectView && onSelectView('announcement');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            })}
+            aria-current={currentView === 'announcement' ? 'page' : undefined}
+            title="Announcement"
+          >
+            <i className="bi bi-megaphone me-2" aria-hidden="true"></i>
+            <span className="nav-text">Announcement</span>
+            <span className="nav-item-badge">NEW</span>
+          </button>
+        </nav>
+
+        {/* ☕ DAYOFF / 1 HR Break Card positioned at bottom of left panel */}
+        <SidebarBreakCard />
+
+        <div className="sidebar-foot">
+          <span className="sidebar-foot-full">Logged in as <strong>Support</strong></span>
+          <span className="sidebar-foot-compact" title="Logged in as Support"><i className="bi bi-person-circle" aria-hidden="true"></i></span>
+        </div>
+        <div className="sidebar-key">
+          <button id="saveGeminiKeyBtn" className="btn btn-sm btn-primary sidebar-key-btn" title="Set Gemini API Key" style={{marginTop:8, width:'100%'}}>
+            <i className="bi bi-key-fill sidebar-key-icon me-1" aria-hidden="true"></i>
+            <span className="sidebar-key-text">Set Gemini API Key</span>
+          </button>
+        </div>
       </div>
     </aside>
   );
@@ -283,172 +873,72 @@ function Header() {
     </header>
   );
 }
+
 // ==========================================
-// ✅ DASHBOARD GRID
+// DASHBOARD STATS GRID (5 METRICS)
 // ==========================================
+
 function DashboardGrid() {
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  
-  const [selectedPerson, setSelectedPerson] = useState(localStorage.getItem('myBreakPerson') || '');
-  const [todayBreak, setTodayBreak] = useState('--:--');
-  const [selectedDateStr, setSelectedDateStr] = useState(''); 
-
-  useEffect(() => {
-    const supportEl = document.getElementById('creditcard-support');
-    
-    const syncFromForm = (e) => {
-      const val = e.target.value;
-      setSelectedPerson(val);
-      localStorage.setItem('myBreakPerson', val);
-    };
-
-    if (supportEl) {
-      setTimeout(() => {
-        if (supportEl.value && supportEl.value !== selectedPerson) {
-          setSelectedPerson(supportEl.value);
-          localStorage.setItem('myBreakPerson', supportEl.value);
-        }
-      }, 500); 
-
-      supportEl.addEventListener('input', syncFromForm);
-      supportEl.addEventListener('change', syncFromForm);
-    }
-
-    return () => {
-      if (supportEl) {
-        supportEl.removeEventListener('input', syncFromForm);
-        supportEl.removeEventListener('change', syncFromForm);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const dateEl = document.getElementById('creditcard-date');
-    
-    const syncDateFromForm = (e) => {
-      setSelectedDateStr(e.target.value);
-    };
-
-    if (dateEl) {
-      setTimeout(() => {
-        if (dateEl.value) {
-          setSelectedDateStr(dateEl.value);
-        }
-      }, 500);
-
-      dateEl.addEventListener('input', syncDateFromForm);
-      dateEl.addEventListener('change', syncDateFromForm);
-    }
-
-    return () => {
-      if (dateEl) {
-        dateEl.removeEventListener('input', syncDateFromForm);
-        dateEl.removeEventListener('change', syncDateFromForm);
-      }
-    };
-  }, []);
-
-  let activeDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-  if (selectedDateStr) {
-    const [y, m, d] = selectedDateStr.split('-');
-    if (y && m && d) {
-      activeDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-    }
-  }
-  
-  const currentDayName = dayNames[activeDate.getDay()];
-  const currentDateString = activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-  useEffect(() => {
-    if (selectedPerson && BREAK_SCHEDULE[currentDayName]) {
-      const schedule = BREAK_SCHEDULE[currentDayName].find(s => {
-        const schedName = s.person.toUpperCase();
-        const myName = selectedPerson.toUpperCase();
-        return schedName.includes(myName) || myName.includes(schedName);
-      });
-      setTodayBreak(schedule ? schedule.time : 'DAYOFF');
-    } else if (selectedPerson) {
-      setTodayBreak('Off / Weekend');
-    } else {
-      setTodayBreak('--:--');
-    }
-  }, [selectedPerson, currentDayName]); 
-
-  const handlePersonChange = (e) => {
-    const val = e.target.value;
-    setSelectedPerson(val);
-    localStorage.setItem('myBreakPerson', val);
-    
-    const supportEl = document.getElementById('creditcard-support');
-    if (supportEl) {
-      supportEl.value = val;
-      supportEl.dispatchEvent(new Event('input', { bubbles: true }));
-      supportEl.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-  };
-
   return (
     <section className="dashboard-grid compact" aria-label="Ticket dashboard summary">
-      <div className="stat-card hero">
-        <div className="stat-label">Total tickets today</div>
-        <div className="stat-value" id="dashboardTotalTickets">0</div>
+      {/* 1. YOUR TICKETS */}
+      <div className="stat-card hero is-clickable" title="Overall total number of tickets" onClick={() => window.showAllTickets && window.showAllTickets()}>
+        <div className="stat-label">
+          <i className="bi bi-collection-fill" aria-hidden="true"></i> Your Tickets
+        </div>
+        <div className="stat-value" id="dashboardYourTickets">0</div>
+        <div className="stat-meta">Overall total tickets</div>
         <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,18 12,14 24,16 36,8 48,12 60,5 72,9 84,3 100,7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
 
-      <div className="stat-card success">
-        <div className="stat-label"><i className="bi bi-check-circle-fill" aria-hidden="true"></i> Resolved</div>
+      {/* 2. YESTERDAY TICKETS */}
+      <div className="stat-card slate is-clickable" title="Click to view yesterday's tickets" onClick={() => window.setFilterToYesterday && window.setFilterToYesterday()}>
+        <div className="stat-label">
+          <i className="bi bi-clock-history" aria-hidden="true"></i> Yesterday Tickets
+        </div>
+        <div className="stat-value" id="dashboardYesterdayTickets">0</div>
+        <div className="stat-meta">Created yesterday</div>
+        <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,16 12,14 24,15 36,11 48,13 60,8 72,10 84,6 100,8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      {/* 3. TODAY TICKETS */}
+      <div className="stat-card accent is-clickable" title="Click to view today's tickets" onClick={() => window.setFilterToToday && window.setFilterToToday()}>
+        <div className="stat-label">
+          <i className="bi bi-calendar2-check-fill" aria-hidden="true"></i> Today Tickets
+        </div>
+        <div className="stat-value" id="dashboardTodayTickets">0</div>
+        <div className="stat-meta">Created today</div>
+        <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,18 12,14 24,16 36,8 48,12 60,5 72,9 84,3 100,7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      {/* 4. RESOLVED */}
+      <div className="stat-card success is-clickable" title="Click to filter by Resolved" onClick={() => window.filterByStatus && window.filterByStatus('RESOLVED')}>
+        <div className="stat-label">
+          <i className="bi bi-check-circle-fill" aria-hidden="true"></i> Resolved
+        </div>
         <div className="stat-value" id="dashboardResolvedTickets">0</div>
+        <div className="stat-meta">Total resolved tickets</div>
         <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,16 12,12 24,14 36,10 48,12 60,7 72,9 84,4 100,6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
 
-      <div className="stat-card warning">
-        <div className="stat-label"><i className="bi bi-hourglass-split" aria-hidden="true"></i> Pending</div>
+      {/* 5. PENDING */}
+      <div className="stat-card warning is-clickable" title="Click to filter by Pending" onClick={() => window.filterByStatus && window.filterByStatus('PENDING')}>
+        <div className="stat-label">
+          <i className="bi bi-hourglass-split" aria-hidden="true"></i> Pending
+        </div>
         <div className="stat-value" id="dashboardPendingTickets">0</div>
+        <div className="stat-meta">Total pending tickets</div>
         <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,20 12,18 24,16 36,14 48,16 60,12 72,14 84,10 100,12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-      </div>
-
-      <div className="stat-card violet stat-card-break">
-        <div className="stat-label stat-label-row">
-          <div className="stat-label-stack">
-            <span><i className="bi bi-cup-hot" aria-hidden="true"></i> 1 Hr Break</span>
-            <span className="stat-label-sub">
-              {currentDayName}, {currentDateString}
-            </span>
-          </div>
-          <select
-            value={selectedPerson}
-            onChange={handlePersonChange}
-            className="break-name-select"
-            aria-label="Select your name"
-          >
-            <option value="">-- Name --</option>
-            <option value="HANZ">HANZ</option>
-            <option value="CHARLES">CHARLES</option>
-            <option value="KENNETH">KENNETH</option>
-            <option value="ADI">ADI</option>
-            <option value="TATI">TATI</option>
-            <option value="RONIE">RONIE</option>
-            <option value="SEAN">SEAN</option>
-            <option value="MAT">MAT</option>
-            <option value="ZEL">ZEL</option>
-            <option value="JR">JR</option>
-            <option value="YASMINE">YASMINE (YAS)</option>
-            <option value="GABRIEL">GABRIEL</option>
-            <option value="ERNEST">ERNEST</option>
-            <option value="REGS">REGS</option>
-            <option value="NICHOLLE">NICHOLLE</option>
-            <option value="ERNEST">EJ</option>
-          </select>
-        </div>
-        <div className="stat-value stat-value-break">
-          {selectedPerson ? todayBreak : (<>Select name <i className="bi bi-hand-index stat-select-arrow" aria-hidden="true"></i></>)}
-        </div>
       </div>
     </section>
   );
@@ -457,7 +947,24 @@ function DashboardGrid() {
 function Tabs() {
   return (
     <div className="top-tabs shell-tabs">
-      <button id="tabBtn-creditcard" className="tab-btn active" onClick={() => window.switchToTab && window.switchToTab('creditcard')}>Credit Card</button>
+      <button 
+        id="tabBtn-creditcard" 
+        className="tab-btn active" 
+        onClick={() => {
+          if (window.createNewTicket) {
+            window.createNewTicket();
+          } else if (window.switchToTab) {
+            window.switchToTab('creditcard');
+          }
+          const formEl = document.querySelector('.left-panel');
+          if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
+          const ticketNumEl = document.getElementById('creditcard-ticketNumber');
+          if (ticketNumEl) ticketNumEl.focus();
+        }}
+        title="Create a new ticket"
+      >
+        + New Ticket
+      </button>
     </div>
   );
 }
@@ -474,6 +981,10 @@ function LeftPanel() {
       </div>
       <table>
         <tbody>
+          <tr>
+            <th><label htmlFor="creditcard-ticketNumber">TICKET #</label></th>
+            <td><input type="text" id="creditcard-ticketNumber" className="no-uppercase" placeholder="Enter Ticket #" /></td>
+          </tr>
           <tr>
             <th><label htmlFor="creditcard-date">DATE</label></th>
             <td><input type="date" id="creditcard-date" /></td>
@@ -572,12 +1083,10 @@ function LeftPanel() {
                 />
                 <input type="hidden" id="creditcard-status" />
                 
-                <div className="form-group" id="creditcard-other-task-container" style={{ display: 'none', marginTop: '10px' }}>
-                  <label htmlFor="creditcard-other-task-select">Select Other Task:</label>
-                  <select id="creditcard-other-task-select" className="form-control">
-                    <option value="">Choose a task</option>
-                    <option value="Program PAX A35 w/ P98">Program PAX A35 w/ P98</option>
-                    <option value="PAX TID ">PAX TID </option>
+                {/* OPTION TEMPLATES FOR 'OTHER TASK' */}
+                <div id="creditcard-other-task-container" style={{ display: 'none', marginTop: '5px' }}>
+                  <select id="creditcard-other-task-select" className="combobox-input no-uppercase">
+                    <option value="">-- SELECT OTHER TASK TEMPLATE --</option>
                     <option value="DEJAVOO TID ">DEJAVOO TID </option>
                     <option value="VALOR TID">VALOR TID </option>
                     <option value="CLOVER DEPROVISIONED">CLOVER DEPROVISIONED</option>
@@ -678,6 +1187,7 @@ function RightPanel() {
         </div>
       </div>
       <div className="preview-summary">
+        <div className="preview-summary-row"><span>Ticket #</span><strong id="creditcard-preview-ticketNumber"></strong></div>
         <div className="preview-summary-row"><span>Store</span><strong id="creditcard-preview-store"></strong></div>
         <div className="preview-summary-row"><span>MID</span><strong id="creditcard-preview-mid"></strong></div>
         <div className="preview-summary-row"><span>Merchant</span><strong id="creditcard-preview-merchant"></strong></div>
@@ -737,6 +1247,7 @@ function BulkBar() {
       <label><input type="checkbox" id="selectAllCheckbox" /> Select all</label>
       <button id="bulkDeleteBtn">Remove</button>
       <button id="bulkCopyBtn">Copy</button>
+      <button id="copyAllBtn" className="copy-all-btn" onClick={() => window.copyAllEntries && window.copyAllEntries()} title="Copy all visible tickets to clipboard">Copy all</button>
       <button className="counter-badge status-filter-btn" data-status="RESOLVED" onClick={() => window.filterByStatus && window.filterByStatus('RESOLVED')}><i className="bi bi-check-circle-fill" aria-hidden="true"></i> Resolved: <span id="counterResolved">0</span></button>
       <button className="counter-badge status-filter-btn" data-status="PENDING" onClick={() => window.filterByStatus && window.filterByStatus('PENDING')}><i className="bi bi-hourglass-split" aria-hidden="true"></i> Pending: <span id="counterPending">0</span></button>
       <button className="counter-badge status-filter-btn" data-status="OTHER TASK" onClick={() => window.filterByStatus && window.filterByStatus('OTHER TASK')}><i className="bi bi-card-list" aria-hidden="true"></i> Other task: <span id="counterOther">0</span></button>
@@ -748,28 +1259,26 @@ function BulkBar() {
 function EntryTable() {
   return (
     <div id="entryTable-wrap">
-      <div style={{ overflowX: 'auto' }}>
-        <table id="entryTable">
-          <thead>
-            <tr>
-              <th></th>
-              <th>DATE</th>
-              <th>SHIFT SCHEDULE</th>
-              <th>SUPPORT NAME</th>
-              <th>MID</th>
-              <th>STORE NAME</th>
-              <th>MERCHANT NAME</th>
-              <th>CONTACT #</th>
-              <th>ISSUE</th>
-              <th>ESCALATED</th>
-              <th>STATUS</th>
-              <th>REMARKS</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <table id="entryTable">
+        <thead>
+          <tr>
+            <th className="th-select"><span className="sr-only">Select</span></th>
+            <th className="th-date">DATE</th>
+            <th className="th-shift">SHIFT SCHEDULE</th>
+            <th className="th-support">SUPPORT NAME</th>
+            <th className="th-store">STORE NAME</th>
+            <th className="th-mid">MID</th>
+            <th className="th-merchant">MERCHANT NAME</th>
+            <th className="th-contact">CONTACT #</th>
+            <th className="th-issue">ISSUE</th>
+            <th className="th-escalated">ESCALATED</th>
+            <th className="th-status">STATUS</th>
+            <th className="th-remarks">REMARKS</th>
+            <th className="th-actions">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
   );
 }
@@ -817,12 +1326,30 @@ export default function App() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showBreakSchedule, setShowBreakSchedule] = useState(false);
   const [showTeamPhoto, setShowTeamPhoto] = useState(false);
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed_creditcard') === 'true';
+  });
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed_creditcard', String(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
-    // Expose a global so the Header's team chip can open the modal
+    // Expose globals so child components / controller can trigger actions
     window.openTeamPhoto = () => setShowTeamPhoto(true);
+    window.switchToFormTab = () => setCurrentView('dashboard');
+    window.switchToDashboardView = () => setCurrentView('dashboard');
     initCreditcardApp();
-    return () => { delete window.openTeamPhoto; };
+    return () => { 
+      delete window.openTeamPhoto; 
+      delete window.switchToFormTab;
+      delete window.switchToDashboardView;
+    };
   }, []);
 
   return (
@@ -960,34 +1487,47 @@ export default function App() {
         `}
       </style>
 
-      <div className="page-shell layout">
+      <div className={`page-shell layout ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Sidebar 
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebarCollapse}
           onOpenTemplates={() => setShowTemplates(true)} 
           onOpenBreakSchedule={() => setShowBreakSchedule(true)} 
+          currentView={currentView}
+          onSelectView={setCurrentView}
         />
         <main className="main-area">
-          <div
-            className="app-banner"
-            style={{ backgroundImage: `url(${teamBanner})` }}
-            role="img"
-            aria-label="Credit Card support team"
-          ></div>
-          <Header />
-          <DashboardGrid />
-          <Tabs />
-          <div className="app-container">
-            <div className="main-content">
-              <div id="tab-creditcard" style={{ display: 'block' }}>
-                <div className="three-panels">
-                  <HistoryPanel />
-                  <LeftPanel />
-                  <RightPanel />
+          {/* ✅ TICKETING DASHBOARD VIEW (Preserved in DOM to retain Quill, form drafts & event listeners) */}
+          <div className="dashboard-view-wrapper" style={{ display: currentView === 'dashboard' ? 'flex' : 'none' }}>
+            <div
+              className="app-banner"
+              style={{ backgroundImage: `url(${teamBanner})` }}
+              role="img"
+              aria-label="Credit Card support team"
+            ></div>
+            <Header />
+            <DashboardGrid />
+            <Tabs />
+            <div className="app-container">
+              <div className="main-content">
+                <div id="tab-creditcard" style={{ display: 'block' }}>
+                  <div className="three-panels">
+                    <HistoryPanel />
+                    <LeftPanel />
+                    <RightPanel />
+                  </div>
                 </div>
+                <BulkBar />
+                <EntryTable />
               </div>
-              <BulkBar />
-              <EntryTable />
             </div>
           </div>
+
+          {/* ✅ INDEPENDENT ANNOUNCEMENT PAGE (Solely announcement content, completely separate) */}
+          <div style={{ display: currentView === 'announcement' ? 'block' : 'none' }}>
+            <AnnouncementPage onBackToDashboard={() => setCurrentView('dashboard')} />
+          </div>
+
           <div id="notification"></div>
         </main>
       </div>

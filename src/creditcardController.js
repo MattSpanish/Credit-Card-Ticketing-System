@@ -182,6 +182,34 @@ export function initCreditcardApp() {
       const dd = String(estDate.getDate()).padStart(2, '0');
       return `${yyyy}-${mm}-${dd}`;
     }
+
+    function getLocalYesterdayString() {
+      const now = new Date();
+      const estDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+      estDate.setDate(estDate.getDate() - 1);
+      const yyyy = estDate.getFullYear();
+      const mm = String(estDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(estDate.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function getEntryDateYMD(entryDate) {
+      if (!entryDate) return '';
+      if (entryDate.includes('-')) {
+        const parts = entryDate.split('-');
+        if (parts.length === 3) {
+          return `${parts[0]}-${String(parts[1]).padStart(2, '0')}-${String(parts[2]).padStart(2, '0')}`;
+        }
+      }
+      const dateObj = parseDateFromString(entryDate);
+      if (dateObj) {
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      }
+      return '';
+    }
     
     function showNotification(msg) {
       const el = document.getElementById('notification');
@@ -593,7 +621,7 @@ export function initCreditcardApp() {
     // ─── FORM DATA ───
     function saveFormData(prefix) {
       const fields = {
-        creditcard: ['shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'remarks', 'resolution', 'date']
+        creditcard: ['ticketNumber', 'shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'remarks', 'resolution', 'date']
       };
       const formData = {};
       fields[prefix].forEach(id => {
@@ -643,6 +671,7 @@ export function initCreditcardApp() {
 
     // ─── PREVIEW ───
     function creditcardUpdatePreview() {
+      const previewTicket = document.getElementById('creditcard-preview-ticketNumber');
       const previewMid = document.getElementById('creditcard-preview-mid');
       const previewStore = document.getElementById('creditcard-preview-store');
       const previewMerchant = document.getElementById('creditcard-preview-merchant');
@@ -651,6 +680,7 @@ export function initCreditcardApp() {
       const previewRes = document.getElementById('creditcard-preview-resolution');
       const previewRemarks = document.getElementById('creditcard-preview-remarks');
       
+      if (previewTicket) previewTicket.textContent = document.getElementById('creditcard-ticketNumber')?.value || '';
       if (previewMid) previewMid.textContent = document.getElementById('creditcard-mid')?.value || '';
       if (previewStore) previewStore.textContent = document.getElementById('creditcard-store')?.value || '';
       if (previewMerchant) previewMerchant.textContent = document.getElementById('creditcard-merchant')?.value || '';
@@ -696,6 +726,7 @@ export function initCreditcardApp() {
         formattedDate = `${parseInt(m, 10)}/${parseInt(d, 10)}/${y}`;
       }
 
+      const ticketNumber = document.getElementById('creditcard-ticketNumber')?.value.trim() || '';
       const shift = document.getElementById('creditcard-shift').value;
       const support = document.getElementById('creditcard-support').value.toUpperCase() || 'AGENT';
       const mid = midEl.value.trim();
@@ -737,6 +768,7 @@ export function initCreditcardApp() {
 
       const newEntry = {
         id: Date.now(),
+        ticketNumber,
         date: formattedDate,
         shift,
         support,
@@ -789,7 +821,7 @@ export function initCreditcardApp() {
 
     function clearFormFields(prefix) {
       if (prefix === 'creditcard') {
-        const fields = ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'store-search'];
+        const fields = ['ticketNumber', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'store-search'];
         fields.forEach(id => {
           const el = document.getElementById(`creditcard-${id}`);
           if (el) el.value = '';
@@ -836,6 +868,8 @@ export function initCreditcardApp() {
         const year = dateParts[2];
         document.getElementById('creditcard-date').value = `${year}-${month}-${day}`;
       }
+      const ticketEl = document.getElementById('creditcard-ticketNumber');
+      if (ticketEl) ticketEl.value = entry.ticketNumber || '';
       document.getElementById('creditcard-shift').value = entry.shift || '';
       document.getElementById('creditcard-support').value = entry.support || '';
       document.getElementById('creditcard-mid').value = entry.mid || '';
@@ -868,7 +902,7 @@ export function initCreditcardApp() {
       const saveDraft = () => {
         if (!editId || editId !== entryId) return;
         const formData = {};
-        const fields = ['shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'remarks', 'date'];
+        const fields = ['ticketNumber', 'shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'remarks', 'date'];
         fields.forEach(id => {
           const el = document.getElementById(`creditcard-${id}`);
           if (el) formData[id] = el.value;
@@ -907,6 +941,11 @@ export function initCreditcardApp() {
       const draftKey = EDIT_DRAFT_KEY + editId;
       localStorage.removeItem(draftKey);
 
+      if (typeof window.switchToDashboardView === 'function') {
+        window.switchToDashboardView();
+      } else if (typeof window.switchToFormTab === 'function') {
+        window.switchToFormTab();
+      }
       populateFormFromEntry(entry);
       creditcardUpdatePreview();
 
@@ -999,8 +1038,8 @@ export function initCreditcardApp() {
         exportDate,
         entry.shift,
         entry.support,
-        entry.mid,
         entry.store,
+        entry.mid,
         entry.merchant || '',
         entry.contactNumber,
         entry.issue || '',
@@ -1050,17 +1089,30 @@ export function initCreditcardApp() {
       const tbody = document.querySelector('#entryTable tbody');
       if (!tbody) return;
       tbody.innerHTML = '';
+      if (visibleEntries.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="13" style="text-align: center; padding: 40px 16px; color: var(--text-muted); font-size: 0.85rem;">
+              <i class="bi bi-inbox" style="font-size: 1.6rem; display: block; margin-bottom: 8px; opacity: 0.4;"></i>
+              No tickets found for this view
+            </td>
+          </tr>
+        `;
+        updateSelectAllCheckboxState();
+        updateStatusCounters();
+        return;
+      }
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
       visibleEntries.forEach(entry => {
-        let displayDate = entry.date || '';
+        let displayDate = `<span class="date-main">${escapeHtml(entry.date || '')}</span>`;
         const dateObj = parseDateFromString(entry.date);
         if (dateObj) {
           const m = dateObj.getMonth() + 1;
           const dd = String(dateObj.getDate()).padStart(2, '0');
           const yy = String(dateObj.getFullYear()).slice(-2);
           const dayName = dayNames[dateObj.getDay()];
-          displayDate = `<strong>${m}/${dd}/${yy} - ${dayName}</strong>`; 
+          displayDate = `<div class="cell-date"><span class="date-main">${m}/${dd}/${yy}</span><span class="day-subtext">${dayName}</span></div>`; 
         }
 
         let combinedRemarks = '';
@@ -1084,8 +1136,8 @@ export function initCreditcardApp() {
             <td>${displayDate}</td>
             <td>${entry.shift || ''}</td>
             <td>${entry.support || ''}</td>
-            <td>${entry.mid || ''}</td>
             <td>${entry.store || ''}</td>
+            <td>${entry.mid || ''}</td>
             <td>${entry.merchant || ''}</td>
             <td>${entry.contactNumber || ''}</td>
             <td style="white-space:pre-wrap;">${entry.issue || ''}</td>
@@ -1107,24 +1159,23 @@ export function initCreditcardApp() {
     }
 
     function updateStatusCounters() {
-      const selectedDateStr = document.getElementById('creditcard-date').value;
+      const selectedDateStr = document.getElementById('creditcard-date')?.value || '';
       
-      let baseEntries = allEntries.filter(entry => !entry.deleted && entry.source === 'creditcard');
+      const allCreditCardEntries = allEntries.filter(entry => !entry.deleted && entry.source === 'creditcard');
 
+      let baseEntries = allCreditCardEntries;
       if (currentSearchQuery) {
         baseEntries = baseEntries.filter(entry => {
           const searchString = `${entry.ticketNumber || ''} ${entry.store || ''} ${entry.mid || ''} ${entry.merchant || ''} ${entry.contactNumber || ''} ${entry.issue || ''}`.toLowerCase();
           return searchString.includes(currentSearchQuery);
         });
-      } else {
+      } else if (selectedDateStr) {
         baseEntries = baseEntries.filter(entry => {
-          const dateObj = parseDateFromString(entry.date);
-          if (!dateObj) return false;
-          const entryDateYMD = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
-          return entryDateYMD === selectedDateStr;
+          return getEntryDateYMD(entry.date) === selectedDateStr;
         });
       }
       
+      // BulkBar table status counters (current view)
       let resolved = 0, pending = 0, other = 0;
       baseEntries.forEach(entry => {
         const status = (entry.status || '').toUpperCase();
@@ -1137,14 +1188,70 @@ export function initCreditcardApp() {
       if (document.getElementById('counterPending')) document.getElementById('counterPending').innerText = pending;
       if (document.getElementById('counterOther')) document.getElementById('counterOther').innerText = other;
       
-      const totalEl = document.getElementById('dashboardTotalTickets');
+      // Dashboard Cards (overall metrics)
+      const todayYMD = getLocalTodayString();
+      const yesterdayYMD = getLocalYesterdayString();
+
+      let yourTicketsTotal = allCreditCardEntries.length;
+      let yesterdayTicketsTotal = 0;
+      let todayTicketsTotal = 0;
+      let overallResolvedTotal = 0;
+      let overallPendingTotal = 0;
+
+      allCreditCardEntries.forEach(entry => {
+        const entryYMD = getEntryDateYMD(entry.date);
+        if (entryYMD === todayYMD) {
+          todayTicketsTotal++;
+        }
+        if (entryYMD === yesterdayYMD) {
+          yesterdayTicketsTotal++;
+        }
+
+        const status = (entry.status || '').toUpperCase();
+        if (status === 'RESOLVED' || status === 'OTHER TASK') {
+          overallResolvedTotal++;
+        } else if (status === 'PENDING') {
+          overallPendingTotal++;
+        }
+      });
+      
+      const yourTicketsEl = document.getElementById('dashboardYourTickets');
+      const yesterdayTicketsEl = document.getElementById('dashboardYesterdayTickets');
+      const todayTicketsEl = document.getElementById('dashboardTodayTickets');
       const dashResolvedEl = document.getElementById('dashboardResolvedTickets');
       const dashPendingEl = document.getElementById('dashboardPendingTickets');
       
-      if (totalEl) totalEl.textContent = baseEntries.length;
-      if (dashResolvedEl) dashResolvedEl.textContent = resolved + other;
-      if (dashPendingEl) dashPendingEl.textContent = pending;
+      if (yourTicketsEl) yourTicketsEl.textContent = yourTicketsTotal;
+      if (yesterdayTicketsEl) yesterdayTicketsEl.textContent = yesterdayTicketsTotal;
+      if (todayTicketsEl) todayTicketsEl.textContent = todayTicketsTotal;
+      if (dashResolvedEl) dashResolvedEl.textContent = overallResolvedTotal;
+      if (dashPendingEl) dashPendingEl.textContent = overallPendingTotal;
     }
+
+    window.setFilterToToday = function() {
+      const dateEl = document.getElementById('creditcard-date');
+      if (dateEl) {
+        dateEl.value = getLocalTodayString();
+        dateEl.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+
+    window.setFilterToYesterday = function() {
+      const dateEl = document.getElementById('creditcard-date');
+      if (dateEl) {
+        dateEl.value = getLocalYesterdayString();
+        dateEl.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+
+    window.showAllTickets = function() {
+      const searchEl = document.getElementById('headerSearch');
+      if (searchEl) searchEl.value = '';
+      currentSearchQuery = '';
+      currentStatusFilter = null;
+      document.querySelectorAll('.status-filter-btn').forEach(btn => btn.classList.remove('active'));
+      renderTable();
+    };
 
     function handleSelectAll(checkbox) {
       const checked = checkbox.checked;
@@ -1352,6 +1459,11 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
             
             if (ticketNum !== null) {
               entry.ticketNumber = ticketNum.trim();
+              if (editId && editId == entry.id) {
+                const tInput = document.getElementById('creditcard-ticketNumber');
+                if (tInput) tInput.value = entry.ticketNumber;
+                creditcardUpdatePreview();
+              }
               saveAllEntries();
               renderSidebar(); 
               showNotification('Ticket number saved!');
@@ -1615,8 +1727,8 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
           exportDate, 
           entry.shift, 
           entry.support, 
-          entry.mid, 
           entry.store, 
+          entry.mid, 
           entry.merchant || '', 
           entry.contactNumber, 
           entry.issue || '', 
@@ -1627,6 +1739,57 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       });
       navigator.clipboard.writeText(rows.join('\n')).then(() => showNotification(`Copied ${rows.length} rows`));
     }
+
+    function copyAllEntries() {
+      const visibleEntries = getVisibleEntries();
+      if (!visibleEntries || visibleEntries.length === 0) {
+        showNotification('No tickets to copy');
+        return;
+      }
+      
+      const rows = visibleEntries.map(entry => {
+        let exportDate = entry.date || '';
+        if (exportDate) {
+          const parts = exportDate.split('/');
+          if (parts.length === 3) {
+            const m = String(parseInt(parts[0], 10)).padStart(2, '0');
+            const d = String(parseInt(parts[1], 10)).padStart(2, '0');
+            const y = parts[2];
+            exportDate = `${d}/${m}/${y}`;
+          }
+        }
+
+        let combinedRemarks = '';
+        if ((entry.status || '').toUpperCase() === 'OTHER TASK') {
+          combinedRemarks = entry.resolution || '';
+        } else {
+          const parsedRem = formatMultiline(entry.remarks || '');
+          const parsedRes = entry.resolution || '';
+          if (parsedRem && parsedRes) {
+            combinedRemarks = parsedRem + '\n\n' + parsedRes;
+          } else {
+            combinedRemarks = parsedRem || parsedRes;
+          }
+        }
+
+        return [
+          exportDate, 
+          entry.shift, 
+          entry.support, 
+          entry.store, 
+          entry.mid, 
+          entry.merchant || '', 
+          entry.contactNumber, 
+          entry.issue || '', 
+          entry.escalated || '', 
+          entry.status || '', 
+          combinedRemarks 
+        ].map(f => escapeCSV(String(f ?? ''))).join('\t');
+      });
+
+      navigator.clipboard.writeText(rows.join('\n')).then(() => showNotification(`Copied all ${rows.length} tickets`));
+    }
+    window.copyAllEntries = copyAllEntries;
 
    // ─── COMBOBOX ───
     function initCombobox(comboboxId, hiddenId, optionsArray, suggestionsId, onSelectCallback) {
@@ -1721,16 +1884,51 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       }
     }
 
+    function resetDraftTabs() {
+      const tabsContainer = document.querySelector('.top-tabs');
+      if (tabsContainer) {
+        tabsContainer.querySelectorAll('.tab-btn[id^="ticketTab-"]').forEach(btn => btn.remove());
+      }
+      
+      try {
+        const savedTabs = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
+        savedTabs.forEach(tab => {
+          if (tab && tab.id) {
+            localStorage.removeItem(`draftData_${tab.id}`);
+          }
+        });
+      } catch (e) {}
+
+      localStorage.removeItem(DRAFT_TABS_KEY);
+      localStorage.removeItem('activeDraftId_creditcard');
+      currentDraftId = null;
+
+      const ccTabBtn = document.getElementById('tabBtn-creditcard');
+      if (ccTabBtn) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        ccTabBtn.classList.add('active');
+      }
+      clearFormFields('creditcard');
+      creditcardUpdatePreview();
+    }
+    window.resetDraftTabs = resetDraftTabs;
+
     window.createNewTicket = function() {
       const tabsContainer = document.querySelector('.top-tabs');
       if (!tabsContainer) return;
+      const todayEST = getESTDateString();
       const draftId = `draft-${Date.now()}`;
       const btn = createDraftTabButton(draftId, 'Ticket');
       tabsContainer.appendChild(btn);
       
       const savedNow = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
-      savedNow.push({ id: draftId, label: 'Ticket' });
+      savedNow.push({ id: draftId, label: 'Ticket', date: todayEST });
       localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(savedNow));
+      if (typeof window.switchToDashboardView === 'function') {
+        window.switchToDashboardView();
+      } else if (typeof window.switchToFormTab === 'function') {
+        window.switchToFormTab();
+      }
       clearFormFields('creditcard');
       activateDraftTab(draftId);
       return draftId;
@@ -1740,7 +1938,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
 
     function saveDraftData(draftId) {
       if (!draftId) return;
-      const fields = ['shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'date', 'support'];
+      const fields = ['ticketNumber', 'shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'date', 'support'];
       const data = {};
       fields.forEach(id => {
         const el = document.getElementById(`creditcard-${id}`);
@@ -1765,7 +1963,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       editId = null;
       localStorage.removeItem(EDIT_STORAGE_KEY);
       if (data) {
-        ['date','shift','support','mid','store','merchant','contactNumber','issue','escalated','status', 'resolution'].forEach(id => {
+        ['ticketNumber', 'date','shift','support','mid','store','merchant','contactNumber','issue','escalated','status', 'resolution'].forEach(id => {
           const el = document.getElementById(`creditcard-${id}`);
           if (el && data[id] !== undefined) el.value = data[id];
         });
@@ -1788,8 +1986,9 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         
         const storeName = (data && data.store) ? data.store : document.getElementById('creditcard-store')?.value || '';
         const mid = (data && data.mid) ? data.mid : document.getElementById('creditcard-mid')?.value || '';
+        const ticketNum = (data && data.ticketNumber) ? data.ticketNumber : document.getElementById('creditcard-ticketNumber')?.value || '';
         
-        let label = storeName || mid || 'Ticket';
+        let label = storeName || mid || (ticketNum ? `Ticket #${ticketNum}` : 'Ticket');
         btn.querySelector('.tab-label').textContent = label;
       } catch (e) {}
     }
@@ -1805,9 +2004,16 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         currentDraftId = null;
         localStorage.removeItem('activeDraftId_creditcard');
         clearFormFields('creditcard');
-      } else if (remaining.length > 0) {
-        const nextDraft = remaining[remaining.length - 1];
-        persistActiveDraftId(nextDraft.id);
+        if (remaining.length > 0) {
+          const nextDraft = remaining[remaining.length - 1];
+          activateDraftTab(nextDraft.id);
+        } else {
+          const ccTabBtn = document.getElementById('tabBtn-creditcard');
+          if (ccTabBtn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            ccTabBtn.classList.add('active');
+          }
+        }
       }
     }
 
@@ -1845,6 +2051,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         }
       };
 
+      parseField(/TICKET (?:NUMBER|#):\s*(.*)/i, 'creditcard-ticketNumber');
       parseField(/STORE NAME:\s*(.*)/i, 'creditcard-store');
       parseField(/MID:\s*(.*)/i, 'creditcard-mid');
       parseField(/PERSON NAME:\s*(.*)/i, 'creditcard-merchant');
@@ -1876,6 +2083,108 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
          }
       }
 
+      // Support tab-separated Google Sheet rows:
+      // Order: Date, Shift Schedule, Support Name, Store Name, MID, Merchant Name, Contact #, Issue, Escalated, Status, Remarks
+      if (text.includes('\t') && !/STORE NAME:/i.test(text)) {
+        const firstLine = text.trim().split(/\r?\n/)[0];
+        const cols = firstLine.split('\t');
+        if (cols.length >= 4) {
+          if (cols[0]) {
+            const dateEl = document.getElementById('creditcard-date');
+            const parsedD = parseDateFromString(cols[0].trim());
+            if (dateEl && parsedD) {
+              const yyyy = parsedD.getFullYear();
+              const mm = String(parsedD.getMonth() + 1).padStart(2, '0');
+              const dd = String(parsedD.getDate()).padStart(2, '0');
+              dateEl.value = `${yyyy}-${mm}-${dd}`;
+              dateEl.dispatchEvent(new Event('input', { bubbles: true }));
+              updated = true;
+            }
+          }
+          if (cols[1]) {
+            const shiftEl = document.getElementById('creditcard-shift');
+            if (shiftEl) {
+              shiftEl.value = cols[1].trim();
+              shiftEl.dispatchEvent(new Event('change', { bubbles: true }));
+              updated = true;
+            }
+          }
+          if (cols[2]) {
+            const supportEl = document.getElementById('creditcard-support');
+            if (supportEl) {
+              supportEl.value = cols[2].trim().toUpperCase();
+              supportEl.dispatchEvent(new Event('change', { bubbles: true }));
+              updated = true;
+            }
+          }
+          if (cols[3]) {
+            const storeEl = document.getElementById('creditcard-store');
+            if (storeEl) {
+              storeEl.value = cols[3].trim();
+              storeEl.dispatchEvent(new Event('input', { bubbles: true }));
+              updated = true;
+            }
+          }
+          if (cols[4]) {
+            const midEl = document.getElementById('creditcard-mid');
+            if (midEl) {
+              midEl.value = cols[4].trim();
+              midEl.dispatchEvent(new Event('input', { bubbles: true }));
+              updated = true;
+            }
+          }
+          if (cols.length > 5 && cols[5]) {
+            const merchEl = document.getElementById('creditcard-merchant');
+            if (merchEl) {
+              merchEl.value = cols[5].trim();
+              merchEl.dispatchEvent(new Event('input', { bubbles: true }));
+              updated = true;
+            }
+          }
+          if (cols.length > 6 && cols[6]) {
+            const phoneEl = document.getElementById('creditcard-contactNumber');
+            if (phoneEl) {
+              phoneEl.value = formatPhoneNumber(cols[6].trim());
+              phoneEl.dispatchEvent(new Event('input', { bubbles: true }));
+              updated = true;
+            }
+          }
+          if (cols.length > 7 && cols[7]) {
+            const issueEl = document.getElementById('creditcard-issue');
+            if (issueEl) {
+              issueEl.value = cols[7].trim();
+              issueEl.dispatchEvent(new Event('input', { bubbles: true }));
+              updated = true;
+            }
+          }
+          if (cols.length > 8 && cols[8]) {
+            const escEl = document.getElementById('creditcard-escalated');
+            if (escEl) {
+              escEl.value = cols[8].trim();
+              escEl.dispatchEvent(new Event('input', { bubbles: true }));
+              updated = true;
+            }
+          }
+          if (cols.length > 9 && cols[9]) {
+            const statusVal = cols[9].trim();
+            const statusInput = document.getElementById('creditcard-status');
+            const statusCombo = document.getElementById('creditcard-status-combobox');
+            if (statusInput) statusInput.value = statusVal;
+            if (statusCombo) statusCombo.value = statusVal;
+            updated = true;
+          }
+          if (cols.length > 10 && cols[10]) {
+            const remarksVal = cols[10].trim();
+            if (quillEditor) {
+              quillEditor.setText(remarksVal + '\n');
+            }
+            const remarksHidden = document.getElementById('creditcard-remarks');
+            if (remarksHidden) remarksHidden.value = remarksVal;
+            updated = true;
+          }
+        }
+      }
+
       if (updated) {
         creditcardUpdatePreview();
         saveFormData('creditcard');
@@ -1890,10 +2199,19 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
 
       document.addEventListener('paste', (e) => {
         const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-        if (pastedText && /STORE NAME:/i.test(pastedText) && /MID:/i.test(pastedText)) {
+        if (!pastedText) return;
+        if (/STORE NAME:/i.test(pastedText) && /MID:/i.test(pastedText)) {
             setTimeout(() => {
                 window.autoFillFromText(pastedText);
             }, 50);
+        } else if (pastedText.includes('\t')) {
+            const firstLine = pastedText.trim().split(/\r?\n/)[0];
+            const cols = firstLine.split('\t');
+            if (cols.length >= 4) {
+                setTimeout(() => {
+                    window.autoFillFromText(pastedText);
+                }, 50);
+            }
         }
       });
 
@@ -1903,25 +2221,69 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       attachGeminiKeyControls();
       initTheme();
 
-      const tabsContainer = document.querySelector('.top-tabs');
-      const savedTabs = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
-      if (tabsContainer) {
-        tabsContainer.querySelectorAll('.tab-btn[id^="ticketTab-"]').forEach(btn => btn.remove());
-        savedTabs.forEach(tab => {
-          tabsContainer.appendChild(createDraftTabButton(tab.id, tab.label || 'Ticket'));
+      const todayEST = getESTDateString();
+      const lastActiveDate = localStorage.getItem('lastActiveDate_creditcard');
+
+      if (lastActiveDate && lastActiveDate !== todayEST) {
+        // Automatically reset all ticket tabs from the previous day
+        resetDraftTabs();
+      } else {
+        // Prune any tabs that are from yesterday
+        const rawSavedTabs = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
+        const validTodayTabs = [];
+        rawSavedTabs.forEach(tab => {
+          let isToday = false;
+          if (tab && tab.date) {
+            isToday = (tab.date === todayEST);
+          } else if (tab && tab.id) {
+            const ts = parseInt(tab.id.replace('draft-', ''), 10);
+            if (!isNaN(ts) && ts > 1000000000000) {
+              const tabDateObj = new Date(ts);
+              const tabEST = new Date(tabDateObj.toLocaleString('en-US', { timeZone: 'America/New_York' })).toISOString().slice(0, 10);
+              isToday = (tabEST === todayEST);
+            }
+          }
+          if (isToday) {
+            validTodayTabs.push(tab);
+          } else if (tab && tab.id) {
+            localStorage.removeItem(`draftData_${tab.id}`);
+          }
         });
+
+        localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(validTodayTabs));
+
+        const tabsContainer = document.querySelector('.top-tabs');
+        if (tabsContainer) {
+          tabsContainer.querySelectorAll('.tab-btn[id^="ticketTab-"]').forEach(btn => btn.remove());
+          validTodayTabs.forEach(tab => {
+            tabsContainer.appendChild(createDraftTabButton(tab.id, tab.label || 'Ticket'));
+          });
+        }
+
+        const activeDraftId = localStorage.getItem('activeDraftId_creditcard');
+        const restoreTarget = validTodayTabs.find(tab => tab.id === activeDraftId) || validTodayTabs[validTodayTabs.length - 1];
+        if (restoreTarget) {
+          currentDraftId = restoreTarget.id;
+          activateDraftTab(restoreTarget.id);
+        } else {
+          currentDraftId = null;
+          localStorage.removeItem('activeDraftId_creditcard');
+          const ccTabBtn = document.getElementById('tabBtn-creditcard');
+          if (ccTabBtn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            ccTabBtn.classList.add('active');
+          }
+        }
       }
 
-      const activeDraftId = localStorage.getItem('activeDraftId_creditcard');
-      const restoreTarget = savedTabs.find(tab => tab.id === activeDraftId) || savedTabs[savedTabs.length - 1];
-      if (restoreTarget) {
-        currentDraftId = restoreTarget.id;
-        activateDraftTab(restoreTarget.id);
-      }
+      localStorage.setItem('lastActiveDate_creditcard', todayEST);
+      localStorage.setItem('lastClearDate_creditcard', todayEST);
 
       document.getElementById('clearAllBtn').addEventListener('click', clearAllEntries);
       document.getElementById('bulkDeleteBtn').addEventListener('click', bulkDelete);
       document.getElementById('bulkCopyBtn').addEventListener('click', bulkCopy);
+      const copyAllBtn = document.getElementById('copyAllBtn');
+      if (copyAllBtn) copyAllBtn.addEventListener('click', copyAllEntries);
       document.getElementById('selectAllCheckbox').addEventListener('change', (e) => handleSelectAll(e.target));
       
       const dateFieldEl = document.getElementById('creditcard-date');
@@ -1932,7 +2294,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         });
       }
 
-      ['mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution'].forEach(id => {
+      ['ticketNumber', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution'].forEach(id => {
         const el = document.getElementById(`creditcard-${id}`);
         if (el) {
           el.addEventListener('input', () => {
@@ -2028,10 +2390,15 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         const todayEST = getESTDateString();
         if (localStorage.getItem('lastClearDate_creditcard') !== todayEST) {
           document.getElementById('creditcard-date').value = getLocalTodayString();
-          saveAllEntries(); renderTable(); renderSidebar();
+          resetDraftTabs(); // Fresh start: ticket tabs from previous day automatically disappear!
+          saveAllEntries();
+          renderTable();
+          renderSidebar();
           localStorage.setItem('lastClearDate_creditcard', todayEST);
+          localStorage.setItem('lastActiveDate_creditcard', todayEST);
+          showNotification('New day started: Ticket tabs reset for today.');
         }
-      }, 60000);
+      }, 30000);
 
       window.addEventListener('beforeunload', () => {
         saveFormData('creditcard');
