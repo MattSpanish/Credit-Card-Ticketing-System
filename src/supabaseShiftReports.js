@@ -164,6 +164,44 @@ PENDING SOLVED TICKET: 0`;
   return baseTemplate;
 }
 
+// Dynamically recalculates HRMS TICKET REVIEW and PENDING TICKET REVIEW
+// whenever the user edits TOTAL CALLS or PENDING for the 5AM - 2PM shift report
+export function recalculateMorningReportText(content, reports, targetDateStr) {
+  if (!content) return content;
+  if (!content.includes('HRMS TICKET REVIEW:') && !content.includes('PENDING TICKET REVIEW:')) {
+    return content;
+  }
+
+  // Calculate base metrics from previous shifts for the exact same date
+  const baseMetrics = calculateMorningDailyWorkMetrics(reports, targetDateStr);
+  const baseHrms = baseMetrics.hrmsTicketReview;
+  const basePending = baseMetrics.pendingTicketReview;
+
+  // Extract current shift's TOTAL CALLS and PENDING from the top section
+  const callsMatch = content.match(/(?:^|\n)\s*TOTAL\s*CALLS?\s*[-:]\s*(\d*)/i);
+  const currentCalls = callsMatch && callsMatch[1] ? parseInt(callsMatch[1], 10) : 0;
+
+  const pendingMatch = content.match(/(?:^|\n)\s*PENDING(?!\s+(?:TICKET|SOLVED))\s*[-:]\s*(\d*)/i);
+  const currentPending = pendingMatch && pendingMatch[1] ? parseInt(pendingMatch[1], 10) : 0;
+
+  const totalHrms = baseHrms + currentCalls;
+  const totalPending = basePending + currentPending;
+
+  let updated = content;
+  // Update HRMS TICKET REVIEW
+  updated = updated.replace(
+    /(HRMS\s*TICKET\s*REVIEW\s*[-:]\s*)\d*/i,
+    (match, prefix) => prefix + totalHrms
+  );
+  // Update PENDING TICKET REVIEW
+  updated = updated.replace(
+    /(PENDING\s*TICKET\s*REVIEW\s*[-:]\s*)\d*/i,
+    (match, prefix) => prefix + totalPending
+  );
+
+  return updated;
+}
+
 // Configuration helper
 export function getSupabaseConfig() {
   const envUrl = import.meta.env.VITE_SUPABASE_URL || '';

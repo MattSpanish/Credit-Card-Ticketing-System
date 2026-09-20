@@ -9,6 +9,7 @@ import {
   testSupabaseConnection,
   getDefaultReportTemplate,
   calculateMorningDailyWorkMetrics,
+  recalculateMorningReportText,
   detectShiftFromContent,
   SUPABASE_SQL_SCRIPT,
 } from './supabaseShiftReports';
@@ -114,6 +115,24 @@ export default function ShiftReportPage({ onBackToDashboard }) {
       textareaRef.current.focus();
     }
     showToast(toastMessage);
+  }
+
+  // Handle report text editing with dynamic live recalculation for 5AM-2PM Daily Work Report
+  function handleReportTextChange(e) {
+    const rawValue = e.target.value;
+    const selStart = e.target.selectionStart;
+    const selEnd = e.target.selectionEnd;
+
+    const updatedValue = recalculateMorningReportText(rawValue, reports, reportDate);
+    setReportText(updatedValue);
+
+    if (textareaRef.current && selStart !== null && selStart !== undefined) {
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.setSelectionRange(selStart, selEnd);
+        }
+      });
+    }
   }
 
   // Process image file for attachment
@@ -441,7 +460,17 @@ export default function ShiftReportPage({ onBackToDashboard }) {
                   type="date"
                   className="composer-input"
                   value={reportDate}
-                  onChange={(e) => setReportDate(e.target.value)}
+                  onChange={(e) => {
+                    const newDate = e.target.value;
+                    setReportDate(newDate);
+                    if (
+                      reportText &&
+                      (reportText.includes('HRMS TICKET REVIEW:') || reportText.includes('PENDING TICKET REVIEW:'))
+                    ) {
+                      const updated = recalculateMorningReportText(reportText, reports, newDate);
+                      setReportText(updated);
+                    }
+                  }}
                   required
                 />
               </div>
@@ -512,7 +541,7 @@ PENDING - 0
 
 OTHER - 0`}
                 value={reportText}
-                onChange={(e) => setReportText(e.target.value)}
+                onChange={handleReportTextChange}
               ></textarea>
             </div>
 
