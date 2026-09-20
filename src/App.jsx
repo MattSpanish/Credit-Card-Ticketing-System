@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { initCreditcardApp } from './creditcardController';
 import teamPhoto from './group-photo.jpeg';
 import teamBanner from './groupcc.jpeg';
+import ShiftReportPage from './ShiftReportPage';
 
 // ✅ GLOBAL DATA
 const BREAK_SCHEDULE = {
@@ -850,6 +851,20 @@ function Sidebar({
           >
             <i className="bi bi-megaphone me-2" aria-hidden="true"></i>
             <span className="nav-text">Announcement</span>
+          </button>
+
+          {/* Dedicated Shift Report Tab */}
+          <button 
+            className={`nav-item ${currentView === 'shift-report' ? 'active' : ''}`}
+            onClick={() => handleNavAction(() => {
+              onSelectView && onSelectView('shift-report');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            })}
+            aria-current={currentView === 'shift-report' ? 'page' : undefined}
+            title="Shift Report"
+          >
+            <i className="bi bi-file-earmark-bar-graph me-2" aria-hidden="true"></i>
+            <span className="nav-text">Shift Report</span>
             <span className="nav-item-badge">NEW</span>
           </button>
         </nav>
@@ -1230,13 +1245,14 @@ function DashboardGrid() {
   );
 }
 
-function Tabs() {
+function Tabs({ currentView = 'dashboard', onSelectView }) {
   return (
     <div className="top-tabs shell-tabs">
       <button 
         id="tabBtn-creditcard" 
-        className="tab-btn active" 
+        className={`tab-btn ${currentView === 'dashboard' ? 'active' : ''}`} 
         onClick={() => {
+          onSelectView && onSelectView('dashboard');
           if (window.createNewTicket) {
             window.createNewTicket();
           } else if (window.switchToTab) {
@@ -1250,6 +1266,18 @@ function Tabs() {
         title="Create a new ticket"
       >
         + New Ticket
+      </button>
+
+      <button 
+        id="tabBtn-shiftreport" 
+        className={`tab-btn ${currentView === 'shift-report' ? 'active' : ''}`} 
+        onClick={() => {
+          onSelectView && onSelectView('shift-report');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        title="Open Shift Reports"
+      >
+        <i className="bi bi-file-earmark-bar-graph me-1" aria-hidden="true"></i> SHIFT REPORT
       </button>
     </div>
   );
@@ -1815,7 +1843,7 @@ export default function App() {
             ></div>
             <Header />
             <DashboardGrid />
-            <Tabs />
+            <Tabs currentView={currentView} onSelectView={setCurrentView} />
             <div className="app-container">
               <div className="main-content">
                 <div id="tab-creditcard" style={{ display: 'block' }}>
@@ -1850,6 +1878,11 @@ export default function App() {
           {/* ✅ INDEPENDENT ANNOUNCEMENT PAGE (Solely announcement content, completely separate) */}
           <div style={{ display: currentView === 'announcement' ? 'block' : 'none' }}>
             <AnnouncementPage onBackToDashboard={() => setCurrentView('dashboard')} />
+          </div>
+
+          {/* ✅ INDEPENDENT SHIFT REPORT PAGE (Paste-only, Supabase shared sync) */}
+          <div style={{ display: currentView === 'shift-report' ? 'block' : 'none' }}>
+            <ShiftReportPage onBackToDashboard={() => setCurrentView('dashboard')} />
           </div>
 
           <div id="notification"></div>
