@@ -58,6 +58,84 @@ export function parseReportMetrics(content) {
   };
 }
 
+// Extract date in YYYY-MM-DD format from report content text
+export function extractDateStringFromContent(content) {
+  if (!content) return '';
+  const monthMatch = content.match(/\b(January|Jan|February|Feb|March|Mar|April|Apr|May|June|Jun|July|Jul|August|Aug|September|Sep|Sept|October|Oct|November|Nov|December|Dec)\s+(\d{1,2}),?\s+(\d{4})\b/i);
+  if (monthMatch) {
+    const months = {
+      january: 1, jan: 1, february: 2, feb: 2, march: 3, mar: 3, april: 4, apr: 4, may: 5,
+      june: 6, jun: 6, july: 7, jul: 7, august: 8, aug: 8, september: 9, sep: 9, sept: 9,
+      october: 10, oct: 10, november: 11, nov: 11, december: 12, dec: 12
+    };
+    const m = months[monthMatch[1].toLowerCase()];
+    const d = parseInt(monthMatch[2], 10);
+    const y = parseInt(monthMatch[3], 10);
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  const isoMatch = content.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+  if (isoMatch) return isoMatch[0];
+  const slashMatch = content.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/);
+  if (slashMatch) {
+    const m = parseInt(slashMatch[1], 10);
+    const d = parseInt(slashMatch[2], 10);
+    const y = parseInt(slashMatch[3], 10);
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  return '';
+}
+
+// Get accurate YYYY-MM-DD date for a report
+// Priority: 1. Date typed in report content, 2. report_date property, 3. created_at fallback
+export function getReportDateISO(report) {
+  if (!report) return '';
+  const contentDate = extractDateStringFromContent(report.content);
+  if (contentDate) return contentDate;
+
+  if (report.report_date) {
+    const d = report.report_date.trim().slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+    const parsed = extractDateStringFromContent(report.report_date);
+    if (parsed) return parsed;
+  }
+
+  if (report.created_at) {
+    try {
+      const d = new Date(report.created_at);
+      if (!isNaN(d.getTime())) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      }
+    } catch {}
+    return report.created_at.slice(0, 10);
+  }
+
+  return '';
+}
+
+// Replace formatted date in report text when the composer date changes
+export function updateReportTextDate(content, targetDateStr) {
+  if (!content || !targetDateStr) return content;
+  let formatted = '';
+  try {
+    const parts = targetDateStr.split('-');
+    if (parts.length === 3) {
+      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      formatted = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+  } catch {}
+  if (!formatted) return content;
+
+  let updated = content.replace(
+    /\b(January|Jan|February|Feb|March|Mar|April|Apr|May|June|Jun|July|Jul|August|Aug|September|Sep|Sept|October|Oct|November|Nov|December|Dec)\s+\d{1,2},?\s+\d{4}\b/i,
+    formatted
+  );
+  updated = updated.replace(/\b\d{4}-\d{2}-\d{2}\b/, formatted);
+  return updated;
+}
+
 // Calculate combined previous shift metrics strictly for the SAME DATE
 // For the 05:00AM - 02:00PM shift:
 // TOTAL CALLS -> HRMS TICKET REVIEW
@@ -67,25 +145,11 @@ export function calculateMorningDailyWorkMetrics(reports, targetDateStr) {
     return { hrmsTicketReview: 0, pendingTicketReview: 0, foundReports: [] };
   }
 
-  // Format target date (e.g. "September 20, 2026")
-  let targetDateFormatted = '';
-  try {
-    const parts = targetDateStr.split('-');
-    if (parts.length === 3) {
-      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-      targetDateFormatted = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    }
-  } catch {}
+  const targetISO = targetDateStr.slice(0, 10);
 
   // Filter reports that match the EXACT same date strictly
   const sameDateReports = reports.filter((r) => {
-    if (r.report_date && r.report_date === targetDateStr) return true;
-    if (r.created_at && r.created_at.slice(0, 10) === targetDateStr) return true;
-    if (r.content) {
-      if (r.content.includes(targetDateStr)) return true;
-      if (targetDateFormatted && r.content.includes(targetDateFormatted)) return true;
-    }
-    return false;
+    return getReportDateISO(r) === targetISO;
   });
 
   // Extract latest report for 2PM-11PM and latest for 9PM-6AM

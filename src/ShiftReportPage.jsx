@@ -11,6 +11,9 @@ import {
   getDefaultReportTemplate,
   calculateMorningDailyWorkMetrics,
   recalculateMorningReportText,
+  updateReportTextDate,
+  extractDateStringFromContent,
+  getReportDateISO,
   detectShiftFromContent,
   SUPABASE_SQL_SCRIPT,
 } from './supabaseShiftReports';
@@ -132,7 +135,11 @@ export default function ShiftReportPage({ onBackToDashboard }) {
     const selStart = e.target.selectionStart;
     const selEnd = e.target.selectionEnd;
 
-    const updatedValue = recalculateMorningReportText(rawValue, reports, reportDate);
+    // Detect if content has a specific date written in it (e.g. 'September 20, 2026')
+    const contentDate = extractDateStringFromContent(rawValue);
+    const activeDate = contentDate || reportDate;
+
+    const updatedValue = recalculateMorningReportText(rawValue, reports, activeDate);
     setReportText(updatedValue);
 
     if (textareaRef.current && selStart !== null && selStart !== undefined) {
@@ -375,31 +382,11 @@ export default function ShiftReportPage({ onBackToDashboard }) {
     });
   }
 
-  // Filtered reports by selected date
+  // Filtered reports by selected date (matching strictly by report date)
   const filteredReports = useMemo(() => {
     if (!filterDate) return reports;
-
-    let targetFormatted = '';
-    try {
-      const parts = filterDate.split('-');
-      if (parts.length === 3) {
-        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-        targetFormatted = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-      }
-    } catch {}
-
-    return reports.filter((r) => {
-      // 1. Explicit report_date property (YYYY-MM-DD)
-      if (r.report_date === filterDate) return true;
-      // 2. ISO timestamp created_at
-      if (r.created_at && r.created_at.slice(0, 10) === filterDate) return true;
-      // 3. Text content contains date (ISO or long format)
-      if (r.content) {
-        if (r.content.includes(filterDate)) return true;
-        if (targetFormatted && r.content.includes(targetFormatted)) return true;
-      }
-      return false;
-    });
+    const targetISO = filterDate.slice(0, 10);
+    return reports.filter((r) => getReportDateISO(r) === targetISO);
   }, [reports, filterDate]);
 
   // Extract a readable title or first line from pasted report
@@ -523,7 +510,8 @@ export default function ShiftReportPage({ onBackToDashboard }) {
                       reportText &&
                       (reportText.includes('HRMS TICKET REVIEW:') || reportText.includes('PENDING TICKET REVIEW:'))
                     ) {
-                      const updated = recalculateMorningReportText(reportText, reports, newDate);
+                      const withUpdatedDate = updateReportTextDate(reportText, newDate);
+                      const updated = recalculateMorningReportText(withUpdatedDate, reports, newDate);
                       setReportText(updated);
                     }
                   }}
