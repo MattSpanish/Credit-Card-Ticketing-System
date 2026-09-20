@@ -1,5 +1,6 @@
 // src/ShiftReportPage.jsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import appLogo from './logo.png';
 import {
   fetchShiftReports,
   addShiftReport,
@@ -426,6 +427,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
       <div className="shift-page-header">
         <div>
           <div className="shift-kicker">
+            <img src={appLogo} alt="CC Logo" className="shift-kicker-logo" />
             <span className="kicker-pill">
               <i className="bi bi-clock-history me-1" aria-hidden="true"></i> Handover & Logs
             </span>

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { initCreditcardApp } from './creditcardController';
 import teamPhoto from './group-photo.jpeg';
 import teamBanner from './groupcc.jpeg';
+import appLogo from './logo.png';
 import ShiftReportPage from './ShiftReportPage';
 
 // ✅ GLOBAL DATA
@@ -788,6 +789,7 @@ function Sidebar({
       <div className="sidebar-inner">
         <div className="sidebar-top">
           <div className="logo" title="CC Tickets v2.6.0">
+            <img src={appLogo} alt="CC Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">CC Tickets</span>
               <span className="logo-version">v2.6.0</span>
@@ -972,8 +974,13 @@ function Header() {
   return (
     <header className="app-header">
       <div className="header-left">
-        <h1>Credit Card Support Center</h1>
-        <p className="small">Capture issues quickly and resolve faster.</p>
+        <div className="header-brand-wrap">
+          <img src={appLogo} alt="CC Support Logo" className="header-logo-img" />
+          <div className="header-titles">
+            <h1>Credit Card Support Center</h1>
+            <p className="small">Capture issues quickly and resolve faster.</p>
+          </div>
+        </div>
       </div>
       <div className="header-actions">
         <div className="header-search-wrap">
