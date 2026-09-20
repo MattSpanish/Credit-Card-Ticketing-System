@@ -1121,7 +1121,11 @@ function DashboardGrid() {
         const raw = localStorage.getItem('unifiedEntries_creditcard');
         if (raw) {
           const parsed = JSON.parse(raw);
-          list = parsed.filter(e => !e.deleted && e.source === 'creditcard' && (e.status || '').toUpperCase() === 'PENDING');
+          list = parsed.filter(e => {
+            if (e.deleted || e.source !== 'creditcard') return false;
+            const status = (e.status || '').toUpperCase().trim();
+            return status !== 'RESOLVED' && status !== 'OTHER TASK';
+          });
         }
       } catch (err) {
         list = [];
@@ -1258,6 +1262,15 @@ function DashboardGrid() {
                         <i className="bi bi-ticket-perforated-fill me-1" aria-hidden="true"></i>
                         {ticket.ticketNumber ? `TICKET #: ${ticket.ticketNumber}` : 'NO TICKET #'}
                       </span>
+                      {(!ticket.status || ticket.status.trim() === '') ? (
+                        <span className="pending-status-pill no-status" title="This ticket has no status assigned">
+                          No Status
+                        </span>
+                      ) : (ticket.status.toUpperCase() !== 'PENDING') ? (
+                        <span className="pending-status-pill alt-status" title={`Status: ${ticket.status}`}>
+                          {ticket.status}
+                        </span>
+                      ) : null}
                       {ticket.ticketNumber && (
                         <button
                           type="button"

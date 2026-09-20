@@ -1125,8 +1125,13 @@ export function initCreditcardApp() {
         });
       }
 
-      if (currentStatusFilter) {
-        entries = entries.filter(entry => (entry.status || '').toUpperCase() === currentStatusFilter);
+      if (currentStatusFilter === 'PENDING') {
+        entries = entries.filter(entry => {
+          const s = (entry.status || '').toUpperCase().trim();
+          return s !== 'RESOLVED' && s !== 'OTHER TASK';
+        });
+      } else if (currentStatusFilter) {
+        entries = entries.filter(entry => (entry.status || '').toUpperCase().trim() === currentStatusFilter);
       }
       return entries;
     }
@@ -1257,10 +1262,10 @@ export function initCreditcardApp() {
       // BulkBar table status counters (current view)
       let resolved = 0, pending = 0, other = 0;
       baseEntries.forEach(entry => {
-        const status = (entry.status || '').toUpperCase();
+        const status = (entry.status || '').toUpperCase().trim();
         if (status === 'RESOLVED') resolved++;
-        else if (status === 'PENDING') pending++;
         else if (status === 'OTHER TASK') other++;
+        else pending++;
       });
       
       if (document.getElementById('counterResolved')) document.getElementById('counterResolved').innerText = resolved;
@@ -1286,10 +1291,10 @@ export function initCreditcardApp() {
           yesterdayTicketsTotal++;
         }
 
-        const status = (entry.status || '').toUpperCase();
+        const status = (entry.status || '').toUpperCase().trim();
         if (status === 'RESOLVED' || status === 'OTHER TASK') {
           overallResolvedTotal++;
-        } else if (status === 'PENDING') {
+        } else {
           overallPendingTotal++;
         }
       });
@@ -1354,7 +1359,11 @@ export function initCreditcardApp() {
 
     window.getPendingTickets = function() {
       return allEntries
-        .filter(entry => !entry.deleted && entry.source === 'creditcard' && (entry.status || '').toUpperCase() === 'PENDING')
+        .filter(entry => {
+          if (entry.deleted || entry.source !== 'creditcard') return false;
+          const status = (entry.status || '').toUpperCase().trim();
+          return status !== 'RESOLVED' && status !== 'OTHER TASK';
+        })
         .map(entry => ({
           id: entry.id,
           ticketNumber: entry.ticketNumber || '',
@@ -1366,7 +1375,8 @@ export function initCreditcardApp() {
           resolution: entry.resolution || '',
           support: entry.support || '',
           date: entry.date || '',
-          escalated: entry.escalated || ''
+          escalated: entry.escalated || '',
+          status: entry.status || ''
         }));
     };
 

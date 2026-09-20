@@ -1173,6 +1173,29 @@ body.dark-mode .stat-card.slate .stat-label .bi { color: #94a3b8; }
     display: inline-flex;
     align-items: center;
 }
+.pending-status-pill {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    margin-left: auto;
+    white-space: nowrap;
+}
+.pending-status-pill.no-status {
+    background: rgba(245, 158, 11, 0.14);
+    color: #d97706;
+    border-color: rgba(245, 158, 11, 0.32);
+}
+body.dark-mode .pending-status-pill.no-status {
+    background: rgba(245, 158, 11, 0.22);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.45);
+}
 .pending-copy-btn {
     display: inline-flex;
     align-items: center;
