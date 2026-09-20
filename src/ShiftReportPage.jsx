@@ -1,6 +1,6 @@
 // src/ShiftReportPage.jsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import appLogo from './logo.png';
+import appLogo from './logo2.png';
 import {
   fetchShiftReports,
   addShiftReport,

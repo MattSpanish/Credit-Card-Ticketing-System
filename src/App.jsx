@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { initCreditcardApp } from './creditcardController';
 import teamPhoto from './group-photo.jpeg';
 import teamBanner from './groupcc.jpeg';
-import appLogo from './logo.png';
+import appLogo from './logo2.png';
 import ShiftReportPage from './ShiftReportPage';
 
 // ✅ GLOBAL DATA
