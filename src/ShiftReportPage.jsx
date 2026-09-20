@@ -40,7 +40,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
   const [reports, setReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState('local'); // 'supabase' | 'local' | 'local-fallback'
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filterDate, setFilterDate] = useState('');
   const [copiedId, setCopiedId] = useState(null);
   const [copiedImgKey, setCopiedImgKey] = useState(null);
   const [feedbackMsg, setFeedbackMsg] = useState('');
@@ -295,17 +295,32 @@ export default function ShiftReportPage({ onBackToDashboard }) {
     });
   }
 
-  // Filtered reports
+  // Filtered reports by selected date
   const filteredReports = useMemo(() => {
-    if (!searchQuery.trim()) return reports;
-    const q = searchQuery.toLowerCase();
+    if (!filterDate) return reports;
+
+    let targetFormatted = '';
+    try {
+      const parts = filterDate.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        targetFormatted = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+    } catch {}
+
     return reports.filter((r) => {
-      const contentMatch = (r.content || '').toLowerCase().includes(q);
-      const authorMatch = (r.author || '').toLowerCase().includes(q);
-      const dateMatch = (r.created_at || '').toLowerCase().includes(q) || (r.report_date || '').toLowerCase().includes(q);
-      return contentMatch || authorMatch || dateMatch;
+      // 1. Explicit report_date property (YYYY-MM-DD)
+      if (r.report_date === filterDate) return true;
+      // 2. ISO timestamp created_at
+      if (r.created_at && r.created_at.slice(0, 10) === filterDate) return true;
+      // 3. Text content contains date (ISO or long format)
+      if (r.content) {
+        if (r.content.includes(filterDate)) return true;
+        if (targetFormatted && r.content.includes(targetFormatted)) return true;
+      }
+      return false;
     });
-  }, [reports, searchQuery]);
+  }, [reports, filterDate]);
 
   // Extract a readable title or first line from pasted report
   function extractReportTitle(content) {
@@ -608,30 +623,43 @@ OTHER - 0`}
               </h3>
               <span className="feed-count-badge">
                 {filteredReports.length} {filteredReports.length === 1 ? 'Report' : 'Reports'}
+                {filterDate ? ` on ${filterDate}` : ''}
               </span>
             </div>
 
             <div className="feed-controls">
-              <div className="feed-search-wrap">
-                <i className="bi bi-search search-icon" aria-hidden="true"></i>
+              <div className="feed-date-filter-wrap">
+                <i className="bi bi-calendar-event date-icon" aria-hidden="true"></i>
                 <input
-                  type="text"
-                  className="feed-search-input"
-                  placeholder="Search reports or authors..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  type="date"
+                  className="feed-date-filter-input"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  title="Select date to filter shift reports"
                 />
-                {searchQuery && (
+                {filterDate && (
                   <button
                     type="button"
-                    className="search-clear-btn"
-                    onClick={() => setSearchQuery('')}
-                    aria-label="Clear search"
+                    className="date-clear-btn"
+                    onClick={() => setFilterDate('')}
+                    title="Clear date filter (show all dates)"
+                    aria-label="Show all dates"
                   >
                     <i className="bi bi-x"></i>
                   </button>
                 )}
               </div>
+
+              {filterDate && (
+                <button
+                  type="button"
+                  className="btn-all-dates"
+                  onClick={() => setFilterDate('')}
+                  title="Show reports from all dates"
+                >
+                  All Dates
+                </button>
+              )}
 
               <button
                 type="button"
@@ -653,14 +681,22 @@ OTHER - 0`}
               </div>
             ) : filteredReports.length === 0 ? (
               <div className="feed-empty-state">
-                <i className="bi bi-inbox empty-icon" aria-hidden="true"></i>
-                <h4>No Shift Reports Found</h4>
+                <i className="bi bi-calendar-x empty-icon" aria-hidden="true"></i>
+                <h4>{filterDate ? `No Reports on ${filterDate}` : 'No Shift Reports Found'}</h4>
                 <p>
-                  {searchQuery
-                    ? `No reports matched "${searchQuery}". Try a different search.`
+                  {filterDate
+                    ? `No shift reports found for ${filterDate}. Select another date or click below to view all reports.`
                     : 'No shift reports have been posted yet. Paste a shift report on the left and click "Post Shift Report"!'}
                 </p>
-                {!searchQuery && (
+                {filterDate ? (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-primary mt-2"
+                    onClick={() => setFilterDate('')}
+                  >
+                    <i className="bi bi-calendar2-range me-1"></i> View All Dates
+                  </button>
+                ) : (
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-primary mt-2"

@@ -3600,38 +3600,46 @@ body.dark-mode .feed-count-badge {
     align-items: center;
 }
 
-.feed-search-wrap .search-icon {
+.feed-date-filter-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.feed-date-filter-wrap .date-icon {
     position: absolute;
     left: 10px;
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     pointer-events: none;
 }
 
-.feed-search-input {
+.feed-date-filter-input {
     padding: 6px 28px 6px 30px;
     font-size: 0.8rem;
+    font-family: inherit;
     border-radius: 8px;
     border: 1px solid var(--border-color, #cbd5e1);
     background: var(--panel-bg, #ffffff);
     color: var(--text-primary);
-    width: 170px;
+    cursor: pointer;
     transition: all 0.2s ease;
+    min-width: 155px;
 }
 
-.feed-search-input:focus {
-    width: 220px;
+.feed-date-filter-input:focus {
     outline: none;
     border-color: var(--primary-color, #2563eb);
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
-body.dark-mode .feed-search-input {
+body.dark-mode .feed-date-filter-input {
     background: var(--bg-surface, #131a29);
     border-color: var(--line, #334155);
+    color-scheme: dark;
 }
 
-.feed-search-wrap .search-clear-btn {
+.feed-date-filter-wrap .date-clear-btn {
     position: absolute;
     right: 8px;
     background: none;
@@ -3640,6 +3648,36 @@ body.dark-mode .feed-search-input {
     cursor: pointer;
     font-size: 0.88rem;
     padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.feed-date-filter-wrap .date-clear-btn:hover {
+    color: #ef4444;
+}
+
+.btn-all-dates {
+    background: var(--bg-elevated, #f1f5f9);
+    border: 1px solid var(--border-color, #cbd5e1);
+    color: var(--text-primary);
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-all-dates:hover {
+    background: var(--primary-color, #2563eb);
+    color: #ffffff;
+    border-color: var(--primary-color, #2563eb);
+}
+
+body.dark-mode .btn-all-dates {
+    background: var(--bg-elevated, #1a2233);
+    border-color: var(--line, #334155);
 }
 
 .feed-refresh-btn {
