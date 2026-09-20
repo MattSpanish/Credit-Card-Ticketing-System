@@ -253,54 +253,80 @@ export function syncPendingOtherItems(content) {
   const pendingCount = parseInt(rawPendingStr, 10);
   if (isNaN(pendingCount) || pendingCount < 0) return content;
 
-  // Locate the OTHER line and any existing item lines directly under it
-  const otherRegex = /((?:^|\n)\s*OTHER\s*[-:]\s*\d*)([^\n]*)((\s*\n\s*\[\d+\][^\n]*)*)/i;
-  const match = content.match(otherRegex);
+  const otherLineRegex = /(^|\n)(\s*OTHER\s*[-:]\s*\d*[^\n]*)/i;
+  const match = content.match(otherLineRegex);
   if (!match) return content;
 
-  const otherLine = match[1];
-  const sameLineRest = match[2] || '';
-  const existingItemsBlock = match[3] || '';
+  const prefix = content.slice(0, match.index + match[1].length + match[2].length);
+  const rest = content.slice(match.index + match[1].length + match[2].length);
 
-  // Parse existing items to preserve any user typed notes
-  const existingItems = [];
-  if (existingItemsBlock) {
-    const rawLines = existingItemsBlock.split('\n');
-    for (const line of rawLines) {
-      const itemMatch = line.match(/^\s*\[(\d+)\](?:\s*(.*))?$/);
-      if (itemMatch) {
-        existingItems.push({
-          num: parseInt(itemMatch[1], 10),
-          text: itemMatch[2] !== undefined ? itemMatch[2] : '',
-        });
-      }
-    }
+  // Boundary for subsequent sections (e.g., DAILY WORK REPORT in morning shift)
+  const boundaryRegex = /(\r?\n\s*(?:DAILY\s*WORK\s*REPORT|HRMS\s*TICKET\s*REVIEW)\b)/i;
+  const boundaryMatch = rest.match(boundaryRegex);
+
+  let itemsSection = '';
+  let suffix = '';
+
+  if (boundaryMatch) {
+    itemsSection = rest.slice(0, boundaryMatch.index);
+    suffix = rest.slice(boundaryMatch.index);
+  } else {
+    itemsSection = rest;
+    suffix = '';
   }
 
-  // If the count already matches, do nothing to avoid altering user input or moving cursor
+  // Parse existing items in itemsSection by finding all [N] headers
+  const headerRegex = /(?:^|\r?\n)[ \t]*\[(\d+)\]/g;
+  const headers = [];
+  let headerMatch;
+  while ((headerMatch = headerRegex.exec(itemsSection)) !== null) {
+    const fullMatch = headerMatch[0];
+    const startIndex = headerMatch.index + (fullMatch.startsWith('\n') || fullMatch.startsWith('\r') ? fullMatch.indexOf('[') : 0);
+    const num = parseInt(headerMatch[1], 10);
+    const endHeaderIndex = startIndex + `[${headerMatch[1]}]`.length;
+    headers.push({
+      num,
+      startIndex,
+      endHeaderIndex,
+    });
+  }
+
+  const existingItems = [];
+  for (let i = 0; i < headers.length; i++) {
+    const cur = headers[i];
+    const nextStart = i + 1 < headers.length ? headers[i + 1].startIndex : itemsSection.length;
+    const body = itemsSection.slice(cur.endHeaderIndex, nextStart);
+    existingItems.push({
+      num: cur.num,
+      body,
+    });
+  }
+
+  // If item count already matches pendingCount, DO NOT TOUCH anything!
   if (existingItems.length === pendingCount) {
     return content;
   }
 
-  // Generate new items block matching PENDING count exactly
-  let newItemsBlock = '';
-  if (pendingCount > 0) {
-    const lines = [];
-    for (let i = 1; i <= pendingCount; i++) {
-      const existing = existingItems[i - 1];
-      if (existing && existing.text && existing.text.trim()) {
-        lines.push(`[${i}] ${existing.text.trim()}`);
-      } else {
-        lines.push(`[${i}]`);
-      }
-    }
-    newItemsBlock = '\n' + lines.join('\n');
+  // If pendingCount is 0, remove items under OTHER
+  if (pendingCount === 0) {
+    return prefix + suffix;
   }
 
-  const replacement = otherLine + sameLineRest + newItemsBlock;
-  const targetToReplace = otherLine + sameLineRest + existingItemsBlock;
+  // Reconstruct items while preserving all user-entered details for each item
+  const itemBlocks = [];
+  for (let i = 1; i <= pendingCount; i++) {
+    const existing = existingItems[i - 1];
+    if (existing && existing.body && existing.body.trim()) {
+      const trimmedBody = existing.body.replace(/\r?\n+$/, '');
+      itemBlocks.push(`[${i}]${trimmedBody}`);
+    } else {
+      itemBlocks.push(`[${i}]`);
+    }
+  }
 
-  return content.replace(targetToReplace, replacement);
+  const newItemsBlock = '\n' + itemBlocks.join('\n\n');
+
+  return prefix + newItemsBlock + suffix;
 }
 
 // Dynamically recalculates HRMS TICKET REVIEW and PENDING TICKET REVIEW
