@@ -296,6 +296,14 @@ button, a, [role="button"], input, select, textarea,
 body.dark-mode .app-header {
     background: rgba(11, 18, 32, 0.78);
 }
+body.dark-mode .header-logo-img,
+body.dark-mode .sidebar-logo-img,
+body.dark-mode .team-chip-avatar,
+body.dark-mode .shift-kicker-logo {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
 .app-header .header-left {
     display: flex;
     align-items: center;
@@ -307,15 +315,17 @@ body.dark-mode .app-header {
     gap: 12px;
 }
 .header-logo-img {
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
+    height: 44px;
+    width: auto;
+    max-width: 68px;
+    border-radius: 6px;
     object-fit: contain;
-    background: #ffffff;
+    background: transparent;
     flex-shrink: 0;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-    border: 1px solid var(--line);
-    padding: 2px;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.15));
 }
 .header-titles {
     display: flex;
@@ -491,16 +501,17 @@ body.dark-mode .app-header {
     border-color: transparent;
 }
 .team-chip-avatar {
-    width: 28px;
     height: 28px;
-    border-radius: 50%;
+    width: auto;
+    max-width: 42px;
+    border-radius: 4px;
     object-fit: contain;
-    background: #ffffff;
+    background: transparent;
     display: inline-block;
     flex-shrink: 0;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-    border: 1px solid var(--line);
-    padding: 2px;
+    box-shadow: none;
+    border: none;
+    padding: 0;
     transition: transform var(--t-fast) var(--ease);
 }
 .team-chip:hover .team-chip-avatar { transform: scale(1.05); }
@@ -584,15 +595,17 @@ body.dark-mode .app-header {
     display: none;
 }
 .sidebar-logo-img {
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
+    height: 34px;
+    width: auto;
+    max-width: 52px;
+    border-radius: 6px;
     object-fit: contain;
-    background: #ffffff;
+    background: transparent;
     flex-shrink: 0;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-    border: 1px solid var(--line);
-    padding: 2px;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
 }
 .sidebar .logo-content {
     display: flex;
@@ -834,8 +847,9 @@ body.dark-mode .sidebar-break-card .stat-value-break {
     padding: 0;
 }
 .sidebar.is-collapsed .sidebar-logo-img {
-    width: 34px;
-    height: 34px;
+    height: 36px;
+    width: auto;
+    max-width: 54px;
 }
 .sidebar.is-collapsed .logo .logo-text,
 .sidebar.is-collapsed .logo .logo-content {
@@ -3231,15 +3245,16 @@ body.dark-mode .announcement-modal-content {
     margin-bottom: 6px;
 }
 .shift-kicker-logo {
-    width: 22px;
-    height: 22px;
+    height: 28px;
+    width: auto;
+    max-width: 44px;
     border-radius: 5px;
     object-fit: contain;
-    background: #ffffff;
+    background: transparent;
     flex-shrink: 0;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-    border: 1px solid var(--line);
-    padding: 1px;
+    box-shadow: none;
+    border: none;
+    padding: 0;
 }
 
 .shift-page-header h1 {
