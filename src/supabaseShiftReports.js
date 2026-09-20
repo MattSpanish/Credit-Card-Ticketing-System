@@ -45,8 +45,81 @@ export function detectShiftFromContent(content) {
   return '';
 }
 
+// Metric parser from report text content (extracts TOTAL CALLS and PENDING only)
+export function parseReportMetrics(content) {
+  if (!content) return { totalCalls: 0, pending: 0 };
+
+  const callsMatch = content.match(/(?:^|\n)\s*TOTAL\s*CALLS?\s*[-:]\s*(\d+)/i);
+  const pendingMatch = content.match(/(?:^|\n)\s*PENDING(?!\s+(?:TICKET|SOLVED))\s*[-:]\s*(\d+)/i);
+
+  return {
+    totalCalls: callsMatch ? parseInt(callsMatch[1], 10) : 0,
+    pending: pendingMatch ? parseInt(pendingMatch[1], 10) : 0,
+  };
+}
+
+// Calculate combined previous shift metrics strictly for the SAME DATE
+// For the 05:00AM - 02:00PM shift:
+// TOTAL CALLS -> HRMS TICKET REVIEW
+// PENDING -> PENDING TICKET REVIEW
+export function calculateMorningDailyWorkMetrics(reports, targetDateStr) {
+  if (!Array.isArray(reports) || !targetDateStr) {
+    return { hrmsTicketReview: 0, pendingTicketReview: 0, foundReports: [] };
+  }
+
+  // Format target date (e.g. "September 20, 2026")
+  let targetDateFormatted = '';
+  try {
+    const parts = targetDateStr.split('-');
+    if (parts.length === 3) {
+      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      targetDateFormatted = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+  } catch {}
+
+  // Filter reports that match the EXACT same date strictly
+  const sameDateReports = reports.filter((r) => {
+    if (r.report_date && r.report_date === targetDateStr) return true;
+    if (r.created_at && r.created_at.slice(0, 10) === targetDateStr) return true;
+    if (r.content) {
+      if (r.content.includes(targetDateStr)) return true;
+      if (targetDateFormatted && r.content.includes(targetDateFormatted)) return true;
+    }
+    return false;
+  });
+
+  // Extract latest report for 2PM-11PM and latest for 9PM-6AM
+  let report2PM = null;
+  let report9PM = null;
+
+  for (const r of sameDateReports) {
+    const shift = detectShiftFromContent(r.content);
+    if (shift === '2PM-11PM' && !report2PM) {
+      report2PM = r;
+    } else if (shift === '9PM-6AM' && !report9PM) {
+      report9PM = r;
+    }
+  }
+
+  const metrics2PM = report2PM ? parseReportMetrics(report2PM.content) : { totalCalls: 0, pending: 0 };
+  const metrics9PM = report9PM ? parseReportMetrics(report9PM.content) : { totalCalls: 0, pending: 0 };
+
+  const hrmsTicketReview = metrics2PM.totalCalls + metrics9PM.totalCalls;
+  const pendingTicketReview = metrics2PM.pending + metrics9PM.pending;
+
+  const foundReports = [];
+  if (report2PM) foundReports.push({ shift: '02:00 PM – 11:00 PM', calls: metrics2PM.totalCalls, pending: metrics2PM.pending });
+  if (report9PM) foundReports.push({ shift: '09:00 PM – 06:00 AM', calls: metrics9PM.totalCalls, pending: metrics9PM.pending });
+
+  return {
+    hrmsTicketReview,
+    pendingTicketReview,
+    foundReports,
+  };
+}
+
 // Default template for quick insert
-export function getDefaultReportTemplate(shiftName = '09:00PM TO 06:00AM', customDate = null) {
+export function getDefaultReportTemplate(shiftName = '09:00PM TO 06:00AM', customDate = null, dailyWorkMetrics = null) {
   let dateObj = new Date();
   if (customDate) {
     const parts = customDate.split('-');
@@ -76,12 +149,15 @@ OTHER - 0`;
 
   // DAILY WORK REPORT is ONLY included for the 05:00AM TO 02:00PM shift
   if (shiftName === '05:00AM TO 02:00PM' || shiftName.includes('05:00AM TO 02:00PM')) {
+    const hrmsReview = dailyWorkMetrics?.hrmsTicketReview ?? 0;
+    const pendingReview = dailyWorkMetrics?.pendingTicketReview ?? 0;
+
     return `${baseTemplate}
 
 DAILY WORK REPORT 
 
-HRMS TICKET REVIEW: 0
-PENDING TICKET REVIEW: 0
+HRMS TICKET REVIEW: ${hrmsReview}
+PENDING TICKET REVIEW: ${pendingReview}
 PENDING SOLVED TICKET: 0`;
   }
 

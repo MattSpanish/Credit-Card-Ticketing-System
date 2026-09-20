@@ -8,6 +8,7 @@ import {
   saveSupabaseConfig,
   testSupabaseConnection,
   getDefaultReportTemplate,
+  calculateMorningDailyWorkMetrics,
   detectShiftFromContent,
   SUPABASE_SQL_SCRIPT,
 } from './supabaseShiftReports';
@@ -88,12 +89,31 @@ export default function ShiftReportPage({ onBackToDashboard }) {
 
   // Handle template insert
   function handleInsertTemplate() {
-    const template = getDefaultReportTemplate(selectedShift, reportDate);
+    let dailyWorkMetrics = null;
+    let toastMessage = 'Standard shift template inserted!';
+
+    if (
+      selectedShift === '05:00AM TO 02:00PM' ||
+      selectedShift.includes('05:00AM TO 02:00PM') ||
+      selectedShift.includes('5AM')
+    ) {
+      const calc = calculateMorningDailyWorkMetrics(reports, reportDate);
+      dailyWorkMetrics = calc;
+
+      if (calc.foundReports && calc.foundReports.length > 0) {
+        const shiftsFound = calc.foundReports.map((f) => f.shift).join(' + ');
+        toastMessage = `⚡ Auto-calculated from ${shiftsFound} on ${reportDate} (HRMS Review: ${calc.hrmsTicketReview}, Pending Review: ${calc.pendingTicketReview})`;
+      } else {
+        toastMessage = `Template inserted. (No previous shifts found for ${reportDate}; HRMS & Pending Ticket Review set to 0)`;
+      }
+    }
+
+    const template = getDefaultReportTemplate(selectedShift, reportDate, dailyWorkMetrics);
     setReportText(template);
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
-    showToast('Standard shift template inserted!');
+    showToast(toastMessage);
   }
 
   // Process image file for attachment
