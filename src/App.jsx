@@ -542,15 +542,15 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.5.0</span>
+          <span className="announcement-stat-val">v2.6.0</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
-          <span className="announcement-stat-val">Sep 18, 2026</span>
+          <span className="announcement-stat-val">Sep 20, 2026</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">New Features</span>
-          <span className="announcement-stat-val">9 Updates</span>
+          <span className="announcement-stat-val">10 Updates</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">System Status</span>
@@ -786,10 +786,10 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="CC Tickets v2.5.0">
+          <div className="logo" title="CC Tickets v2.6.0">
             <div className="logo-content">
               <span className="logo-text">CC Tickets</span>
-              <span className="logo-version">v2.5.0</span>
+              <span className="logo-version">v2.6.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
