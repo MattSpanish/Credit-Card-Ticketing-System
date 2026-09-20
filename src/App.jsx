@@ -647,7 +647,7 @@ function SidebarBreakCard() {
   };
 
   return (
-    <div className="sidebar-break-card stat-card violet stat-card-break" title="1 Hour Break Schedule">
+    <div className="sidebar-break-card stat-card violet" title="1 Hour Break Schedule">
       <div className="sidebar-break-top">
         <span className="sidebar-break-title">
           <i className="bi bi-cup-hot" aria-hidden="true"></i> 1 HR BREAK
