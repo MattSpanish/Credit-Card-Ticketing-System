@@ -903,7 +903,7 @@ OTHER - 0`}
                                     title="Copy image to clipboard to paste in WhatsApp/Slack/Teams"
                                   >
                                     <i className={`bi ${isImgCopied ? 'bi-check2' : 'bi-clipboard-plus'} me-1`}></i>
-                                    {isImgCopied ? 'Image Copied!' : 'Copy Image'}
+                                    {isImgCopied ? 'Copied!' : 'Copy Image'}
                                   </button>
                                 </div>
                               </div>
