@@ -345,21 +345,24 @@ export function recalculateMorningReportText(content, reports, excludeReportId =
   return updated;
 }
 
+const DEFAULT_SUPABASE_URL = 'https://aoimupucltnqolrwmiio.supabase.co';
+const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvaW11cHVjbHRucW9scndtaWlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5MDI4ODgsImV4cCI6MjEwNTQ3ODg4OH0.YxO8mSCuvoo-VuRMB7ItljG9VTdJHDJN9w6Jz9d2PL8';
+
 // Configuration helper
 export function getSupabaseConfig() {
-  const envUrl = import.meta.env.VITE_SUPABASE_URL || '';
-  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-  const localUrl = localStorage.getItem(STORAGE_KEYS.SUPABASE_URL) || '';
-  const localKey = localStorage.getItem(STORAGE_KEYS.SUPABASE_KEY) || '';
+  const envUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || '';
+  const envKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || '';
+  const localUrl = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEYS.SUPABASE_URL)) || '';
+  const localKey = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEYS.SUPABASE_KEY)) || '';
 
-  const url = (localUrl || envUrl).trim().replace(/\/+$/, '');
-  const key = (localKey || envKey).trim();
+  const url = (localUrl || envUrl || DEFAULT_SUPABASE_URL).trim().replace(/\/+$/, '');
+  const key = (localKey || envKey || DEFAULT_SUPABASE_KEY).trim();
 
   return {
     url,
     key,
     isConfigured: Boolean(url && key),
-    isFromEnv: Boolean(envUrl && envKey && !localUrl),
+    isFromEnv: Boolean((envUrl || DEFAULT_SUPABASE_URL) && !localUrl),
   };
 }
 
@@ -402,7 +405,10 @@ export async function testSupabaseConnection(urlInput, keyInput) {
 
     if (res.status === 404 || res.status === 400) {
       const err = await res.json().catch(() => ({}));
-      if (err.message && err.message.includes('relation "public.shift_reports" does not exist')) {
+      if (
+        (err.message && (err.message.includes('relation "public.shift_reports" does not exist') || err.message.includes("Could not find the table 'public.shift_reports'"))) ||
+        err.code === 'PGRST205'
+      ) {
         return {
           success: false,
           needsTable: true,
@@ -420,6 +426,7 @@ export async function testSupabaseConnection(urlInput, keyInput) {
 
 // Local cache helpers
 function getLocalReports() {
+  if (typeof localStorage === 'undefined') return [];
   try {
     const data = localStorage.getItem(STORAGE_KEYS.REPORTS);
     return data ? JSON.parse(data) : [];
@@ -430,6 +437,7 @@ function getLocalReports() {
 }
 
 function saveLocalReports(reports) {
+  if (typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(reports));
   } catch (e) {
