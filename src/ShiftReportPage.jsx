@@ -6,9 +6,6 @@ import {
   addShiftReport,
   updateShiftReport,
   deleteShiftReport,
-  getSupabaseConfig,
-  saveSupabaseConfig,
-  testSupabaseConnection,
   getDefaultReportTemplate,
   calculateMorningDailyWorkMetrics,
   recalculateMorningReportText,
@@ -16,7 +13,6 @@ import {
   updateReportTextDate,
   getReportDateISO,
   detectShiftFromContent,
-  SUPABASE_SQL_SCRIPT,
 } from './supabaseShiftReports';
 
 const SUPPORT_NAMES = ['HANZ', 'CHARLES', 'KENNETH', 'ADI', 'TATI', 'RONIE', 'SEAN'];
@@ -46,7 +42,6 @@ export default function ShiftReportPage({ onBackToDashboard }) {
   // Feed state
   const [reports, setReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [syncStatus, setSyncStatus] = useState('local'); // 'supabase' | 'local' | 'local-fallback'
   const [filterDate, setFilterDate] = useState('');
   const [copiedId, setCopiedId] = useState(null);
   const [copiedImgKey, setCopiedImgKey] = useState(null);
@@ -63,23 +58,12 @@ export default function ShiftReportPage({ onBackToDashboard }) {
   const [editImages, setEditImages] = useState([]);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
-  // Supabase modal state
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [supabaseUrl, setSupabaseUrl] = useState('');
-  const [supabaseKey, setSupabaseKey] = useState('');
-  const [testResult, setTestResult] = useState(null);
-  const [isTesting, setIsTesting] = useState(false);
-  const [copiedSql, setCopiedSql] = useState(false);
-
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Load initial reports and config
+  // Load initial reports
   useEffect(() => {
     loadReports();
-    const cfg = getSupabaseConfig();
-    setSupabaseUrl(cfg.url);
-    setSupabaseKey(cfg.key);
   }, []);
 
   async function loadReports() {
@@ -87,10 +71,8 @@ export default function ShiftReportPage({ onBackToDashboard }) {
     try {
       const res = await fetchShiftReports();
       setReports(res.reports || []);
-      setSyncStatus(res.source);
     } catch (e) {
       console.error(e);
-      setSyncStatus('local');
     } finally {
       setIsLoading(false);
     }
@@ -340,45 +322,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
     }
   }
 
-  // Supabase config handlers
-  async function handleTestConnection() {
-    setIsTesting(true);
-    setTestResult(null);
-    try {
-      const res = await testSupabaseConnection(supabaseUrl, supabaseKey);
-      setTestResult(res);
-    } catch (err) {
-      setTestResult({ success: false, message: err.message });
-    } finally {
-      setIsTesting(false);
-    }
-  }
 
-  function handleSaveSupabaseConfig(e) {
-    e.preventDefault();
-    saveSupabaseConfig(supabaseUrl, supabaseKey);
-    setShowConfigModal(false);
-    showToast('⚙️ Supabase settings saved!');
-    loadReports();
-  }
-
-  function handleDisconnectSupabase() {
-    saveSupabaseConfig('', '');
-    setSupabaseUrl('');
-    setSupabaseKey('');
-    setTestResult(null);
-    setShowConfigModal(false);
-    showToast('Switched to local storage mode.');
-    loadReports();
-  }
-
-  function handleCopySql() {
-    navigator.clipboard.writeText(SUPABASE_SQL_SCRIPT).then(() => {
-      setCopiedSql(true);
-      setTimeout(() => setCopiedSql(false), 2500);
-      showToast('SQL script copied!');
-    });
-  }
 
   // Filtered reports by selected date (matching strictly by report date)
   const filteredReports = useMemo(() => {
@@ -440,22 +384,6 @@ export default function ShiftReportPage({ onBackToDashboard }) {
         </div>
 
         <div className="shift-header-actions">
-          {/* Connection Status Indicator */}
-          <button
-            type="button"
-            className={`shift-conn-pill ${syncStatus === 'supabase' ? 'is-connected' : 'is-local'}`}
-            onClick={() => setShowConfigModal(true)}
-            title="Configure Supabase Shared Sync"
-          >
-            <span className="status-dot"></span>
-            {syncStatus === 'supabase' ? (
-              <span>Supabase Connected</span>
-            ) : (
-              <span>Local Mode (Connect Supabase)</span>
-            )}
-            <i className="bi bi-gear ms-1" aria-hidden="true"></i>
-          </button>
-
           <button
             type="button"
             className="announcement-back-btn"
@@ -1081,150 +1009,7 @@ OTHER - 0`}
         </div>
       )}
 
-      {/* Supabase Configuration Modal */}
-      {showConfigModal && (
-        <div className="break-modal-overlay" onClick={() => setShowConfigModal(false)}>
-          <div className="shift-config-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="break-modal-header">
-              <div>
-                <h2 className="modal-title modal-title-row">
-                  <i className="bi bi-database-check me-2"></i>
-                  Supabase Team Sync Configuration
-                </h2>
-                <p className="modal-subtitle">
-                  Connect your team's Supabase project so shift reports sync in real-time across all computers.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowConfigModal(false)}
-                className="break-close-btn icon-close"
-                aria-label="Close"
-              >
-                <i className="bi bi-x-lg"></i>
-              </button>
-            </div>
 
-            <form onSubmit={handleSaveSupabaseConfig} className="config-modal-body">
-              <div className="info-box mb-3">
-                <i className="bi bi-info-circle info-box-icon" aria-hidden="true"></i>
-                <span>
-                  <strong>Shift Reports Only:</strong> This Supabase connection is strictly used to store and sync shift reports so they don't get buried. Tickets remain completely separate and local.
-                </span>
-              </div>
-
-              <div className="form-group mb-3">
-                <label className="form-label" htmlFor="supabaseUrlInput">
-                  Supabase Project URL
-                </label>
-                <input
-                  id="supabaseUrlInput"
-                  type="url"
-                  className="form-control"
-                  placeholder="https://your-project.supabase.co"
-                  value={supabaseUrl}
-                  onChange={(e) => setSupabaseUrl(e.target.value)}
-                  required
-                />
-                <div className="form-text">
-                  Found in Supabase Dashboard → Project Settings → API → Project URL.
-                </div>
-              </div>
-
-              <div className="form-group mb-3">
-                <label className="form-label" htmlFor="supabaseKeyInput">
-                  Supabase Anon Public API Key
-                </label>
-                <input
-                  id="supabaseKeyInput"
-                  type="password"
-                  className="form-control"
-                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                  value={supabaseKey}
-                  onChange={(e) => setSupabaseKey(e.target.value)}
-                  required
-                />
-                <div className="form-text">
-                  Found in Supabase Dashboard → Project Settings → API → anon public key.
-                </div>
-              </div>
-
-              {testResult && (
-                <div
-                  className={`alert ${testResult.success ? 'alert-success' : 'alert-warning'} mt-2 mb-3`}
-                  role="alert"
-                >
-                  <i
-                    className={`bi ${testResult.success ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2`}
-                  ></i>
-                  {testResult.message}
-                </div>
-              )}
-
-              {/* SQL Schema helper */}
-              <div className="sql-helper-box mb-3">
-                <div className="sql-helper-header">
-                  <span>
-                    <i className="bi bi-terminal me-1"></i> SQL Table Setup (Run once in Supabase SQL Editor)
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    onClick={handleCopySql}
-                  >
-                    <i className={`bi ${copiedSql ? 'bi-check2' : 'bi-clipboard'} me-1`}></i>
-                    {copiedSql ? 'Copied SQL!' : 'Copy SQL Script'}
-                  </button>
-                </div>
-                <pre className="sql-code-block">{SUPABASE_SQL_SCRIPT}</pre>
-              </div>
-
-              <div className="config-modal-footer">
-                <div className="footer-left">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={handleTestConnection}
-                    disabled={isTesting || !supabaseUrl || !supabaseKey}
-                  >
-                    {isTesting ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-1"></span> Testing...
-                      </>
-                    ) : (
-                      <>
-                        <i className="bi bi-lightning-charge me-1"></i> Test Connection
-                      </>
-                    )}
-                  </button>
-
-                  {(supabaseUrl || supabaseKey) && (
-                    <button
-                      type="button"
-                      className="btn btn-outline-danger"
-                      onClick={handleDisconnectSupabase}
-                    >
-                      Disconnect & Use Local
-                    </button>
-                  )}
-                </div>
-
-                <div className="footer-right">
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    onClick={() => setShowConfigModal(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    <i className="bi bi-check2 me-1"></i> Save & Connect
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

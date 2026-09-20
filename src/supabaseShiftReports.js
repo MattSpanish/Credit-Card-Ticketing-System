@@ -355,14 +355,14 @@ export function getSupabaseConfig() {
   const localUrl = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEYS.SUPABASE_URL)) || '';
   const localKey = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEYS.SUPABASE_KEY)) || '';
 
-  const url = (localUrl || envUrl || DEFAULT_SUPABASE_URL).trim().replace(/\/+$/, '');
-  const key = (localKey || envKey || DEFAULT_SUPABASE_KEY).trim();
+  const url = (envUrl || DEFAULT_SUPABASE_URL || localUrl).trim().replace(/\/+$/, '');
+  const key = (envKey || DEFAULT_SUPABASE_KEY || localKey).trim();
 
   return {
     url,
     key,
     isConfigured: Boolean(url && key),
-    isFromEnv: Boolean((envUrl || DEFAULT_SUPABASE_URL) && !localUrl),
+    isFromEnv: Boolean(envUrl || DEFAULT_SUPABASE_URL),
   };
 }
 
