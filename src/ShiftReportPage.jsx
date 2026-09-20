@@ -11,8 +11,8 @@ import {
   getDefaultReportTemplate,
   calculateMorningDailyWorkMetrics,
   recalculateMorningReportText,
+  syncPendingOtherItems,
   updateReportTextDate,
-  extractDateStringFromContent,
   getReportDateISO,
   detectShiftFromContent,
   SUPABASE_SQL_SCRIPT,
@@ -110,19 +110,20 @@ export default function ShiftReportPage({ onBackToDashboard }) {
       selectedShift.includes('05:00AM TO 02:00PM') ||
       selectedShift.includes('5AM')
     ) {
-      const calc = calculateMorningDailyWorkMetrics(reports, reportDate);
+      const calc = calculateMorningDailyWorkMetrics(reports);
       dailyWorkMetrics = calc;
 
       if (calc.foundReports && calc.foundReports.length > 0) {
         const shiftsFound = calc.foundReports.map((f) => f.shift).join(' + ');
-        toastMessage = `⚡ Auto-calculated from ${shiftsFound} on ${reportDate} (HRMS Review: ${calc.hrmsTicketReview}, Pending Review: ${calc.pendingTicketReview})`;
+        toastMessage = `⚡ Auto-calculated from 2 previous shifts: ${shiftsFound} (HRMS Review: ${calc.hrmsTicketReview}, Pending Review: ${calc.pendingTicketReview})`;
       } else {
-        toastMessage = `Template inserted. (No previous shifts found for ${reportDate}; HRMS & Pending Ticket Review set to 0)`;
+        toastMessage = `Template inserted. (No previous shift reports found; HRMS & Pending Ticket Review set to 0)`;
       }
     }
 
     const template = getDefaultReportTemplate(selectedShift, reportDate, dailyWorkMetrics);
-    setReportText(template);
+    const syncedTemplate = syncPendingOtherItems(template);
+    setReportText(syncedTemplate);
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
@@ -135,11 +136,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
     const selStart = e.target.selectionStart;
     const selEnd = e.target.selectionEnd;
 
-    // Detect if content has a specific date written in it (e.g. 'September 20, 2026')
-    const contentDate = extractDateStringFromContent(rawValue);
-    const activeDate = contentDate || reportDate;
-
-    const updatedValue = recalculateMorningReportText(rawValue, reports, activeDate);
+    const updatedValue = recalculateMorningReportText(rawValue, reports);
     setReportText(updatedValue);
 
     if (textareaRef.current && selStart !== null && selStart !== undefined) {
@@ -309,7 +306,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
 
   function handleEditContentChange(e) {
     const raw = e.target.value;
-    const updated = recalculateMorningReportText(raw, reports, editReportDate);
+    const updated = recalculateMorningReportText(raw, reports, editingReport?.id);
     setEditContent(updated);
   }
 
@@ -511,7 +508,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
                       (reportText.includes('HRMS TICKET REVIEW:') || reportText.includes('PENDING TICKET REVIEW:'))
                     ) {
                       const withUpdatedDate = updateReportTextDate(reportText, newDate);
-                      const updated = recalculateMorningReportText(withUpdatedDate, reports, newDate);
+                      const updated = recalculateMorningReportText(withUpdatedDate, reports);
                       setReportText(updated);
                     }
                   }}

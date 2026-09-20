@@ -136,48 +136,55 @@ export function updateReportTextDate(content, targetDateStr) {
   return updated;
 }
 
-// Calculate combined previous shift metrics strictly for the SAME DATE
+// Calculate combined metrics from the two most recent previous shift reports (no date verification)
 // For the 05:00AM - 02:00PM shift:
-// TOTAL CALLS -> HRMS TICKET REVIEW
-// PENDING -> PENDING TICKET REVIEW
-export function calculateMorningDailyWorkMetrics(reports, targetDateStr) {
-  if (!Array.isArray(reports) || !targetDateStr) {
+// TOTAL CALLS from previous 2 reports -> HRMS TICKET REVIEW
+// PENDING from previous 2 reports -> PENDING TICKET REVIEW
+export function calculateMorningDailyWorkMetrics(reports, excludeReportId = null) {
+  if (!Array.isArray(reports) || reports.length === 0) {
     return { hrmsTicketReview: 0, pendingTicketReview: 0, foundReports: [] };
   }
 
-  const targetISO = targetDateStr.slice(0, 10);
+  // Filter out the report being edited (if any). If a date string was accidentally passed, ignore it.
+  const candidateReports = (excludeReportId && !/^\d{4}-\d{2}-\d{2}$/.test(excludeReportId))
+    ? reports.filter((r) => r?.id !== excludeReportId)
+    : [...reports];
 
-  // Filter reports that match the EXACT same date strictly
-  const sameDateReports = reports.filter((r) => {
-    return getReportDateISO(r) === targetISO;
-  });
+  // Prefer previous reports that are not 5AM-2PM morning shifts (e.g. 2PM-11PM and 9PM-6AM)
+  const nonMorning = candidateReports.filter(
+    (r) => detectShiftFromContent(r?.content) !== '5AM-2PM'
+  );
 
-  // Extract latest report for 2PM-11PM and latest for 9PM-6AM
-  let report2PM = null;
-  let report9PM = null;
+  // Take the two most recent previous shift reports
+  const selectedReports = (nonMorning.length >= 2 ? nonMorning : candidateReports).slice(0, 2);
 
-  for (const r of sameDateReports) {
-    const shift = detectShiftFromContent(r.content);
-    if (shift === '2PM-11PM' && !report2PM) {
-      report2PM = r;
-    } else if (shift === '9PM-6AM' && !report9PM) {
-      report9PM = r;
-    }
+  let totalCalls = 0;
+  let totalPending = 0;
+  const foundReports = [];
+
+  for (const r of selectedReports) {
+    const metrics = parseReportMetrics(r?.content);
+    totalCalls += metrics.totalCalls;
+    totalPending += metrics.pending;
+
+    let shiftLabel = 'Previous Shift';
+    const detected = detectShiftFromContent(r?.content);
+    if (detected === '2PM-11PM') shiftLabel = '02:00 PM – 11:00 PM';
+    else if (detected === '9PM-6AM') shiftLabel = '09:00 PM – 06:00 AM';
+    else if (detected === '5AM-2PM') shiftLabel = '05:00 AM – 02:00 PM';
+
+    foundReports.push({
+      id: r?.id,
+      shift: shiftLabel,
+      calls: metrics.totalCalls,
+      pending: metrics.pending,
+      author: r?.author,
+    });
   }
 
-  const metrics2PM = report2PM ? parseReportMetrics(report2PM.content) : { totalCalls: 0, pending: 0 };
-  const metrics9PM = report9PM ? parseReportMetrics(report9PM.content) : { totalCalls: 0, pending: 0 };
-
-  const hrmsTicketReview = metrics2PM.totalCalls + metrics9PM.totalCalls;
-  const pendingTicketReview = metrics2PM.pending + metrics9PM.pending;
-
-  const foundReports = [];
-  if (report2PM) foundReports.push({ shift: '02:00 PM – 11:00 PM', calls: metrics2PM.totalCalls, pending: metrics2PM.pending });
-  if (report9PM) foundReports.push({ shift: '09:00 PM – 06:00 AM', calls: metrics9PM.totalCalls, pending: metrics9PM.pending });
-
   return {
-    hrmsTicketReview,
-    pendingTicketReview,
+    hrmsTicketReview: totalCalls,
+    pendingTicketReview: totalPending,
     foundReports,
   };
 }
@@ -228,16 +235,88 @@ PENDING SOLVED TICKET: 0`;
   return baseTemplate;
 }
 
-// Dynamically recalculates HRMS TICKET REVIEW and PENDING TICKET REVIEW
-// whenever the user edits TOTAL CALLS or PENDING for the 5AM - 2PM shift report
-export function recalculateMorningReportText(content, reports, targetDateStr) {
+// Automatically syncs the number of [1], [2], ... input lines under OTHER
+// with the number entered in PENDING (excluding PENDING TICKET REVIEW and PENDING SOLVED TICKET)
+export function syncPendingOtherItems(content) {
   if (!content) return content;
-  if (!content.includes('HRMS TICKET REVIEW:') && !content.includes('PENDING TICKET REVIEW:')) {
+
+  // Extract PENDING count (ignoring PENDING TICKET REVIEW and PENDING SOLVED TICKET)
+  const pendingMatch = content.match(/(?:^|\n)\s*PENDING(?!\s+(?:TICKET|SOLVED))\s*[-:]\s*(\d*)/i);
+  if (!pendingMatch) return content;
+
+  const rawPendingStr = pendingMatch[1];
+  // If user is currently clearing/typing (e.g. "PENDING - "), keep existing items
+  if (rawPendingStr === '' || rawPendingStr === undefined) {
     return content;
   }
 
-  // Calculate base metrics from previous shifts for the exact same date
-  const baseMetrics = calculateMorningDailyWorkMetrics(reports, targetDateStr);
+  const pendingCount = parseInt(rawPendingStr, 10);
+  if (isNaN(pendingCount) || pendingCount < 0) return content;
+
+  // Locate the OTHER line and any existing item lines directly under it
+  const otherRegex = /((?:^|\n)\s*OTHER\s*[-:]\s*\d*)([^\n]*)((\s*\n\s*\[\d+\][^\n]*)*)/i;
+  const match = content.match(otherRegex);
+  if (!match) return content;
+
+  const otherLine = match[1];
+  const sameLineRest = match[2] || '';
+  const existingItemsBlock = match[3] || '';
+
+  // Parse existing items to preserve any user typed notes
+  const existingItems = [];
+  if (existingItemsBlock) {
+    const rawLines = existingItemsBlock.split('\n');
+    for (const line of rawLines) {
+      const itemMatch = line.match(/^\s*\[(\d+)\](?:\s*(.*))?$/);
+      if (itemMatch) {
+        existingItems.push({
+          num: parseInt(itemMatch[1], 10),
+          text: itemMatch[2] !== undefined ? itemMatch[2] : '',
+        });
+      }
+    }
+  }
+
+  // If the count already matches, do nothing to avoid altering user input or moving cursor
+  if (existingItems.length === pendingCount) {
+    return content;
+  }
+
+  // Generate new items block matching PENDING count exactly
+  let newItemsBlock = '';
+  if (pendingCount > 0) {
+    const lines = [];
+    for (let i = 1; i <= pendingCount; i++) {
+      const existing = existingItems[i - 1];
+      if (existing && existing.text && existing.text.trim()) {
+        lines.push(`[${i}] ${existing.text.trim()}`);
+      } else {
+        lines.push(`[${i}]`);
+      }
+    }
+    newItemsBlock = '\n' + lines.join('\n');
+  }
+
+  const replacement = otherLine + sameLineRest + newItemsBlock;
+  const targetToReplace = otherLine + sameLineRest + existingItemsBlock;
+
+  return content.replace(targetToReplace, replacement);
+}
+
+// Dynamically recalculates HRMS TICKET REVIEW and PENDING TICKET REVIEW
+// whenever the user edits TOTAL CALLS or PENDING for the 5AM - 2PM shift report
+export function recalculateMorningReportText(content, reports, excludeReportId = null) {
+  if (!content) return content;
+
+  // First sync the OTHER [1], [2] items with PENDING count
+  let synced = syncPendingOtherItems(content);
+
+  if (!synced.includes('HRMS TICKET REVIEW:') && !synced.includes('PENDING TICKET REVIEW:')) {
+    return synced;
+  }
+
+  // Calculate base metrics from the 2 previous shift reports (no date verification)
+  const baseMetrics = calculateMorningDailyWorkMetrics(reports, excludeReportId);
   const baseHrms = baseMetrics.hrmsTicketReview;
   const basePending = baseMetrics.pendingTicketReview;
 
@@ -251,7 +330,7 @@ export function recalculateMorningReportText(content, reports, targetDateStr) {
   const totalHrms = baseHrms + currentCalls;
   const totalPending = basePending + currentPending;
 
-  let updated = content;
+  let updated = synced;
   // Update HRMS TICKET REVIEW
   updated = updated.replace(
     /(HRMS\s*TICKET\s*REVIEW\s*[-:]\s*)\d*/i,
