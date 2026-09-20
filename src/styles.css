@@ -3760,13 +3760,80 @@ body.dark-mode .report-feed-item {
 .report-title-badge {
     font-size: 0.76rem;
     font-weight: 700;
-    color: var(--primary-color, #2563eb);
-    background: rgba(37, 99, 235, 0.1);
-    padding: 3px 8px;
+    padding: 4px 10px;
     border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s ease;
 }
 
-body.dark-mode .report-title-badge {
+/* 1. SHIFT 09:00 PM – 06:00 AM (Light Blue) */
+.report-feed-item.shift-theme-night {
+    border-left: 4px solid #3b82f6;
+}
+.report-title-badge.badge-night,
+.report-feed-item.shift-theme-night .report-title-badge {
+    color: #1d4ed8;
+    background: #ebf3ff;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+body.dark-mode .report-feed-item.shift-theme-night {
+    border-left-color: #3b82f6;
+}
+body.dark-mode .report-title-badge.badge-night,
+body.dark-mode .report-feed-item.shift-theme-night .report-title-badge {
+    background: rgba(59, 130, 246, 0.18);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+/* 2. SHIFT 05:00 AM – 02:00 PM (Light Emerald / Green) */
+.report-feed-item.shift-theme-morning {
+    border-left: 4px solid #10b981;
+}
+.report-title-badge.badge-morning,
+.report-feed-item.shift-theme-morning .report-title-badge {
+    color: #047857;
+    background: #ecfdf5;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+body.dark-mode .report-feed-item.shift-theme-morning {
+    border-left-color: #10b981;
+}
+body.dark-mode .report-title-badge.badge-morning,
+body.dark-mode .report-feed-item.shift-theme-morning .report-title-badge {
+    background: rgba(16, 185, 129, 0.18);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
+/* 3. SHIFT 02:00 PM – 11:00 PM (Light Violet / Purple) */
+.report-feed-item.shift-theme-evening {
+    border-left: 4px solid #8b5cf6;
+}
+.report-title-badge.badge-evening,
+.report-feed-item.shift-theme-evening .report-title-badge {
+    color: #6d28d9;
+    background: #f5f3ff;
+    border: 1px solid rgba(139, 92, 246, 0.25);
+}
+body.dark-mode .report-feed-item.shift-theme-evening {
+    border-left-color: #8b5cf6;
+}
+body.dark-mode .report-title-badge.badge-evening,
+body.dark-mode .report-feed-item.shift-theme-evening .report-title-badge {
+    background: rgba(139, 92, 246, 0.18);
+    color: #a78bfa;
+    border-color: rgba(139, 92, 246, 0.35);
+}
+
+/* Default fallback */
+.report-title-badge.badge-default {
+    color: var(--primary-color, #2563eb);
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+}
+body.dark-mode .report-title-badge.badge-default {
     background: rgba(37, 99, 235, 0.2);
     color: #60a5fa;
 }

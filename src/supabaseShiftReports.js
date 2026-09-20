@@ -27,12 +27,14 @@ export function parseReportMetrics(content) {
 // Helper to detect shift from report content
 export function detectShiftFromContent(content) {
   if (!content) return '';
-  const upper = content.toUpperCase();
+  const upper = content.toUpperCase().replace(/–/g, '-');
   if (
     upper.includes('02:00PM TO 11:00PM') ||
     upper.includes('02:00 PM - 11:00 PM') ||
     upper.includes('02:00PM - 11:00PM') ||
-    (upper.includes('2:00') && upper.includes('11:00'))
+    upper.includes('2:00 PM - 11:00 PM') ||
+    upper.includes('2PM - 11PM') ||
+    (upper.includes('11:00') && (upper.includes('2:00') || upper.includes('02:00')))
   ) {
     return '2PM-11PM';
   }
@@ -40,6 +42,8 @@ export function detectShiftFromContent(content) {
     upper.includes('09:00PM TO 06:00AM') ||
     upper.includes('09:00 PM - 06:00 AM') ||
     upper.includes('09:00PM - 06:00AM') ||
+    upper.includes('9:00 PM - 6:00 AM') ||
+    upper.includes('9PM - 6AM') ||
     (upper.includes('9:00') && upper.includes('6:00'))
   ) {
     return '9PM-6AM';
@@ -48,7 +52,9 @@ export function detectShiftFromContent(content) {
     upper.includes('05:00AM TO 02:00PM') ||
     upper.includes('05:00 AM - 02:00 PM') ||
     upper.includes('05:00AM - 02:00PM') ||
-    (upper.includes('5:00') && upper.includes('2:00'))
+    upper.includes('5:00 AM - 2:00 PM') ||
+    upper.includes('5AM - 2PM') ||
+    ((upper.includes('5:00') || upper.includes('05:00')) && (upper.includes('2:00') || upper.includes('02:00')))
   ) {
     return '5AM-2PM';
   }

@@ -9,6 +9,7 @@ import {
   testSupabaseConnection,
   getDefaultReportTemplate,
   calculateMorningShiftMetrics,
+  detectShiftFromContent,
   SUPABASE_SQL_SCRIPT,
 } from './supabaseShiftReports';
 
@@ -711,13 +712,27 @@ OTHER - 0`}
                 const title = extractReportTitle(report.content);
                 const isCopied = copiedId === report.id;
                 const images = Array.isArray(report.images) ? report.images : [];
+                const shiftType = detectShiftFromContent(report.content);
+
+                let shiftThemeClass = 'shift-theme-default';
+                let badgeClass = 'badge-default';
+                if (shiftType === '9PM-6AM') {
+                  shiftThemeClass = 'shift-theme-night';
+                  badgeClass = 'badge-night';
+                } else if (shiftType === '5AM-2PM') {
+                  shiftThemeClass = 'shift-theme-morning';
+                  badgeClass = 'badge-morning';
+                } else if (shiftType === '2PM-11PM') {
+                  shiftThemeClass = 'shift-theme-evening';
+                  badgeClass = 'badge-evening';
+                }
 
                 return (
-                  <article key={report.id} className="report-feed-item">
+                  <article key={report.id} className={`report-feed-item ${shiftThemeClass}`}>
                     {/* Item Top Bar */}
                     <div className="report-item-header">
                       <div className="report-item-meta">
-                        <span className="report-title-badge">
+                        <span className={`report-title-badge ${badgeClass}`}>
                           <i className="bi bi-calendar2-event me-1"></i>
                           {title}
                         </span>
