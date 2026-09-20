@@ -8,12 +8,24 @@ const STORAGE_KEYS = {
 };
 
 // Default template for quick insert
-export function getDefaultReportTemplate(shiftName = '09:00PM TO 06:00AM') {
-  const date = new Date();
-  const options = { year: 'numeric', month: 'long', day: 'numeric' };
-  const formattedDate = date.toLocaleDateString('en-US', options);
+export function getDefaultReportTemplate(shiftName = '09:00PM TO 06:00AM', customDate = null) {
+  let dateObj = new Date();
+  if (customDate) {
+    const parts = customDate.split('-');
+    if (parts.length === 3) {
+      dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    } else {
+      dateObj = new Date(customDate);
+    }
+  }
+  if (isNaN(dateObj.getTime())) {
+    dateObj = new Date();
+  }
 
-  return `SHIFT REPORT ${shiftName}
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  const formattedDate = dateObj.toLocaleDateString('en-US', options);
+
+  const baseTemplate = `SHIFT REPORT ${shiftName}
 
 ${formattedDate}
 
@@ -22,13 +34,20 @@ TOTAL CALLS - 0
 RESOLVE - 0
 PENDING - 0
 
-OTHER - 0
+OTHER - 0`;
+
+  // DAILY WORK REPORT is ONLY included for the 05:00AM TO 02:00PM shift
+  if (shiftName === '05:00AM TO 02:00PM' || shiftName.includes('05:00AM TO 02:00PM')) {
+    return `${baseTemplate}
 
 DAILY WORK REPORT 
 
 HRMS TICKET REVIEW: 0
 PENDING TICKET REVIEW: 0
 PENDING SOLVED TICKET: 0`;
+  }
+
+  return baseTemplate;
 }
 
 // Configuration helper
@@ -170,7 +189,7 @@ export async function fetchShiftReports() {
 }
 
 // Add a new shift report
-export async function addShiftReport({ content, author = '' }) {
+export async function addShiftReport({ content, author = '', reportDate = '', images = [] }) {
   if (!content || !content.trim()) {
     throw new Error('Report content cannot be empty');
   }
@@ -180,16 +199,24 @@ export async function addShiftReport({ content, author = '' }) {
   const timestamp = new Date().toISOString();
   const config = getSupabaseConfig();
 
+  // Normalize images (ensure array of dataUrl strings)
+  const normalizedImages = Array.isArray(images)
+    ? images.map((img) => (typeof img === 'string' ? img : (img.dataUrl || ''))).filter(Boolean)
+    : [];
+
   const newReport = {
     id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
     content: trimmedContent,
     author: trimmedAuthor,
+    report_date: reportDate,
+    images: normalizedImages,
     created_at: timestamp,
   };
 
   if (config.isConfigured) {
     try {
-      const res = await fetch(`${config.url}/rest/v1/shift_reports`, {
+      // First attempt: insert with images and report_date
+      let res = await fetch(`${config.url}/rest/v1/shift_reports`, {
         method: 'POST',
         headers: {
           apikey: config.key,
@@ -200,16 +227,40 @@ export async function addShiftReport({ content, author = '' }) {
         body: JSON.stringify({
           content: trimmedContent,
           author: trimmedAuthor,
+          report_date: reportDate,
+          images: normalizedImages,
         }),
       });
 
+      // If Supabase table doesn't have images/report_date columns yet, fallback to base fields
+      if (!res.ok && res.status === 400) {
+        res = await fetch(`${config.url}/rest/v1/shift_reports`, {
+          method: 'POST',
+          headers: {
+            apikey: config.key,
+            Authorization: `Bearer ${config.key}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=representation',
+          },
+          body: JSON.stringify({
+            content: trimmedContent,
+            author: trimmedAuthor,
+          }),
+        });
+      }
+
       if (res.ok) {
         const [savedRecord] = await res.json();
-        // Update local cache
+        // Ensure local cache keeps images even if remote column was missing
+        const recordWithImages = {
+          ...savedRecord,
+          images: savedRecord.images || normalizedImages,
+          report_date: savedRecord.report_date || reportDate,
+        };
         const current = getLocalReports();
-        const updated = [savedRecord, ...current.filter((r) => r.id !== savedRecord.id)];
+        const updated = [recordWithImages, ...current.filter((r) => r.id !== recordWithImages.id)];
         saveLocalReports(updated);
-        return { success: true, report: savedRecord, synced: true };
+        return { success: true, report: recordWithImages, synced: true };
       } else {
         console.warn('Supabase insert failed, saving locally', res.status);
       }
@@ -255,8 +306,14 @@ create table if not exists shift_reports (
   id uuid primary key default gen_random_uuid(),
   content text not null,
   author text default '',
+  report_date text default '',
+  images jsonb default '[]'::jsonb,
   created_at timestamptz default now()
 );
+
+-- If your table already exists, run these two migrations:
+alter table shift_reports add column if not exists report_date text default '';
+alter table shift_reports add column if not exists images jsonb default '[]'::jsonb;
 
 -- Enable Row Level Security (RLS)
 alter table shift_reports enable row level security;

@@ -16,15 +16,23 @@ const STANDARD_SHIFTS = [
   '09:00PM TO 06:00AM',
   '05:00AM TO 02:00PM',
   '02:00PM TO 11:00PM',
-  '07:30AM TO 06:30PM',
-  '06:00PM TO 05:00AM',
 ];
+
+function getTodayDateISO() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 export default function ShiftReportPage({ onBackToDashboard }) {
   // Composer state
   const [reportText, setReportText] = useState('');
+  const [reportDate, setReportDate] = useState(getTodayDateISO());
   const [author, setAuthor] = useState('');
   const [selectedShift, setSelectedShift] = useState('09:00PM TO 06:00AM');
+  const [attachedImages, setAttachedImages] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Feed state
@@ -33,7 +41,11 @@ export default function ShiftReportPage({ onBackToDashboard }) {
   const [syncStatus, setSyncStatus] = useState('local'); // 'supabase' | 'local' | 'local-fallback'
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState(null);
+  const [copiedImgKey, setCopiedImgKey] = useState(null);
   const [feedbackMsg, setFeedbackMsg] = useState('');
+
+  // Lightbox modal state
+  const [previewImageUrl, setPreviewImageUrl] = useState(null);
 
   // Supabase modal state
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -44,6 +56,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
   const [copiedSql, setCopiedSql] = useState(false);
 
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Load initial reports and config
   useEffect(() => {
@@ -69,12 +82,12 @@ export default function ShiftReportPage({ onBackToDashboard }) {
 
   function showToast(msg) {
     setFeedbackMsg(msg);
-    setTimeout(() => setFeedbackMsg(''), 3000);
+    setTimeout(() => setFeedbackMsg(''), 3200);
   }
 
   // Handle template insert
   function handleInsertTemplate() {
-    const template = getDefaultReportTemplate(selectedShift);
+    const template = getDefaultReportTemplate(selectedShift, reportDate);
     setReportText(template);
     if (textareaRef.current) {
       textareaRef.current.focus();
@@ -82,11 +95,62 @@ export default function ShiftReportPage({ onBackToDashboard }) {
     showToast('Standard shift template inserted!');
   }
 
+  // Process image file for attachment
+  function processImageFile(file) {
+    if (!file || !file.type || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      const dataUrl = loadEvent.target.result;
+      setAttachedImages((prev) => [
+        ...prev,
+        {
+          id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          dataUrl,
+          name: file.name || `screenshot_${Date.now()}.png`,
+          size: file.size,
+        },
+      ]);
+      showToast('📷 Image attached to shift report!');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // WhatsApp-style Ctrl+V paste listener on chat box
+  function handlePaste(e) {
+    const clipboardData = e.clipboardData;
+    if (!clipboardData || !clipboardData.items) return;
+
+    const items = clipboardData.items;
+    let foundImage = false;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type && item.type.indexOf('image') !== -1) {
+        foundImage = true;
+        e.preventDefault(); // Prevent pasting binary or empty junk in textarea
+        const file = item.getAsFile();
+        if (file) {
+          processImageFile(file);
+        }
+      }
+    }
+  }
+
+  function handleFileInputChange(e) {
+    const files = Array.from(e.target.files || []);
+    files.forEach(processImageFile);
+    e.target.value = '';
+  }
+
+  function handleRemoveAttachedImage(id) {
+    setAttachedImages((prev) => prev.filter((img) => img.id !== id));
+  }
+
   // Handle post report
   async function handlePostReport(e) {
     if (e) e.preventDefault();
-    if (!reportText.trim()) {
-      showToast('⚠️ Please paste or type your shift report first.');
+    if (!reportText.trim() && attachedImages.length === 0) {
+      showToast('⚠️ Please paste your shift report or attach an image.');
       return;
     }
 
@@ -95,11 +159,14 @@ export default function ShiftReportPage({ onBackToDashboard }) {
       const res = await addShiftReport({
         content: reportText,
         author: author.trim(),
+        reportDate,
+        images: attachedImages,
       });
 
       if (res.success) {
         showToast(res.synced ? '✅ Report posted & synced to Supabase!' : '✅ Report saved locally!');
         setReportText('');
+        setAttachedImages([]);
         await loadReports();
       }
     } catch (err) {
@@ -110,17 +177,54 @@ export default function ShiftReportPage({ onBackToDashboard }) {
   }
 
   // Handle copy text
-  function handleCopy(text, id = null) {
+  function handleCopyText(text, id = null) {
     if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
       if (id) {
         setCopiedId(id);
         setTimeout(() => setCopiedId(null), 2500);
       }
-      showToast('📋 Shift report copied to clipboard!');
+      showToast('📋 Shift report text copied to clipboard!');
     }).catch(() => {
       showToast('⚠️ Failed to copy to clipboard');
     });
+  }
+
+  // Copy Image directly to system clipboard as PNG blob
+  async function handleCopyImage(imgSrc, key = null) {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            try {
+              await navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob }),
+              ]);
+              if (key) {
+                setCopiedImgKey(key);
+                setTimeout(() => setCopiedImgKey(null), 2500);
+              }
+              showToast('📋 Image copied to clipboard! (Ready to paste into chat)');
+            } catch (clipErr) {
+              console.error('Clipboard write error', clipErr);
+              showToast('⚠️ Right click the image and choose "Copy image".');
+            }
+          }
+        }, 'image/png');
+      };
+      img.onerror = () => showToast('⚠️ Could not load image to copy');
+      img.src = imgSrc;
+    } catch (err) {
+      console.error(err);
+      showToast('⚠️ Could not copy image');
+    }
   }
 
   // Handle delete
@@ -182,7 +286,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
     return reports.filter((r) => {
       const contentMatch = (r.content || '').toLowerCase().includes(q);
       const authorMatch = (r.author || '').toLowerCase().includes(q);
-      const dateMatch = (r.created_at || '').toLowerCase().includes(q);
+      const dateMatch = (r.created_at || '').toLowerCase().includes(q) || (r.report_date || '').toLowerCase().includes(q);
       return contentMatch || authorMatch || dateMatch;
     });
   }, [reports, searchQuery]);
@@ -276,7 +380,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
                 <i className="bi bi-pencil-square me-2" aria-hidden="true"></i>
                 Paste Shift Report
               </h3>
-              <p className="composer-hint">Paste your formatted shift report here. No individual fields required.</p>
+              <p className="composer-hint">Paste your formatted report here. Press <strong>Ctrl + V</strong> with an image copied to attach screenshots!</p>
             </div>
             <button
               type="button"
@@ -289,8 +393,24 @@ export default function ShiftReportPage({ onBackToDashboard }) {
           </div>
 
           <form onSubmit={handlePostReport}>
-            {/* Quick Metadata: Shift & Author */}
-            <div className="composer-meta-row">
+            {/* Quick Metadata: Date, Shift & Author */}
+            <div className="composer-meta-row composer-meta-row-3col">
+              {/* 1. Date Field */}
+              <div className="composer-meta-field">
+                <label htmlFor="reportDateInput">
+                  <i className="bi bi-calendar-event me-1"></i> Date:
+                </label>
+                <input
+                  id="reportDateInput"
+                  type="date"
+                  className="composer-input"
+                  value={reportDate}
+                  onChange={(e) => setReportDate(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* 2. Shift Timing */}
               <div className="composer-meta-field">
                 <label htmlFor="shiftSelect">
                   <i className="bi bi-clock me-1"></i> Shift Timing:
@@ -309,16 +429,17 @@ export default function ShiftReportPage({ onBackToDashboard }) {
                 </select>
               </div>
 
+              {/* 3. Posted By */}
               <div className="composer-meta-field">
                 <label htmlFor="authorSelect">
-                  <i className="bi bi-person me-1"></i> Posted By (Optional):
+                  <i className="bi bi-person me-1"></i> Posted By:
                 </label>
                 <div className="author-input-wrapper">
                   <input
                     id="authorSelect"
                     type="text"
                     className="composer-input"
-                    placeholder="Enter your name"
+                    placeholder="Enter name"
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
                     list="supportNamesList"
@@ -332,13 +453,16 @@ export default function ShiftReportPage({ onBackToDashboard }) {
               </div>
             </div>
 
-            {/* Paste Textarea */}
+            {/* Paste Textarea with onPaste image support */}
             <div className="composer-textarea-wrap">
               <textarea
                 ref={textareaRef}
                 className="shift-paste-textarea"
-                rows={14}
+                rows={13}
+                onPaste={handlePaste}
                 placeholder={`Paste your completed shift report here...
+
+Tip: Copy any image or screenshot and press Ctrl + V here to attach it automatically!
 
 Example:
 SHIFT REPORT 09:00PM TO 06:00AM
@@ -350,37 +474,87 @@ TOTAL CALLS - 0
 RESOLVE - 0
 PENDING - 0
 
-OTHER - 0
-
-DAILY WORK REPORT 
-
-HRMS TICKET REVIEW: 0
-PENDING TICKET REVIEW: 0
-PENDING SOLVED TICKET: 0`}
+OTHER - 0`}
                 value={reportText}
                 onChange={(e) => setReportText(e.target.value)}
               ></textarea>
             </div>
 
+            {/* Attached Images Preview Strip */}
+            {attachedImages.length > 0 && (
+              <div className="attached-images-strip">
+                <div className="attached-images-title">
+                  <i className="bi bi-images me-1"></i>
+                  <span>Attached Images ({attachedImages.length})</span>
+                  <span className="attached-images-hint">Click image to preview full size</span>
+                </div>
+                <div className="attached-images-list">
+                  {attachedImages.map((img) => (
+                    <div key={img.id} className="attached-image-card">
+                      <img
+                        src={img.dataUrl}
+                        alt={img.name}
+                        className="attached-image-thumb"
+                        onClick={() => setPreviewImageUrl(img.dataUrl)}
+                        title="Click to preview full size"
+                      />
+                      <button
+                        type="button"
+                        className="btn-remove-attached-img"
+                        onClick={() => handleRemoveAttachedImage(img.id)}
+                        title="Remove image"
+                        aria-label="Remove image"
+                      >
+                        <i className="bi bi-x"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Hidden file input for manual image upload */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              multiple
+              style={{ display: 'none' }}
+              onChange={handleFileInputChange}
+            />
+
             {/* Composer Footer Actions */}
             <div className="composer-actions-bar">
               <div className="composer-actions-left">
+                <button
+                  type="button"
+                  className="btn-composer-secondary"
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                  title="Attach image or screenshot file"
+                >
+                  <i className="bi bi-paperclip me-1" aria-hidden="true"></i> Attach Image
+                </button>
+
                 {reportText.trim() && (
                   <button
                     type="button"
                     className="btn-composer-secondary"
-                    onClick={() => handleCopy(reportText)}
+                    onClick={() => handleCopyText(reportText)}
                     title="Copy current text"
                   >
                     <i className="bi bi-clipboard me-1" aria-hidden="true"></i> Copy Text
                   </button>
                 )}
-                {reportText.trim() && (
+
+                {(reportText.trim() || attachedImages.length > 0) && (
                   <button
                     type="button"
                     className="btn-composer-ghost"
-                    onClick={() => setReportText('')}
-                    title="Clear text"
+                    onClick={() => {
+                      setReportText('');
+                      setAttachedImages([]);
+                    }}
+                    title="Clear text and attachments"
                   >
                     <i className="bi bi-trash3 me-1" aria-hidden="true"></i> Clear
                   </button>
@@ -390,7 +564,7 @@ PENDING SOLVED TICKET: 0`}
               <button
                 type="submit"
                 className="btn-post-report"
-                disabled={isSubmitting || !reportText.trim()}
+                disabled={isSubmitting || (!reportText.trim() && attachedImages.length === 0)}
               >
                 {isSubmitting ? (
                   <>
@@ -416,7 +590,9 @@ PENDING SOLVED TICKET: 0`}
                 <i className="bi bi-journals me-2" aria-hidden="true"></i>
                 Shift Reports History
               </h3>
-              <span className="feed-count-badge">{filteredReports.length} {filteredReports.length === 1 ? 'Report' : 'Reports'}</span>
+              <span className="feed-count-badge">
+                {filteredReports.length} {filteredReports.length === 1 ? 'Report' : 'Reports'}
+              </span>
             </div>
 
             <div className="feed-controls">
@@ -482,6 +658,7 @@ PENDING SOLVED TICKET: 0`}
               filteredReports.map((report) => {
                 const title = extractReportTitle(report.content);
                 const isCopied = copiedId === report.id;
+                const images = Array.isArray(report.images) ? report.images : [];
 
                 return (
                   <article key={report.id} className="report-feed-item">
@@ -505,15 +682,17 @@ PENDING SOLVED TICKET: 0`}
                       </div>
 
                       <div className="report-item-actions">
-                        <button
-                          type="button"
-                          className={`btn-copy-report ${isCopied ? 'copied' : ''}`}
-                          onClick={() => handleCopy(report.content, report.id)}
-                          title="Copy full report to clipboard"
-                        >
-                          <i className={`bi ${isCopied ? 'bi-check2' : 'bi-clipboard'} me-1`}></i>
-                          {isCopied ? 'Copied!' : 'Copy Report'}
-                        </button>
+                        {report.content && (
+                          <button
+                            type="button"
+                            className={`btn-copy-report ${isCopied ? 'copied' : ''}`}
+                            onClick={() => handleCopyText(report.content, report.id)}
+                            title="Copy full report text to clipboard"
+                          >
+                            <i className={`bi ${isCopied ? 'bi-check2' : 'bi-clipboard'} me-1`}></i>
+                            {isCopied ? 'Copied Text!' : 'Copy Text'}
+                          </button>
+                        )}
                         <button
                           type="button"
                           className="btn-delete-report"
@@ -526,9 +705,59 @@ PENDING SOLVED TICKET: 0`}
                     </div>
 
                     {/* Pre-wrap formatted report content */}
-                    <div className="report-content-box">
-                      <pre className="report-pre-text">{report.content}</pre>
-                    </div>
+                    {report.content && (
+                      <div className="report-content-box">
+                        <pre className="report-pre-text">{report.content}</pre>
+                      </div>
+                    )}
+
+                    {/* Attached Images Gallery in History */}
+                    {images.length > 0 && (
+                      <div className="report-images-gallery">
+                        <div className="report-gallery-header">
+                          <i className="bi bi-images me-1"></i>
+                          <span>Attached Screenshots ({images.length})</span>
+                          <span className="report-gallery-sub">Click image to preview · Click "Copy Image" to paste into chat</span>
+                        </div>
+                        <div className="report-images-grid">
+                          {images.map((imgItem, idx) => {
+                            const imgSrc = typeof imgItem === 'string' ? imgItem : imgItem.dataUrl;
+                            const imgKey = `${report.id}_img_${idx}`;
+                            const isImgCopied = copiedImgKey === imgKey;
+
+                            return (
+                              <div key={imgKey} className="report-image-card">
+                                <div
+                                  className="report-image-preview-wrap"
+                                  onClick={() => setPreviewImageUrl(imgSrc)}
+                                  title="Click to view full size"
+                                >
+                                  <img
+                                    src={imgSrc}
+                                    alt={`Shift Attachment ${idx + 1}`}
+                                    className="report-feed-img"
+                                  />
+                                  <div className="report-image-hover-overlay">
+                                    <i className="bi bi-arrows-fullscreen me-1"></i> Preview
+                                  </div>
+                                </div>
+                                <div className="report-image-card-actions">
+                                  <button
+                                    type="button"
+                                    className={`btn-copy-img ${isImgCopied ? 'copied' : ''}`}
+                                    onClick={() => handleCopyImage(imgSrc, imgKey)}
+                                    title="Copy image to clipboard to paste in WhatsApp/Slack/Teams"
+                                  >
+                                    <i className={`bi ${isImgCopied ? 'bi-check2' : 'bi-clipboard-plus'} me-1`}></i>
+                                    {isImgCopied ? 'Image Copied!' : 'Copy Image'}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </article>
                 );
               })
@@ -536,6 +765,41 @@ PENDING SOLVED TICKET: 0`}
           </div>
         </section>
       </div>
+
+      {/* Lightbox / Full-Screen Image Preview Modal */}
+      {previewImageUrl && (
+        <div className="image-lightbox-overlay" onClick={() => setPreviewImageUrl(null)}>
+          <div className="image-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <div className="image-lightbox-header">
+              <div className="lightbox-header-title">
+                <i className="bi bi-image me-2"></i> Screenshot Preview
+              </div>
+              <div className="lightbox-header-actions">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={() => handleCopyImage(previewImageUrl, 'lightbox_active')}
+                  title="Copy image to clipboard"
+                >
+                  <i className="bi bi-clipboard-plus me-1"></i> Copy Image
+                </button>
+                <button
+                  type="button"
+                  className="lightbox-close-btn"
+                  onClick={() => setPreviewImageUrl(null)}
+                  title="Close preview"
+                  aria-label="Close preview"
+                >
+                  <i className="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </div>
+            <div className="image-lightbox-body">
+              <img src={previewImageUrl} alt="Full resolution preview" className="image-lightbox-img" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Supabase Configuration Modal */}
       {showConfigModal && (
