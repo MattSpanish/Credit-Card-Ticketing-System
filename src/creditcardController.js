@@ -1052,23 +1052,70 @@ export function initCreditcardApp() {
       navigator.clipboard.writeText(values.join('\t')).then(() => showNotification('Row copied!'));
     };
 
+    // Global search clearing fallback
+    window.clearGlobalSearch = window.clearGlobalSearch || function() {
+      currentSearchQuery = '';
+      const input = document.getElementById('headerSearch');
+      if (input) input.value = '';
+      if (window.updateSearchMatchCount) window.updateSearchMatchCount(null);
+      renderTable();
+      renderSidebar();
+    };
+
     window.handleGlobalSearch = function(query) {
       currentSearchQuery = (query || '').toLowerCase().trim();
       renderTable();
       renderSidebar();
     };
 
+    // Comprehensive multi-term search matching across all ticket fields
+    function ticketMatchesSearch(entry, query) {
+      if (!query) return true;
+      const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+      if (terms.length === 0) return true;
+
+      const cleanRemarks = formatMultiline(entry.remarks || '');
+      const cleanOriginal = formatMultiline(entry.originalRemarks || '');
+
+      let dateVariants = entry.date || '';
+      const dateObj = parseDateFromString(entry.date);
+      if (dateObj) {
+        const monthLong = dateObj.toLocaleString('en-US', { month: 'long' }).toLowerCase();
+        const monthShort = dateObj.toLocaleString('en-US', { month: 'short' }).toLowerCase();
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const dayName = dayNames[dateObj.getDay()] || '';
+        const ymd = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+        dateVariants += ` ${monthLong} ${monthShort} ${dayName} ${ymd}`;
+      }
+
+      const searchableText = [
+        entry.ticketNumber || '',
+        entry.store || '',
+        entry.mid || '',
+        entry.merchant || '',
+        entry.contactNumber || '',
+        entry.issue || '',
+        entry.resolution || '',
+        cleanRemarks,
+        cleanOriginal,
+        entry.support || '',
+        entry.shift || '',
+        entry.status || '',
+        entry.escalated || '',
+        dateVariants
+      ].join(' ').toLowerCase();
+
+      return terms.every(term => searchableText.includes(term));
+    }
+
     // ─── TABLE ───
     function getVisibleEntries() {
-      const selectedDateStr = document.getElementById('creditcard-date').value;
+      const selectedDateStr = document.getElementById('creditcard-date')?.value || '';
       
       let entries = allEntries.filter(entry => !entry.deleted && entry.source === 'creditcard');
 
       if (currentSearchQuery) {
-        entries = entries.filter(entry => {
-          const searchString = `${entry.ticketNumber || ''} ${entry.store || ''} ${entry.mid || ''} ${entry.merchant || ''} ${entry.contactNumber || ''} ${entry.issue || ''}`.toLowerCase();
-          return searchString.includes(currentSearchQuery);
-        });
+        entries = entries.filter(entry => ticketMatchesSearch(entry, currentSearchQuery));
       } else {
         entries = entries.filter(entry => {
           const dateObj = parseDateFromString(entry.date);
@@ -1086,18 +1133,53 @@ export function initCreditcardApp() {
 
     function renderTable() {
       const visibleEntries = getVisibleEntries();
+
+      // Update match count badge in header
+      if (window.updateSearchMatchCount) {
+        window.updateSearchMatchCount(currentSearchQuery ? visibleEntries.length : null);
+      }
+
+      // Update search status banner above table
+      const searchBanner = document.getElementById('searchStatusBar');
+      const searchStatusQuery = document.getElementById('searchStatusQuery');
+      const searchStatusCount = document.getElementById('searchStatusCount');
+      if (searchBanner && searchStatusQuery && searchStatusCount) {
+        if (currentSearchQuery) {
+          searchBanner.style.display = 'flex';
+          searchStatusQuery.textContent = `"${currentSearchQuery}"`;
+          searchStatusCount.textContent = visibleEntries.length;
+        } else {
+          searchBanner.style.display = 'none';
+        }
+      }
+
       const tbody = document.querySelector('#entryTable tbody');
       if (!tbody) return;
       tbody.innerHTML = '';
       if (visibleEntries.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="13" style="text-align: center; padding: 40px 16px; color: var(--text-muted); font-size: 0.85rem;">
-              <i class="bi bi-inbox" style="font-size: 1.6rem; display: block; margin-bottom: 8px; opacity: 0.4;"></i>
-              No tickets found for this view
-            </td>
-          </tr>
-        `;
+        if (currentSearchQuery) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="13" style="text-align: center; padding: 48px 16px; color: var(--text-muted); font-size: 0.88rem;">
+                <i class="bi bi-search" style="font-size: 1.8rem; display: block; margin-bottom: 10px; opacity: 0.45;"></i>
+                <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">No tickets found matching "${escapeHtml(currentSearchQuery)}"</div>
+                <div style="font-size: 0.78rem; opacity: 0.75; margin-bottom: 12px;">Try searching by Ticket #, Store Name, MID, Agent Name, Issue, Remarks, or Status.</div>
+                <button type="button" class="btn btn-sm" style="font-size: 0.8rem; padding: 4px 12px; cursor: pointer;" onclick="window.clearGlobalSearch && window.clearGlobalSearch()">
+                  <i class="bi bi-x-circle me-1" aria-hidden="true"></i> Clear Search
+                </button>
+              </td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="13" style="text-align: center; padding: 40px 16px; color: var(--text-muted); font-size: 0.85rem;">
+                <i class="bi bi-inbox" style="font-size: 1.6rem; display: block; margin-bottom: 8px; opacity: 0.4;"></i>
+                No tickets found for this view
+              </td>
+            </tr>
+          `;
+        }
         updateSelectAllCheckboxState();
         updateStatusCounters();
         return;
@@ -1165,10 +1247,7 @@ export function initCreditcardApp() {
 
       let baseEntries = allCreditCardEntries;
       if (currentSearchQuery) {
-        baseEntries = baseEntries.filter(entry => {
-          const searchString = `${entry.ticketNumber || ''} ${entry.store || ''} ${entry.mid || ''} ${entry.merchant || ''} ${entry.contactNumber || ''} ${entry.issue || ''}`.toLowerCase();
-          return searchString.includes(currentSearchQuery);
-        });
+        baseEntries = baseEntries.filter(entry => ticketMatchesSearch(entry, currentSearchQuery));
       } else if (selectedDateStr) {
         baseEntries = baseEntries.filter(entry => {
           return getEntryDateYMD(entry.date) === selectedDateStr;
@@ -1245,9 +1324,13 @@ export function initCreditcardApp() {
     };
 
     window.showAllTickets = function() {
-      const searchEl = document.getElementById('headerSearch');
-      if (searchEl) searchEl.value = '';
-      currentSearchQuery = '';
+      if (window.clearGlobalSearch) {
+        window.clearGlobalSearch();
+      } else {
+        const searchEl = document.getElementById('headerSearch');
+        if (searchEl) searchEl.value = '';
+        currentSearchQuery = '';
+      }
       currentStatusFilter = null;
       document.querySelectorAll('.status-filter-btn').forEach(btn => btn.classList.remove('active'));
       renderTable();
@@ -1267,7 +1350,27 @@ export function initCreditcardApp() {
         else btn.classList.remove('active');
       });
       renderTable();
-    }
+    };
+
+    window.getPendingTickets = function() {
+      return allEntries
+        .filter(entry => !entry.deleted && entry.source === 'creditcard' && (entry.status || '').toUpperCase() === 'PENDING')
+        .map(entry => ({
+          id: entry.id,
+          ticketNumber: entry.ticketNumber || '',
+          store: entry.store || '',
+          mid: entry.mid || '',
+          merchant: entry.merchant || '',
+          contactNumber: entry.contactNumber || '',
+          issue: entry.issue || '',
+          resolution: entry.resolution || '',
+          support: entry.support || '',
+          date: entry.date || '',
+          escalated: entry.escalated || ''
+        }));
+    };
+
+    window.showNotification = showNotification;
 
     function clearAllEntries() {
       if (!confirm('Delete ALL entries permanently? This cannot be undone.')) return;
@@ -1291,10 +1394,7 @@ export function initCreditcardApp() {
       let historyEntries = allEntries.filter(entry => !entry.deleted && !entry.imported && entry.source === 'creditcard');
 
       if (currentSearchQuery) {
-        historyEntries = historyEntries.filter(entry => {
-          const searchString = `${entry.ticketNumber || ''} ${entry.store || ''} ${entry.mid || ''} ${entry.merchant || ''} ${entry.contactNumber || ''} ${entry.issue || ''}`.toLowerCase();
-          return searchString.includes(currentSearchQuery);
-        });
+        historyEntries = historyEntries.filter(entry => ticketMatchesSearch(entry, currentSearchQuery));
       }
 
       const grouped = {};
@@ -1318,20 +1418,25 @@ export function initCreditcardApp() {
       let html = '';
       for (const month of sortedMonths) {
         if (collapseState.months[month] === undefined) collapseState.months[month] = month !== currentMonthKey;
-        const isMonthCollapsed = collapseState.months[month];
+        // When searching, auto-expand any month group containing matching tickets
+        const isMonthCollapsed = currentSearchQuery ? false : collapseState.months[month];
+        const monthTotal = Object.values(grouped[month]).reduce((sum, arr) => sum + arr.length, 0);
+        const monthBadge = currentSearchQuery ? `<span class="search-match-count">(${monthTotal})</span>` : '';
         html += `<div class="sidebar-group">
                   <div class="month-header" onclick="toggleMonth('${month.replace(/'/g, "\\'")}')">
-                      <i class="bi bi-chevron-down collapse-caret ${isMonthCollapsed ? 'is-collapsed' : ''}" aria-hidden="true"></i> ${month}
+                      <i class="bi bi-chevron-down collapse-caret ${isMonthCollapsed ? 'is-collapsed' : ''}" aria-hidden="true"></i> ${month} ${monthBadge}
                   </div>`;
         if (!isMonthCollapsed) {
           const dates = grouped[month];
           const sortedDates = Object.keys(dates).sort((a, b) => new Date(b) - new Date(a));
           for (const dateKey of sortedDates) {
             if (collapseState.dates[dateKey] === undefined) collapseState.dates[dateKey] = dateKey !== todayFormatted;
-            const isDateCollapsed = collapseState.dates[dateKey];
+            // When searching, auto-expand any date group containing matching tickets
+            const isDateCollapsed = currentSearchQuery ? false : collapseState.dates[dateKey];
+            const dateBadge = currentSearchQuery ? `<span class="search-match-count">(${dates[dateKey].length})</span>` : '';
             html += `<div class="date-group">
                       <div class="date-header" onclick="toggleDate('${dateKey.replace(/'/g, "\\'")}')">
-                          <i class="bi bi-chevron-down collapse-caret ${isDateCollapsed ? 'is-collapsed' : ''}" aria-hidden="true"></i> ${dateKey}
+                          <i class="bi bi-chevron-down collapse-caret ${isDateCollapsed ? 'is-collapsed' : ''}" aria-hidden="true"></i> ${dateKey} ${dateBadge}
                       </div>`;
             if (!isDateCollapsed) {
               html += `<div class="date-entries">`;
@@ -1371,7 +1476,22 @@ export function initCreditcardApp() {
         html += `</div>`;
       }
 
-      if (historyEntries.length === 0) html = '<div style="padding:20px; text-align:center;">No entries yet.</div>';
+      if (historyEntries.length === 0) {
+        if (currentSearchQuery) {
+          html = `
+            <div class="sidebar-search-empty">
+              <i class="bi bi-search" style="font-size: 1.4rem; display: block; margin-bottom: 8px; opacity: 0.4;"></i>
+              <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">No history matches</div>
+              <div style="font-size: 0.75rem; opacity: 0.75; margin-top: 4px;">No tickets match "${escapeHtml(currentSearchQuery)}"</div>
+              <button type="button" class="btn btn-sm" style="margin-top: 10px; font-size: 0.75rem; padding: 4px 10px; cursor: pointer;" onclick="window.clearGlobalSearch && window.clearGlobalSearch()">
+                Clear search
+              </button>
+            </div>
+          `;
+        } else {
+          html = '<div style="padding:20px; text-align:center;">No entries yet.</div>';
+        }
+      }
       container.innerHTML = html;
       attachSidebarEvents(container);
     }
@@ -2289,6 +2409,14 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       const dateFieldEl = document.getElementById('creditcard-date');
       if (dateFieldEl) {
         dateFieldEl.addEventListener('change', () => {
+          if (currentSearchQuery) {
+            if (window.clearGlobalSearch) {
+              window.clearGlobalSearch();
+              return;
+            } else {
+              currentSearchQuery = '';
+            }
+          }
           renderTable();
           saveFormData('creditcard');
         });
