@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { initCreditcardApp } from './creditcardController';
 import teamPhoto from './group-photo.jpeg';
 import teamBanner from './groupcc.jpeg';
@@ -77,11 +77,57 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-09-20",
+    version: "v2.6.0",
+    date: "September 20, 2026",
+    isLatest: true,
+    badge: "TODAY'S RELEASE",
+    title: "Global Search Engine, Pending Hover Popover & Navigation Upgrades",
+    summary: "Introducing comprehensive multi-field global search with keyboard shortcuts, live match count pill, auto-expanding sidebar results, interactive hover popover for Pending tickets, and refined layout improvements.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-hourglass-split",
+        title: "Interactive Pending Tickets Hover Popover",
+        desc: "Hovering your cursor over the Pending card on the dashboard stats grid now instantly reveals an interactive popover listing all pending tickets with their ticket numbers, store names, MIDs, issues, and assigned agents. Includes one-click copy buttons (📋) and click-to-locate integration that loads the ticket straight into your search view.",
+        tag: "New Feature"
+      },
+      {
+        type: "feature",
+        icon: "bi-search",
+        title: "Comprehensive Global Search & Keyboard Shortcuts",
+        desc: "The top search bar is now fully functional across all ticket fields (Ticket #, Store Name, MID, Support Agent, Issue, Remarks, Resolution, Status, and Dates). Press Ctrl+K (or ⌘K on Mac) to focus anywhere. Features a live match counter badge, one-click clear button (✕ / Esc), and an active search status indicator bar above the table.",
+        tag: "New Feature"
+      },
+      {
+        type: "improvement",
+        icon: "bi-arrows-expand",
+        title: "Auto-Expanding History Accordions on Search",
+        desc: "When searching for tickets, past month and date groups in the History sidebar containing matching entries automatically expand with live match counts, ensuring you never miss a result hidden inside collapsed drawers.",
+        tag: "Improvements"
+      },
+      {
+        type: "ui",
+        icon: "bi-layout-sidebar-inset",
+        title: "Optimized Sidebar Layout & Break Card Width",
+        desc: "Relocated the DAYOFF / 1 HR Break Card cleanly above the sidebar footer navigation, with perfectly aligned select borders and full support for longer agent names without text cutoff.",
+        tag: "UI / UX"
+      },
+      {
+        type: "warning",
+        icon: "bi-shield-exclamation",
+        title: "CRITICAL: Do Not Delete or Erase Browser Cache (Chrome & Edge)",
+        desc: "Important reminder: Please DO NOT delete or erase your browser cache or browsing data in Google Chrome or Microsoft Edge because your data and tickets are currently saved in your browser cache. If you delete your cache or site data, your tickets and saved records will be permanently deleted and cannot be recovered.",
+        tag: "Critical Reminder"
+      }
+    ]
+  },
+  {
     id: "rel-2026-09-18",
     version: "v2.5.0",
     date: "September 18, 2026",
-    isLatest: true,
-    badge: "TODAY'S RELEASE",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
     title: "One-Click 'Copy All', Direct Ticket # Intake, Midnight Tab Reset & Revamped Dashboard",
     summary: "A major usability update featuring one-click 'Copy all', streamlined ticket creation, automated tab resets, non-scrolling table grid, and upgraded productivity metrics.",
     items: [
@@ -843,6 +889,71 @@ function Sidebar({
 // ==========================================
 
 function Header() {
+  const [query, setQuery] = useState('');
+  const [matchCount, setMatchCount] = useState(null);
+
+  useEffect(() => {
+    // Expose global clear function for other components/controller
+    window.clearGlobalSearch = () => {
+      setQuery('');
+      setMatchCount(null);
+      if (window.handleGlobalSearch) {
+        window.handleGlobalSearch('');
+      }
+      const input = document.getElementById('headerSearch');
+      if (input) input.value = '';
+    };
+
+    // Callback for controller to report matching ticket count
+    window.updateSearchMatchCount = (count) => {
+      setMatchCount(count);
+    };
+
+    // Keyboard shortcut: Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        if (window.switchToDashboardView) window.switchToDashboardView();
+        const input = document.getElementById('headerSearch');
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      delete window.clearGlobalSearch;
+      delete window.updateSearchMatchCount;
+    };
+  }, []);
+
+  const handleChange = (e) => {
+    const val = e.target.value;
+    setQuery(val);
+    if (!val.trim()) {
+      setMatchCount(null);
+    }
+    if (window.switchToDashboardView) {
+      window.switchToDashboardView();
+    }
+    if (window.handleGlobalSearch) {
+      window.handleGlobalSearch(val);
+    }
+  };
+
+  const handleClear = () => {
+    if (window.clearGlobalSearch) {
+      window.clearGlobalSearch();
+    }
+    const input = document.getElementById('headerSearch');
+    if (input) {
+      input.focus();
+    }
+  };
+
   return (
     <header className="app-header">
       <div className="header-left">
@@ -853,12 +964,54 @@ function Header() {
         <div className="header-search-wrap">
           <i className="bi bi-search header-search-icon" aria-hidden="true"></i>
           <input
+            id="headerSearch"
+            type="text"
+            role="searchbox"
+            value={query}
             className="header-search"
             placeholder="Search tickets, stores, MID..."
             aria-label="Search tickets, stores, or MID"
-            onChange={(e) => window.handleGlobalSearch && window.handleGlobalSearch(e.target.value)}
+            onChange={handleChange}
+            onFocus={() => {
+              if (window.switchToDashboardView) window.switchToDashboardView();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                handleClear();
+                e.target.blur();
+              }
+            }}
           />
-          <span className="header-search-kbd" aria-hidden="true">⌘K</span>
+          {query.trim() ? (
+            <div className="header-search-actions">
+              {matchCount !== null && (
+                <span className="header-search-count" title={`${matchCount} matching ticket(s)`}>
+                  {matchCount}
+                </span>
+              )}
+              <button
+                type="button"
+                className="header-search-clear-btn"
+                onClick={handleClear}
+                title="Clear search (Esc)"
+                aria-label="Clear search"
+              >
+                <i className="bi bi-x-lg" aria-hidden="true"></i>
+              </button>
+            </div>
+          ) : (
+            <span
+              className="header-search-kbd is-clickable"
+              aria-hidden="true"
+              title="Press Ctrl+K or ⌘K to search"
+              onClick={() => {
+                const input = document.getElementById('headerSearch');
+                if (input) input.focus();
+              }}
+            >
+              ⌘K
+            </span>
+          )}
         </div>
         <button
           className="team-chip"
@@ -874,11 +1027,49 @@ function Header() {
   );
 }
 
+
 // ==========================================
 // DASHBOARD STATS GRID (5 METRICS)
 // ==========================================
 
 function DashboardGrid() {
+  const [isPendingHovered, setIsPendingHovered] = useState(false);
+  const [pendingList, setPendingList] = useState([]);
+  const hoverTimeoutRef = useRef(null);
+
+  const loadPendingTickets = () => {
+    let list = [];
+    if (typeof window !== 'undefined' && window.getPendingTickets) {
+      list = window.getPendingTickets();
+    } else {
+      try {
+        const raw = localStorage.getItem('unifiedEntries_creditcard');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          list = parsed.filter(e => !e.deleted && e.source === 'creditcard' && (e.status || '').toUpperCase() === 'PENDING');
+        }
+      } catch (err) {
+        list = [];
+      }
+    }
+    setPendingList(list);
+  };
+
+  const handlePendingMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    loadPendingTickets();
+    setIsPendingHovered(true);
+  };
+
+  const handlePendingMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsPendingHovered(false);
+    }, 140);
+  };
+
   return (
     <section className="dashboard-grid compact" aria-label="Ticket dashboard summary">
       {/* 1. YOUR TICKETS */}
@@ -930,7 +1121,13 @@ function DashboardGrid() {
       </div>
 
       {/* 5. PENDING */}
-      <div className="stat-card warning is-clickable" title="Click to filter by Pending" onClick={() => window.filterByStatus && window.filterByStatus('PENDING')}>
+      <div 
+        className="stat-card warning is-clickable pending-card-wrap" 
+        title="Click to filter by Pending · Hover to view pending ticket numbers" 
+        onClick={() => window.filterByStatus && window.filterByStatus('PENDING')}
+        onMouseEnter={handlePendingMouseEnter}
+        onMouseLeave={handlePendingMouseLeave}
+      >
         <div className="stat-label">
           <i className="bi bi-hourglass-split" aria-hidden="true"></i> Pending
         </div>
@@ -939,6 +1136,95 @@ function DashboardGrid() {
         <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,20 12,18 24,16 36,14 48,16 60,12 72,14 84,10 100,12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
+
+        {/* Hover Popover showing all pending tickets */}
+        {isPendingHovered && (
+          <div 
+            className="pending-popover" 
+            onClick={(e) => e.stopPropagation()}
+            onMouseEnter={handlePendingMouseEnter}
+            onMouseLeave={handlePendingMouseLeave}
+          >
+            <div className="pending-popover-header">
+              <div className="pending-popover-title">
+                <i className="bi bi-hourglass-split" aria-hidden="true"></i>
+                <span>Pending Tickets</span>
+                <span className="pending-count-badge">{pendingList.length}</span>
+              </div>
+              <span className="pending-popover-hint">{pendingList.length === 1 ? '1 ticket' : `${pendingList.length} tickets`}</span>
+            </div>
+
+            {pendingList.length === 0 ? (
+              <div className="pending-popover-empty">
+                <i className="bi bi-check2-circle" aria-hidden="true"></i>
+                <span>No pending tickets right now</span>
+              </div>
+            ) : (
+              <div className="pending-popover-list">
+                {pendingList.map((ticket, idx) => (
+                  <div 
+                    key={ticket.id || idx} 
+                    className="pending-popover-item"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const query = ticket.ticketNumber || ticket.store || ticket.mid;
+                      if (query && window.handleGlobalSearch) {
+                        window.handleGlobalSearch(query);
+                        const sInput = document.getElementById('headerSearch');
+                        if (sInput) sInput.value = query;
+                      } else if (window.filterByStatus) {
+                        window.filterByStatus('PENDING');
+                      }
+                    }}
+                    title="Click to search and view this ticket in table"
+                  >
+                    <div className="pending-item-top">
+                      <span className="pending-ticket-badge">
+                        <i className="bi bi-ticket-perforated-fill me-1" aria-hidden="true"></i>
+                        {ticket.ticketNumber ? `TICKET #: ${ticket.ticketNumber}` : 'NO TICKET #'}
+                      </span>
+                      {ticket.ticketNumber && (
+                        <button
+                          type="button"
+                          className="pending-copy-btn"
+                          title="Copy ticket number"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(ticket.ticketNumber);
+                            if (window.showNotification) {
+                              window.showNotification(`Copied ticket #${ticket.ticketNumber}`);
+                            }
+                          }}
+                        >
+                          <i className="bi bi-clipboard" aria-hidden="true"></i>
+                        </button>
+                      )}
+                    </div>
+                    <div className="pending-item-details">
+                      <span className="pending-store-name">{ticket.store || 'Store —'}</span>
+                      {ticket.mid && <span className="pending-mid">MID: {ticket.mid}</span>}
+                    </div>
+                    {ticket.issue && (
+                      <div className="pending-item-issue" title={ticket.issue}>
+                        {ticket.issue}
+                      </div>
+                    )}
+                    <div className="pending-item-meta">
+                      {ticket.date && <span className="pending-meta-date"><i className="bi bi-calendar3 me-1"></i>{ticket.date}</span>}
+                      {ticket.support && <span className="pending-meta-agent"><i className="bi bi-person me-1"></i>{ticket.support}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="pending-popover-footer">
+              <span className="pending-footer-tip">
+                <i className="bi bi-info-circle me-1"></i> Click ticket to search · Click card to filter table
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -1427,6 +1713,28 @@ export default function App() {
             color: var(--text-muted, #cbd5e1);
           }
 
+          body.dark-mode .pending-popover {
+            background-color: var(--panel-bg, #1e293b);
+            border-color: var(--border-color, #334155);
+            box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.3);
+          }
+          body.dark-mode .pending-popover::before {
+            background-color: var(--panel-bg, #1e293b);
+            border-color: var(--border-color, #334155);
+          }
+          body.dark-mode .pending-popover-item {
+            background-color: rgba(255, 255, 255, 0.03);
+            border-color: var(--border-color, #334155);
+          }
+          body.dark-mode .pending-popover-item:hover {
+            background-color: rgba(255, 255, 255, 0.07);
+          }
+          body.dark-mode .pending-copy-btn {
+            background-color: var(--panel-bg, #1e293b);
+            border-color: var(--border-color, #334155);
+            color: var(--text-muted, #cbd5e1);
+          }
+
           @keyframes overlayFadeIn {
             from { opacity: 0; backdrop-filter: blur(0px); }
             to { opacity: 1; backdrop-filter: blur(5px); }
@@ -1518,6 +1826,22 @@ export default function App() {
                   </div>
                 </div>
                 <BulkBar />
+                <div id="searchStatusBar" className="search-status-bar" style={{ display: 'none' }}>
+                  <div className="search-status-info">
+                    <i className="bi bi-search" aria-hidden="true"></i>
+                    <span>
+                      Showing <strong id="searchStatusCount">0</strong> ticket(s) matching <strong id="searchStatusQuery">""</strong> across all dates
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-clear-search"
+                    onClick={() => window.clearGlobalSearch && window.clearGlobalSearch()}
+                    title="Clear search and return to selected date"
+                  >
+                    <i className="bi bi-x-circle me-1" aria-hidden="true"></i> Clear search
+                  </button>
+                </div>
                 <EntryTable />
               </div>
             </div>
