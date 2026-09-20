@@ -788,10 +788,10 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="CC Tickets v2.6.0">
-            <img src={appLogo} alt="CC Logo" className="sidebar-logo-img" />
+          <div className="logo" title="Tickets v2.6.0">
+            <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
-              <span className="logo-text">CC Tickets</span>
+              <span className="logo-text">Tickets</span>
               <span className="logo-version">v2.6.0</span>
             </div>
           </div>
@@ -1041,7 +1041,7 @@ function Header() {
           title="View team photo"
           type="button"
         >
-          <span className="team-chip-avatar" aria-hidden="true">CC</span>
+          <img src={appLogo} alt="Team Logo" className="team-chip-avatar" />
           <span className="team-chip-label">Team</span>
         </button>
       </div>

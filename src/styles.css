@@ -489,15 +489,16 @@ body.dark-mode .app-header {
     border-color: transparent;
 }
 .team-chip-avatar {
-    width: 28px; height: 28px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--teal-500), var(--violet-500));
-    color: white;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 0.78rem; font-weight: 700;
-    letter-spacing: -0.02em;
+    object-fit: cover;
+    display: inline-block;
+    flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    transition: transform var(--t-fast) var(--ease);
 }
-.team-chip:hover .team-chip-avatar { transform: scale(1.04); }
+.team-chip:hover .team-chip-avatar { transform: scale(1.05); }
 @media (max-width: 700px) { .team-chip-label { display: none; } .team-chip { padding: 0; width: 38px; } }
 
 /* ============================================================
