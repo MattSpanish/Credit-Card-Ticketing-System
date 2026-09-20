@@ -8,7 +8,6 @@ import {
   saveSupabaseConfig,
   testSupabaseConnection,
   getDefaultReportTemplate,
-  calculateMorningShiftMetrics,
   detectShiftFromContent,
   SUPABASE_SQL_SCRIPT,
 } from './supabaseShiftReports';
@@ -87,29 +86,14 @@ export default function ShiftReportPage({ onBackToDashboard }) {
     setTimeout(() => setFeedbackMsg(''), 3500);
   }
 
-  // Handle template insert with automatic calculation for 05:00AM - 02:00PM shift
+  // Handle template insert
   function handleInsertTemplate() {
-    let calculatedMetrics = null;
-    let toastMessage = 'Standard shift template inserted!';
-
-    if (selectedShift === '05:00AM TO 02:00PM' || selectedShift.includes('05:00AM TO 02:00PM')) {
-      const calc = calculateMorningShiftMetrics(reports, reportDate);
-      calculatedMetrics = calc;
-
-      if (calc.foundReports.length > 0) {
-        const shiftsFound = calc.foundReports.map((f) => f.shift).join(' + ');
-        toastMessage = `⚡ Auto-calculated from ${shiftsFound} on ${reportDate} (Calls: ${calc.totalCalls}, Resolve: ${calc.resolve}, Pending: ${calc.pending}, Other: ${calc.other})`;
-      } else {
-        toastMessage = `Template inserted. (No 2PM-11PM or 9PM-6AM reports found for ${reportDate}; values set to 0)`;
-      }
-    }
-
-    const template = getDefaultReportTemplate(selectedShift, reportDate, calculatedMetrics);
+    const template = getDefaultReportTemplate(selectedShift, reportDate);
     setReportText(template);
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
-    showToast(toastMessage);
+    showToast('Standard shift template inserted!');
   }
 
   // Process image file for attachment

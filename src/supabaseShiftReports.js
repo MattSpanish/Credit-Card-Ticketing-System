@@ -7,22 +7,6 @@ const STORAGE_KEYS = {
   SUPABASE_KEY: 'cc_supabase_anon_key',
 };
 
-// Metric parser from report text content
-export function parseReportMetrics(content) {
-  if (!content) return { totalCalls: 0, resolve: 0, pending: 0, other: 0 };
-
-  const callsMatch = content.match(/(?:^|\n)\s*TOTAL\s*CALLS\s*[-:]\s*(\d+)/i);
-  const resolveMatch = content.match(/(?:^|\n)\s*RESOLVE[D]?\s*[-:]\s*(\d+)/i);
-  const pendingMatch = content.match(/(?:^|\n)\s*PENDING\s*[-:]\s*(\d+)/i);
-  const otherMatch = content.match(/(?:^|\n)\s*OTHER\s*[-:]\s*(\d+)/i);
-
-  return {
-    totalCalls: callsMatch ? parseInt(callsMatch[1], 10) : 0,
-    resolve: resolveMatch ? parseInt(resolveMatch[1], 10) : 0,
-    pending: pendingMatch ? parseInt(pendingMatch[1], 10) : 0,
-    other: otherMatch ? parseInt(otherMatch[1], 10) : 0,
-  };
-}
 
 // Helper to detect shift from report content
 export function detectShiftFromContent(content) {
@@ -61,69 +45,8 @@ export function detectShiftFromContent(content) {
   return '';
 }
 
-// Calculate combined previous shift metrics (2PM-11PM and 9PM-6AM) strictly for the SAME DATE
-export function calculateMorningShiftMetrics(reports, targetDateStr) {
-  if (!Array.isArray(reports) || !targetDateStr) {
-    return { totalCalls: 0, resolve: 0, pending: 0, other: 0, foundReports: [] };
-  }
-
-  // Format target date (e.g. "September 20, 2026")
-  let targetDateFormatted = '';
-  try {
-    const parts = targetDateStr.split('-');
-    if (parts.length === 3) {
-      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-      targetDateFormatted = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    }
-  } catch {}
-
-  // Filter reports that match the EXACT same date
-  const sameDateReports = reports.filter((r) => {
-    if (r.report_date && r.report_date === targetDateStr) return true;
-    if (r.created_at && r.created_at.slice(0, 10) === targetDateStr) return true;
-    if (r.content) {
-      if (r.content.includes(targetDateStr)) return true;
-      if (targetDateFormatted && r.content.includes(targetDateFormatted)) return true;
-    }
-    return false;
-  });
-
-  // Extract latest report for 2PM-11PM and latest for 9PM-6AM
-  let report2PM = null;
-  let report9PM = null;
-
-  for (const r of sameDateReports) {
-    const shift = detectShiftFromContent(r.content);
-    if (shift === '2PM-11PM' && !report2PM) {
-      report2PM = r;
-    } else if (shift === '9PM-6AM' && !report9PM) {
-      report9PM = r;
-    }
-  }
-
-  const metrics2PM = report2PM ? parseReportMetrics(report2PM.content) : { totalCalls: 0, resolve: 0, pending: 0, other: 0 };
-  const metrics9PM = report9PM ? parseReportMetrics(report9PM.content) : { totalCalls: 0, resolve: 0, pending: 0, other: 0 };
-
-  const totalCalls = metrics2PM.totalCalls + metrics9PM.totalCalls;
-  const resolve = metrics2PM.resolve + metrics9PM.resolve;
-  const pending = metrics2PM.pending + metrics9PM.pending;
-  const other = metrics2PM.other + metrics9PM.other;
-
-  const foundReports = [];
-  if (report2PM) foundReports.push({ shift: '02:00PM TO 11:00PM', metrics: metrics2PM });
-  if (report9PM) foundReports.push({ shift: '09:00PM TO 06:00AM', metrics: metrics9PM });
-
-  return {
-    totalCalls,
-    resolve,
-    pending,
-    other,
-    foundReports,
-  };
-}
-
 // Default template for quick insert
-export function getDefaultReportTemplate(shiftName = '09:00PM TO 06:00AM', customDate = null, calculatedMetrics = null) {
+export function getDefaultReportTemplate(shiftName = '09:00PM TO 06:00AM', customDate = null) {
   let dateObj = new Date();
   if (customDate) {
     const parts = customDate.split('-');
@@ -140,21 +63,16 @@ export function getDefaultReportTemplate(shiftName = '09:00PM TO 06:00AM', custo
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
   const formattedDate = dateObj.toLocaleDateString('en-US', options);
 
-  const totalCalls = calculatedMetrics?.totalCalls ?? 0;
-  const resolve = calculatedMetrics?.resolve ?? 0;
-  const pending = calculatedMetrics?.pending ?? 0;
-  const other = calculatedMetrics?.other ?? 0;
-
   const baseTemplate = `SHIFT REPORT ${shiftName}
 
 ${formattedDate}
 
-TOTAL CALLS - ${totalCalls}
+TOTAL CALLS - 0
 
-RESOLVE - ${resolve}
-PENDING - ${pending}
+RESOLVE - 0
+PENDING - 0
 
-OTHER - ${other}`;
+OTHER - 0`;
 
   // DAILY WORK REPORT is ONLY included for the 05:00AM TO 02:00PM shift
   if (shiftName === '05:00AM TO 02:00PM' || shiftName.includes('05:00AM TO 02:00PM')) {
