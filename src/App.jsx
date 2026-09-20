@@ -918,7 +918,7 @@ function Sidebar({
             aria-current={currentView === 'shift-report' ? 'page' : undefined}
             title="Shift Report"
           >
-            <i className="bi bi-file-earmark-bar-graph me-2" aria-hidden="true"></i>
+            <i className="bi bi-file-earmark-bar-graph me-1" aria-hidden="true"></i>
             <span className="nav-text">Shift Report</span>
             <span className="nav-item-badge">BETA</span>
           </button>

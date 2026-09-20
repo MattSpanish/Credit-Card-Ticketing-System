@@ -640,7 +640,7 @@ body.dark-mode .app-header {
     position: relative;
     background: transparent;
     border: 1px solid transparent;
-    padding: 8px 12px 8px 16px;
+    padding: 8px 10px 8px 14px;
     border-radius: var(--r-sm);
     text-align: left;
     cursor: pointer;
@@ -649,8 +649,12 @@ body.dark-mode .app-header {
     font-size: 0.88rem;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    white-space: nowrap;
     transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.nav-item .nav-text {
+    white-space: nowrap;
 }
 .nav-item .bi { font-size: 1rem; opacity: 0.8; }
 .nav-item:hover {
@@ -2841,14 +2845,16 @@ body.dark-mode .info-box { background: var(--accent-secondary-soft); }
     color: #ffffff;
 }
 .nav-item-badge {
-    font-size: 0.62rem;
+    font-size: 0.60rem;
     font-weight: 700;
     letter-spacing: 0.03em;
-    padding: 1px 6px;
+    padding: 1px 5px;
     border-radius: 4px;
     background: var(--teal-600);
     color: #ffffff;
     margin-left: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 body.dark-mode .nav-item-badge {
     background: var(--teal-500);
