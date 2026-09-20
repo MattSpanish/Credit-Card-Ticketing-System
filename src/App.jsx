@@ -79,11 +79,64 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-09-21",
+    version: "v2.7.0",
+    date: "September 21, 2026",
+    isLatest: true,
+    badge: "TODAY'S RELEASE",
+    title: "Dedicated Shift Report Tab (Beta) with Cloud Sync & Smart Calculation",
+    summary: "Introducing the new Shift Report workspace (Beta) with real-time Supabase cloud synchronization, smart dynamic metrics calculation from previous shifts, automatic pending case enumeration, and a smooth scrollable report composer.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-file-earmark-bar-graph",
+        title: "Dedicated Shift Report Workspace (Beta)",
+        desc: "A centralized, dedicated space for Nashville CC Support where each shift handover report can be pasted, organized, and retrieved by date so important logs never get buried in chat channels. Includes pre-formatted shift templates for 09:00 PM – 06:00 AM, 05:00 AM – 02:00 PM, and 02:00 PM – 11:00 PM.",
+        tag: "New Feature"
+      },
+      {
+        type: "feature",
+        icon: "bi-cloud-check",
+        title: "Real-Time Cloud Synchronization (Supabase)",
+        desc: "All shift reports automatically sync to a shared cloud database in real time. Support team members on different computers can instantly view, search, and edit shift handover reports without manual file sharing or exposed credentials.",
+        tag: "Cloud Sync"
+      },
+      {
+        type: "feature",
+        icon: "bi-calculator",
+        title: "Smart Daily Work Report Auto-Calculation (05:00 AM – 02:00 PM)",
+        desc: "For the morning shift report, HRMS TICKET REVIEW and PENDING TICKET REVIEW automatically calculate by summing the TOTAL CALLS and PENDING counts from the two most recent previous shift reports. Numbers update dynamically in real time as you edit your shift's numbers.",
+        tag: "Automation"
+      },
+      {
+        type: "feature",
+        icon: "bi-list-ol",
+        title: "Automatic Pending Case Enumeration under OTHER",
+        desc: "Entering or updating the PENDING count automatically creates matching numbered slots ([1], [2], [3]...) under OTHER. Multi-line case details (customer names, phone numbers, emails, notes) can be entered freely under each number without duplicating or altering the enumeration.",
+        tag: "Smart Template"
+      },
+      {
+        type: "ui",
+        icon: "bi-arrows-vertical",
+        title: "Scrollable Report Composer with Themed Scrollbar",
+        desc: "The Paste Shift Report field is now smoothly scrollable with a visible, custom-themed scrollbar in both dark and light mode. The composer keeps bottom action buttons (Attach Image, Copy Text, Post Shift Report) easily accessible regardless of report length.",
+        tag: "UI / UX"
+      },
+      {
+        type: "warning",
+        icon: "bi-shield-exclamation",
+        title: "CRITICAL: Do Not Delete or Erase Browser Cache (Chrome & Edge)",
+        desc: "Important reminder: Please DO NOT delete or erase your browser cache or browsing data in Google Chrome or Microsoft Edge because your data and tickets are currently saved in your browser cache. If you delete your cache or site data, your tickets and saved records will be permanently deleted and cannot be recovered.",
+        tag: "Critical Reminder"
+      }
+    ]
+  },
+  {
     id: "rel-2026-09-20",
     version: "v2.6.0",
     date: "September 20, 2026",
-    isLatest: true,
-    badge: "TODAY'S RELEASE",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
     title: "Global Search Engine, Pending Hover Popover & Navigation Upgrades",
     summary: "Introducing comprehensive multi-field global search with keyboard shortcuts, live match count pill, auto-expanding sidebar results, interactive hover popover for Pending tickets, and refined layout improvements.",
     items: [
@@ -544,15 +597,15 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.6.0</span>
+          <span className="announcement-stat-val">v2.7.0</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
-          <span className="announcement-stat-val">Sep 20, 2026</span>
+          <span className="announcement-stat-val">Sep 21, 2026</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">New Features</span>
-          <span className="announcement-stat-val">10 Updates</span>
+          <span className="announcement-stat-val">15 Updates</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">System Status</span>
@@ -788,11 +841,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.6.0">
+          <div className="logo" title="Tickets v2.7.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.6.0</span>
+              <span className="logo-version">v2.7.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -867,7 +920,7 @@ function Sidebar({
           >
             <i className="bi bi-file-earmark-bar-graph me-2" aria-hidden="true"></i>
             <span className="nav-text">Shift Report</span>
-            <span className="nav-item-badge">NEW</span>
+            <span className="nav-item-badge">BETA</span>
           </button>
         </nav>
 
