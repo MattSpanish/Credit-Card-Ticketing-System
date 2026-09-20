@@ -1281,6 +1281,7 @@ export function initCreditcardApp() {
       let todayTicketsTotal = 0;
       let overallResolvedTotal = 0;
       let overallPendingTotal = 0;
+      let overallBackendTotal = 0;
 
       allCreditCardEntries.forEach(entry => {
         const entryYMD = getEntryDateYMD(entry.date);
@@ -1292,8 +1293,10 @@ export function initCreditcardApp() {
         }
 
         const status = (entry.status || '').toUpperCase().trim();
-        if (status === 'RESOLVED' || status === 'OTHER TASK') {
+        if (status === 'RESOLVED') {
           overallResolvedTotal++;
+        } else if (status === 'OTHER TASK') {
+          overallBackendTotal++;
         } else {
           overallPendingTotal++;
         }
@@ -1304,12 +1307,14 @@ export function initCreditcardApp() {
       const todayTicketsEl = document.getElementById('dashboardTodayTickets');
       const dashResolvedEl = document.getElementById('dashboardResolvedTickets');
       const dashPendingEl = document.getElementById('dashboardPendingTickets');
+      const dashBackendEl = document.getElementById('dashboardBackendTickets');
       
       if (yourTicketsEl) yourTicketsEl.textContent = yourTicketsTotal;
       if (yesterdayTicketsEl) yesterdayTicketsEl.textContent = yesterdayTicketsTotal;
       if (todayTicketsEl) todayTicketsEl.textContent = todayTicketsTotal;
       if (dashResolvedEl) dashResolvedEl.textContent = overallResolvedTotal;
       if (dashPendingEl) dashPendingEl.textContent = overallPendingTotal;
+      if (dashBackendEl) dashBackendEl.textContent = overallBackendTotal;
     }
 
     window.setFilterToToday = function() {

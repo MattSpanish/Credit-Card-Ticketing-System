@@ -928,14 +928,14 @@ body.dark-mode .sidebar-break-card .stat-value-break {
    ============================================================ */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
     margin-bottom: 0;
 }
 .dashboard-grid.compact {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
     margin-bottom: 0;
     align-items: stretch;
 }
@@ -982,6 +982,7 @@ body.dark-mode .sidebar-break-card .stat-value-break {
 .stat-card.accent .stat-label .bi { color: var(--teal-500); }
 .stat-card.success .stat-label .bi { color: var(--success); }
 .stat-card.warning .stat-label .bi { color: var(--warning); }
+.stat-card.violet .stat-label .bi  { color: var(--violet-500); }
 .stat-card.hero .stat-label .bi { color: rgba(255, 255, 255, 0.9); }
 
 body.dark-mode .stat-card.slate::before { background: #94a3b8; }

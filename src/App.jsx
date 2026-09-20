@@ -1104,7 +1104,7 @@ function Header() {
 
 
 // ==========================================
-// DASHBOARD STATS GRID (5 METRICS)
+// DASHBOARD STATS GRID (6 METRICS)
 // ==========================================
 
 function DashboardGrid() {
@@ -1313,6 +1313,22 @@ function DashboardGrid() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* 6. BACKEND */}
+      <div 
+        className="stat-card violet is-clickable" 
+        title="Click to filter by Backend (Other Task)" 
+        onClick={() => window.filterByStatus && window.filterByStatus('OTHER TASK')}
+      >
+        <div className="stat-label">
+          <i className="bi bi-cpu-fill" aria-hidden="true"></i> Backend
+        </div>
+        <div className="stat-value" id="dashboardBackendTickets">0</div>
+        <div className="stat-meta">Other task tickets</div>
+        <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,15 12,18 24,10 36,14 48,9 60,13 72,8 84,11 100,6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
     </section>
   );
