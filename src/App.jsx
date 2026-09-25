@@ -79,8 +79,8 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-26-v274",
-    version: "v2.7.4",
+    id: "rel-2026-09-26-v275",
+    version: "v2.7.5",
     date: "September 26, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
@@ -363,7 +363,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.7.4';
+  const version = latestAnnouncement.version || 'v2.7.5';
   const title = latestAnnouncement.title || 'System Update';
   const summary = latestAnnouncement.summary || '';
   const date = latestAnnouncement.date || 'September 26, 2026';
@@ -735,7 +735,7 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.7.4</span>
+          <span className="announcement-stat-val">v2.7.5</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
@@ -979,11 +979,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.7.4">
+          <div className="logo" title="Tickets v2.7.5">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.7.4</span>
+              <span className="logo-version">v2.7.5</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1875,23 +1875,14 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.7.4';
-      const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+      const currentVersion = latestAnnouncement?.version || 'v2.7.5';
 
-      // If user checked "Do not show again" for this version, never show again for this version
+      // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
-      if (isDismissed) return false;
-
       const lastSeenVersion = localStorage.getItem('last_seen_update_version');
-      const lastSeenDate = localStorage.getItem('last_seen_update_date');
 
-      // Condition 1: A new update version was released
-      const isNewUpdate = lastSeenVersion !== currentVersion;
-
-      // Condition 2: First time opening website today
-      const isFirstTimeToday = lastSeenDate !== todayStr;
-
-      return isNewUpdate || isFirstTimeToday;
+      // ONLY show if it's a new update version that hasn't been seen/dismissed yet
+      return lastSeenVersion !== currentVersion && !isDismissed;
     } catch (e) {
       return false;
     }
@@ -1900,15 +1891,11 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.7.4';
-      const todayStr = new Date().toLocaleDateString('en-CA');
+      const currentVersion = latestAnnouncement?.version || 'v2.7.5';
 
-      localStorage.setItem('last_seen_update_date', todayStr);
+      // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
-
-      if (doNotShowAgain) {
-        localStorage.setItem(`dismissed_update_pop_${currentVersion}`, 'true');
-      }
+      localStorage.setItem(`dismissed_update_pop_${currentVersion}`, 'true');
     } catch (e) {
       console.error(e);
     }
