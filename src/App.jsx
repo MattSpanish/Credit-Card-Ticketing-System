@@ -79,13 +79,13 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-26-v273",
-    version: "v2.7.3",
+    id: "rel-2026-09-26-v274",
+    version: "v2.7.4",
     date: "September 26, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
     title: "What's New?",
-    summary: "Introducing an automatic blurred-backdrop Update Notification popup when opening the website so the team is always notified of new updates, plus 1-click copy in Shift Reports History.",
+    summary: "Introducing an automatic blurred-backdrop Update Notification popup when opening the website so the team is always notified of new updates.",
     items: [
       {
         type: "feature",
@@ -363,7 +363,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.7.3';
+  const version = latestAnnouncement.version || 'v2.7.4';
   const title = latestAnnouncement.title || 'System Update';
   const summary = latestAnnouncement.summary || '';
   const date = latestAnnouncement.date || 'September 26, 2026';
@@ -735,7 +735,7 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.7.3</span>
+          <span className="announcement-stat-val">v2.7.4</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
@@ -979,11 +979,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.7.3">
+          <div className="logo" title="Tickets v2.7.4">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.7.3</span>
+              <span className="logo-version">v2.7.4</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1875,7 +1875,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.7.3';
+      const currentVersion = latestAnnouncement?.version || 'v2.7.4';
       const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
 
       // If user checked "Do not show again" for this version, never show again for this version
@@ -1900,7 +1900,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.7.3';
+      const currentVersion = latestAnnouncement?.version || 'v2.7.4';
       const todayStr = new Date().toLocaleDateString('en-CA');
 
       localStorage.setItem('last_seen_update_date', todayStr);
