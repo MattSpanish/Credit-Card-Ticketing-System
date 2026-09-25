@@ -4635,3 +4635,272 @@ body.dark-mode .lightbox-close-btn:hover {
     border-radius: 8px;
 }
 
+/* ============================================================
+   Update Notification Popup Modal (with Blurred Backdrop)
+   ============================================================ */
+.update-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 15, 29, 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000 !important;
+    padding: 16px;
+    animation: overlayFadeIn 0.25s ease forwards;
+}
+
+.update-modal-card {
+    position: relative;
+    background: var(--bg-elevated, #ffffff);
+    border: 1px solid var(--line, #e2e8f0);
+    border-radius: var(--r-xl, 16px);
+    width: min(100%, 540px);
+    max-width: 540px;
+    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.update-modal-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #10b981);
+}
+
+.update-modal-header {
+    padding: 24px 24px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.update-icon-glow {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.2));
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: var(--primary-color, #2563eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+body.dark-mode .update-icon-glow {
+    color: #60a5fa;
+    border-color: rgba(96, 165, 250, 0.35);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(139, 92, 246, 0.3));
+}
+
+.update-header-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.update-header-tags {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.update-pill-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+body.dark-mode .update-pill-badge {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+.update-version-chip {
+    font-size: 0.76rem;
+    font-weight: 800;
+    font-family: monospace;
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: #10b981;
+    color: #ffffff;
+    letter-spacing: 0.02em;
+}
+
+.update-date-text {
+    font-size: 0.74rem;
+    color: var(--text-muted, #64748b);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.update-title {
+    margin: 4px 0 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary, #0f172a);
+    line-height: 1.35;
+}
+
+.update-modal-body {
+    padding: 0 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.update-summary-text {
+    font-size: 0.86rem;
+    line-height: 1.5;
+    color: var(--text-secondary, #475569);
+    margin: 0;
+}
+
+.update-highlights-list {
+    background: var(--bg-surface, #f8fafc);
+    border: 1px solid var(--line, #e2e8f0);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+body.dark-mode .update-highlights-list {
+    background: rgba(30, 41, 59, 0.4);
+    border-color: var(--line, #334155);
+}
+
+.update-highlight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: var(--text-primary, #1e293b);
+}
+
+.update-highlight-icon {
+    font-size: 0.95rem;
+    color: var(--primary-color, #2563eb);
+    margin-top: 1px;
+    flex-shrink: 0;
+}
+
+body.dark-mode .update-highlight-icon {
+    color: #60a5fa;
+}
+
+.update-highlight-text strong {
+    color: var(--text-primary, #0f172a);
+}
+
+body.dark-mode .update-highlight-text strong {
+    color: #f1f5f9;
+}
+
+.update-view-all-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary-color, #2563eb);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    width: fit-content;
+}
+
+.update-view-all-link:hover {
+    color: #1d4ed8;
+}
+
+body.dark-mode .update-view-all-link {
+    color: #60a5fa;
+}
+
+body.dark-mode .update-view-all-link:hover {
+    color: #93c5fd;
+}
+
+.update-modal-footer {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--line, #e2e8f0);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: var(--bg-elevated, #ffffff);
+    flex-wrap: wrap;
+}
+
+.update-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: var(--text-secondary, #475569);
+    cursor: pointer;
+    user-select: none;
+}
+
+.update-checkbox-label input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--primary-color, #2563eb);
+    cursor: pointer;
+}
+
+.btn-update-ok {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 22px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.btn-update-ok:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+
+.btn-update-ok:active {
+    transform: translateY(0);
+}
+

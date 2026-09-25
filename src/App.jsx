@@ -79,11 +79,43 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-26",
-    version: "v2.7.1",
+    id: "rel-2026-09-26-v272",
+    version: "v2.7.2",
     date: "September 26, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
+    title: "Daily Update Notification Popup & Shift Report Quick-Copy",
+    summary: "Introducing an automatic blurred-backdrop Update Notification popup when opening the website so the team is always notified of new updates, plus 1-click copy in Shift Reports History.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-bell-fill",
+        title: "Daily / New Update Notification Popup",
+        desc: "When team members open the website for the first time in a day or whenever a new version is released, an update modal appears with a frosted background blur, showcasing the version number and key highlights. Includes a 'Do not show again' option and 'OK, got it' confirmation.",
+        tag: "System Alert"
+      },
+      {
+        type: "feature",
+        icon: "bi-clipboard-check",
+        title: "1-Click Copy in Shift Reports History",
+        desc: "Each card in the Shift Reports History feed now features a dedicated Copy button right next to the Edit button. Clicking instantly copies the formatted report text to the clipboard with an emerald checkmark confirmation.",
+        tag: "Quick Action"
+      },
+      {
+        type: "ui",
+        icon: "bi-phone",
+        title: "Optimized Responsiveness",
+        desc: "Dashboard metrics grid, side-by-side Ticket Form and Preview panels, and horizontal table scrolling have been optimized across mobile, tablet, and desktop displays.",
+        tag: "Responsiveness"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-09-26",
+    version: "v2.7.1",
+    date: "September 26, 2026",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
     title: "Shift Report Quick-Copy Button & Enhanced Responsiveness",
     summary: "Added a one-click Copy button directly next to the Edit button in the Shift Reports History feed for instant clipboard copying, along with responsive improvements across all screen sizes.",
     items: [
@@ -327,6 +359,87 @@ const ANNOUNCEMENTS_DATA = [
 // ==========================================
 // ✅ EXTRACTED MODAL COMPONENTS 
 // ==========================================
+
+function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
+  const [doNotShowAgain, setDoNotShowAgain] = useState(false);
+  const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
+  const version = latestAnnouncement.version || 'v2.7.2';
+  const title = latestAnnouncement.title || 'System Update';
+  const summary = latestAnnouncement.summary || '';
+  const date = latestAnnouncement.date || 'September 26, 2026';
+  const items = latestAnnouncement.items || [];
+
+  return (
+    <div className="update-modal-overlay">
+      <div className="update-modal-card" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="update-modal-header">
+          <div className="update-icon-glow">
+            <i className="bi bi-stars"></i>
+          </div>
+          <div className="update-header-info">
+            <div className="update-header-tags">
+              <span className="update-pill-badge">
+                <i className="bi bi-megaphone-fill"></i> New Update
+              </span>
+              <span className="update-version-chip">{version}</span>
+              <span className="update-date-text">
+                <i className="bi bi-calendar3"></i> {date}
+              </span>
+            </div>
+            <h3 className="update-title">{title}</h3>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="update-modal-body">
+          <p className="update-summary-text">{summary}</p>
+
+          {items.length > 0 && (
+            <div className="update-highlights-list">
+              {items.slice(0, 3).map((item, idx) => (
+                <div key={idx} className="update-highlight-item">
+                  <i className={`bi ${item.icon || 'bi-check-circle-fill'} update-highlight-icon`}></i>
+                  <div className="update-highlight-text">
+                    <strong>{item.title}:</strong> {item.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            type="button"
+            className="update-view-all-link"
+            onClick={onViewAnnouncements}
+          >
+            <i className="bi bi-journal-text me-1"></i> View full update details in Announcements
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div className="update-modal-footer">
+          <label className="update-checkbox-label">
+            <input
+              type="checkbox"
+              checked={doNotShowAgain}
+              onChange={(e) => setDoNotShowAgain(e.target.checked)}
+            />
+            <span>Do not show again for this update</span>
+          </label>
+
+          <button
+            type="button"
+            className="btn-update-ok"
+            onClick={() => onConfirm(doNotShowAgain)}
+          >
+            <i className="bi bi-check-lg"></i> OK, got it
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function TidTemplatesModal({ onClose }) {
   const copySpecificTemplate = (device) => {
@@ -622,7 +735,7 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.7.1</span>
+          <span className="announcement-stat-val">v2.7.2</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
@@ -866,11 +979,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.7.1">
+          <div className="logo" title="Tickets v2.7.2">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.7.1</span>
+              <span className="logo-version">v2.7.2</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1759,6 +1872,54 @@ export default function App() {
     return localStorage.getItem('sidebar_collapsed_creditcard') === 'true';
   });
 
+  const [showUpdateModal, setShowUpdateModal] = useState(() => {
+    try {
+      const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
+      const currentVersion = latestAnnouncement?.version || 'v2.7.2';
+      const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+
+      // If user checked "Do not show again" for this version, never show again for this version
+      const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
+      if (isDismissed) return false;
+
+      const lastSeenVersion = localStorage.getItem('last_seen_update_version');
+      const lastSeenDate = localStorage.getItem('last_seen_update_date');
+
+      // Condition 1: A new update version was released
+      const isNewUpdate = lastSeenVersion !== currentVersion;
+
+      // Condition 2: First time opening website today
+      const isFirstTimeToday = lastSeenDate !== todayStr;
+
+      return isNewUpdate || isFirstTimeToday;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const handleConfirmUpdateModal = (doNotShowAgain) => {
+    try {
+      const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
+      const currentVersion = latestAnnouncement?.version || 'v2.7.2';
+      const todayStr = new Date().toLocaleDateString('en-CA');
+
+      localStorage.setItem('last_seen_update_date', todayStr);
+      localStorage.setItem('last_seen_update_version', currentVersion);
+
+      if (doNotShowAgain) {
+        localStorage.setItem(`dismissed_update_pop_${currentVersion}`, 'true');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setShowUpdateModal(false);
+  };
+
+  const handleViewAnnouncementsFromModal = () => {
+    handleConfirmUpdateModal(false);
+    setCurrentView('announcement');
+  };
+
   const toggleSidebarCollapse = () => {
     setIsSidebarCollapsed((prev) => {
       const next = !prev;
@@ -2004,6 +2165,12 @@ export default function App() {
       </div>
 
       {/* MODALS OUTSIDE LAYOUT */}
+      {showUpdateModal && (
+        <UpdateNotificationModal
+          onConfirm={handleConfirmUpdateModal}
+          onViewAnnouncements={handleViewAnnouncementsFromModal}
+        />
+      )}
       {showTemplates && <TidTemplatesModal onClose={() => setShowTemplates(false)} />}
       {showBreakSchedule && <BreakScheduleModal onClose={() => setShowBreakSchedule(false)} />}
       {showTeamPhoto && <TeamPhotoModal onClose={() => setShowTeamPhoto(false)} />}
