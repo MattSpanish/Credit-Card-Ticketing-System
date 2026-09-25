@@ -755,6 +755,15 @@ OTHER - 0`}
                       <div className="report-item-actions">
                         <button
                           type="button"
+                          className={`btn-copy-report ${isCopied ? 'copied' : ''}`}
+                          onClick={() => handleCopyText(report.content, report.id)}
+                          title={isCopied ? 'Copied to clipboard!' : 'Copy shift report'}
+                          aria-label="Copy shift report"
+                        >
+                          <i className={`bi ${isCopied ? 'bi-check2' : 'bi-clipboard'}`}></i>
+                        </button>
+                        <button
+                          type="button"
                           className="btn-edit-report"
                           onClick={() => handleOpenEditModal(report)}
                           title="Edit shift report"

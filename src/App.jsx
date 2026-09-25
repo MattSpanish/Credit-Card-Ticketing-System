@@ -79,11 +79,36 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-09-26",
+    version: "v2.7.1",
+    date: "September 26, 2026",
+    isLatest: true,
+    badge: "TODAY'S RELEASE",
+    title: "Shift Report Quick-Copy Button & Enhanced Responsiveness",
+    summary: "Added a one-click Copy button directly next to the Edit button in the Shift Reports History feed for instant clipboard copying, along with responsive improvements across all screen sizes.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-clipboard-check",
+        title: "1-Click Copy in Shift Reports History",
+        desc: "Each card in the Shift Reports History feed now features a dedicated Copy button right next to the Edit button. Clicking instantly copies the formatted report text to the clipboard with an emerald checkmark confirmation.",
+        tag: "Quick Action"
+      },
+      {
+        type: "ui",
+        icon: "bi-phone",
+        title: "Optimized Responsiveness",
+        desc: "Dashboard metrics grid, side-by-side Ticket Form and Preview panels, and horizontal table scrolling have been optimized across mobile, tablet, and desktop displays.",
+        tag: "Responsiveness"
+      }
+    ]
+  },
+  {
     id: "rel-2026-09-21",
     version: "v2.7.0",
     date: "September 21, 2026",
-    isLatest: true,
-    badge: "TODAY'S RELEASE",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
     title: "Dedicated Shift Report Tab (Beta) with Cloud Sync & Smart Calculation",
     summary: "Introducing the new Shift Report workspace (Beta) with real-time Supabase cloud synchronization, smart dynamic metrics calculation from previous shifts, automatic pending case enumeration, and a smooth scrollable report composer.",
     items: [
@@ -597,11 +622,11 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.7.0</span>
+          <span className="announcement-stat-val">v2.7.1</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
-          <span className="announcement-stat-val">Sep 21, 2026</span>
+          <span className="announcement-stat-val">Sep 26, 2026</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">New Features</span>
@@ -841,11 +866,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.7.0">
+          <div className="logo" title="Tickets v2.7.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.7.0</span>
+              <span className="logo-version">v2.7.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
