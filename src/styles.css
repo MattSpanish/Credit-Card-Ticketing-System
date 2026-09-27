@@ -5658,7 +5658,9 @@ body.dark-mode .lightbox-close-btn:hover {
 .update-modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(5, 10, 20, 0.45);
+    background: rgba(5, 10, 20, 0.65);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5670,6 +5672,8 @@ body.dark-mode .lightbox-close-btn:hover {
 .update-modal-card {
     position: relative;
     background: var(--bg-elevated, #ffffff);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--line, #e2e8f0);
     border-radius: var(--r-xl, 16px);
     width: min(100%, 600px);
@@ -5682,7 +5686,9 @@ body.dark-mode .lightbox-close-btn:hover {
 }
 
 body.dark-mode .update-modal-card {
-    background: rgba(8, 18, 32, 0.65);
+    background: rgba(8, 18, 32, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--glass-border);
     box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.75), 0 0 24px rgba(45, 212, 191, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }

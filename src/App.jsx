@@ -80,12 +80,44 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-28-v276",
-    version: "v2.7.6",
+    id: "rel-2026-09-28-v280",
+    version: "v2.8.0",
     date: "September 28, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
     title: "What's New?",
+    summary: "Added frosted background blur exclusively to the update notification popup, refined transparent glass dashboard panels, and updated appreciation slideshow header.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-aspect-ratio",
+        title: "Update Popup Frosted Backdrop Blur",
+        desc: "Restored frosted glass backdrop blur exclusively to the update popup modal overlay so release announcements stand out cleanly, while keeping dashboard boxes completely transparent.",
+        tag: "UI / UX"
+      },
+      {
+        type: "ui",
+        icon: "bi-layers-fill",
+        title: "Transparent Glass Dashboard",
+        desc: "Dashboard containers, form panels, metrics cards, table, and sidebar maintain pure transparent glassmorphism matching the Announcements tab.",
+        tag: "UI / UX"
+      },
+      {
+        type: "feature",
+        icon: "bi-images",
+        title: "New Header Appreciation Banner",
+        desc: "Updated the header slideshow with coworker appreciation banner slide.",
+        tag: "Visual"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-09-28-v276",
+    version: "v2.7.6",
+    date: "September 28, 2026",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
+    title: "Transparent Glass & Button Contrast",
     summary: "Refined dashboard boxes to full transparency matching Announcements, updated header banner with coworker appreciation slide, and restored high-contrast button styling.",
     items: [
       {
@@ -396,7 +428,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.7.6';
+  const version = latestAnnouncement.version || 'v2.8.0';
   const title = latestAnnouncement.title || 'System Update';
   const summary = latestAnnouncement.summary || '';
   const date = latestAnnouncement.date || 'September 28, 2026';
@@ -771,7 +803,7 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.7.6</span>
+          <span className="announcement-stat-val">v2.8.0</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
@@ -1015,11 +1047,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.7.6">
+          <div className="logo" title="Tickets v2.8.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.7.6</span>
+              <span className="logo-version">v2.8.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -2770,7 +2802,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.7.6';
+      const currentVersion = latestAnnouncement?.version || 'v2.8.0';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -2786,7 +2818,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.7.6';
+      const currentVersion = latestAnnouncement?.version || 'v2.8.0';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
