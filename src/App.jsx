@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { initCreditcardApp } from './creditcardController';
 import teamPhoto from './group-photo.jpeg';
 import teamBanner from './groupcc.jpeg';
-import appreciationBanner from './Slide2.png';
+import tatiBanner from './tati2.png';
 import appLogo from './logo2.png';
 import ShiftReportPage from './ShiftReportPage';
 
@@ -80,11 +80,43 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-09-28-v276",
+    version: "v2.7.6",
+    date: "September 28, 2026",
+    isLatest: true,
+    badge: "TODAY'S RELEASE",
+    title: "What's New?",
+    summary: "Refined dashboard boxes to full transparency matching Announcements, updated header banner with coworker appreciation slide, and restored high-contrast button styling.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layers-fill",
+        title: "Transparent Glass Dashboard",
+        desc: "Removed background blur from all dashboard containers, form panels, metrics cards, table, and sidebar for an ultra-clean transparent glassmorphism look matching the Announcements tab.",
+        tag: "UI / UX"
+      },
+      {
+        type: "feature",
+        icon: "bi-images",
+        title: "New Header Appreciation Banner",
+        desc: "Updated the header slideshow with coworker appreciation banner slide.",
+        tag: "Visual"
+      },
+      {
+        type: "ui",
+        icon: "bi-cursor-fill",
+        title: "+ New Ticket Button Contrast",
+        desc: "Restored bold, high-contrast text styling for the active '+ New Ticket' button across both dark and light modes.",
+        tag: "UI / UX"
+      }
+    ]
+  },
+  {
     id: "rel-2026-09-26-v275",
     version: "v2.7.5",
     date: "September 26, 2026",
-    isLatest: true,
-    badge: "TODAY'S RELEASE",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
     title: "What's New?",
     summary: "Introducing an automatic blurred-backdrop Update Notification popup when opening the website so the team is always notified of new updates.",
     items: [
@@ -364,10 +396,10 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.7.5';
+  const version = latestAnnouncement.version || 'v2.7.6';
   const title = latestAnnouncement.title || 'System Update';
   const summary = latestAnnouncement.summary || '';
-  const date = latestAnnouncement.date || 'September 26, 2026';
+  const date = latestAnnouncement.date || 'September 28, 2026';
   const items = latestAnnouncement.items || [];
 
   return (
@@ -375,17 +407,14 @@ function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
       <div className="update-modal-card" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="update-modal-header">
-          <div className="update-icon-glow">
-            <i className="bi bi-stars"></i>
-          </div>
           <div className="update-header-info">
             <div className="update-header-tags">
+              <div className="update-header-left-meta">
+                <span className="update-version-chip">{version}</span>
+                <span className="update-date-text">{date}</span>
+              </div>
               <span className="update-pill-badge">
-                <i className="bi bi-megaphone-fill"></i> New Update
-              </span>
-              <span className="update-version-chip">{version}</span>
-              <span className="update-date-text">
-                <i className="bi bi-calendar3"></i> {date}
+                <i className="bi bi-stars"></i> {latestAnnouncement.badge || "TODAY'S RELEASE"}
               </span>
             </div>
             <h3 className="update-title">{title}</h3>
@@ -400,9 +429,15 @@ function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
             <div className="update-highlights-list">
               {items.slice(0, 3).map((item, idx) => (
                 <div key={idx} className="update-highlight-item">
-                  <i className={`bi ${item.icon || 'bi-check-circle-fill'} update-highlight-icon`}></i>
-                  <div className="update-highlight-text">
-                    <strong>{item.title}:</strong> {item.desc}
+                  <div className="update-highlight-icon-box">
+                    <i className={`bi ${item.icon || 'bi-check-circle-fill'}`}></i>
+                  </div>
+                  <div className="update-highlight-content">
+                    <div className="update-highlight-header-row">
+                      <span className="update-highlight-title">{item.title}</span>
+                      {item.tag && <span className="update-highlight-tag">{item.tag}</span>}
+                    </div>
+                    <p className="update-highlight-desc">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -736,11 +771,11 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.7.5</span>
+          <span className="announcement-stat-val">v2.7.6</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
-          <span className="announcement-stat-val">Sep 26, 2026</span>
+          <span className="announcement-stat-val">Sep 28, 2026</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">New Features</span>
@@ -980,11 +1015,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.7.5">
+          <div className="logo" title="Tickets v2.7.6">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.7.5</span>
+              <span className="logo-version">v2.7.6</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1858,7 +1893,7 @@ function AppBanner() {
     },
     {
       id: 'appreciation',
-      src: appreciationBanner,
+      src: tatiBanner,
       alt: 'Appreciation message for coworker',
       position: 'center center'
     }
@@ -1918,6 +1953,710 @@ function AppBanner() {
 }
 
 // ==========================================
+// REMINDER BAR & MODAL
+// ==========================================
+
+const REMINDERS_STORAGE_KEY = 'team_reminders_creditcard';
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+const isReminderInSlideshow = (reminder) => {
+  if (!reminder) return false;
+  if (reminder.removedFromSlideshow) return false;
+  if (reminder.isImportant) return true;
+  if (!reminder.createdAt) return true;
+  const createdTime = new Date(reminder.createdAt).getTime();
+  if (isNaN(createdTime)) return true;
+  return Date.now() - createdTime <= SEVEN_DAYS_MS;
+};
+
+function ReminderBar({ reminders = [], onOpenModal }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Only show reminders in the slideshow that are important or within the 7-day window and not removed
+  const activeReminders = useMemo(() => {
+    return reminders.filter(isReminderInSlideshow);
+  }, [reminders]);
+
+  // Keep index within bounds if activeReminders list changes
+  useEffect(() => {
+    if (activeReminders.length === 0) {
+      setCurrentIndex(0);
+    } else if (currentIndex >= activeReminders.length) {
+      setCurrentIndex(activeReminders.length - 1);
+    }
+  }, [activeReminders.length, currentIndex]);
+
+  // Slideshow interval: 10 seconds per reminder
+  useEffect(() => {
+    if (activeReminders.length <= 1 || isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % activeReminders.length);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [activeReminders.length, isPaused]);
+
+  const handlePrev = (e) => {
+    e.stopPropagation();
+    if (activeReminders.length <= 1) return;
+    setCurrentIndex((prev) => (prev - 1 + activeReminders.length) % activeReminders.length);
+  };
+
+  const handleNext = (e) => {
+    e.stopPropagation();
+    if (activeReminders.length <= 1) return;
+    setCurrentIndex((prev) => (prev + 1) % activeReminders.length);
+  };
+
+  const currentReminder = activeReminders[currentIndex];
+
+  return (
+    <div
+      className="reminder-bar"
+      role="region"
+      aria-label="Team Reminders Bar"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div className="reminder-icon-box" title="Team Reminder">
+        <i className="bi bi-bell-fill reminder-bell-icon" aria-hidden="true"></i>
+      </div>
+
+      <div className="reminder-content">
+        {!currentReminder ? (
+          <div
+            className="reminder-empty-state"
+            onClick={() => onOpenModal('all', null, null, 'view_reminders')}
+            title="Click to view reminders"
+          >
+            <span className="reminder-empty-title">Team Reminders</span>
+            <p className="reminder-empty-desc">
+              {reminders.length > 0
+                ? 'No active reminders in slideshow. Click to view all reminders or add a new one.'
+                : 'No reminders yet. Click to view or add a new reminder for the team.'}
+            </p>
+          </div>
+        ) : (
+          <div
+            key={currentReminder.id || currentIndex}
+            className="reminder-slide-item"
+            onClick={() => onOpenModal('all', null, currentReminder, 'slide')}
+            title="Click to view full details"
+          >
+            <div className="reminder-header-row">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
+                <h4 className="reminder-title">{currentReminder.subject}</h4>
+                {currentReminder.isImportant && (
+                  <span className="reminder-tag-important">
+                    <i className="bi bi-star-fill me-1" aria-hidden="true"></i> Important
+                  </span>
+                )}
+              </div>
+              {activeReminders.length > 1 && (
+                <span className="reminder-counter-tag">
+                  {currentIndex + 1} of {activeReminders.length}
+                </span>
+              )}
+            </div>
+            <p className="reminder-desc-text">{currentReminder.description}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="reminder-actions-right">
+        {activeReminders.length > 1 && (
+          <div className="reminder-nav-group">
+            <button
+              type="button"
+              className="reminder-nav-btn"
+              onClick={handlePrev}
+              title="Previous reminder"
+              aria-label="Previous reminder"
+            >
+              <i className="bi bi-chevron-left" aria-hidden="true"></i>
+            </button>
+            <button
+              type="button"
+              className="reminder-nav-btn"
+              onClick={handleNext}
+              title="Next reminder"
+              aria-label="Next reminder"
+            >
+              <i className="bi bi-chevron-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        )}
+        <button
+          type="button"
+          className="btn-add-reminder btn-view-reminders"
+          onClick={() => onOpenModal('all', null, null, 'view_reminders')}
+          title="View all team reminders"
+        >
+          <i className="bi bi-eye" aria-hidden="true"></i>
+          <span>View Reminders</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ReminderModal({
+  onClose,
+  reminders,
+  onSave,
+  onDelete,
+  onToggleSlideshow,
+  initialTab = 'all',
+  editingReminder = null,
+  initialViewingReminder = null,
+  modalSource = 'view_reminders',
+  onClearEditing
+}) {
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [currentEditItem, setCurrentEditItem] = useState(editingReminder);
+  const [viewingReminder, setViewingReminder] = useState(initialViewingReminder);
+  const [currentModalSource, setCurrentModalSource] = useState(modalSource);
+  const [subject, setSubject] = useState(editingReminder?.subject || '');
+  const [description, setDescription] = useState(editingReminder?.description || '');
+  const [isImportant, setIsImportant] = useState(editingReminder?.isImportant || false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    setCurrentModalSource(modalSource);
+  }, [modalSource]);
+
+  useEffect(() => {
+    if (editingReminder) {
+      setCurrentEditItem(editingReminder);
+      setSubject(editingReminder.subject || '');
+      setDescription(editingReminder.description || '');
+      setIsImportant(Boolean(editingReminder.isImportant));
+      setViewingReminder(null);
+      setActiveTab('add');
+    }
+  }, [editingReminder]);
+
+  useEffect(() => {
+    if (initialViewingReminder) {
+      setViewingReminder(initialViewingReminder);
+      setActiveTab('all');
+    }
+  }, [initialViewingReminder]);
+
+  const handleStartEdit = (reminder) => {
+    setCurrentEditItem(reminder);
+    setSubject(reminder.subject || '');
+    setDescription(reminder.description || '');
+    setIsImportant(Boolean(reminder.isImportant));
+    setErrorMessage('');
+    setViewingReminder(null);
+    setActiveTab('add');
+  };
+
+  const handleCancelEdit = () => {
+    setCurrentEditItem(null);
+    setSubject('');
+    setDescription('');
+    setIsImportant(false);
+    setErrorMessage('');
+    if (onClearEditing) onClearEditing();
+    setActiveTab('all');
+  };
+
+  const handleRemoveFromSlideshow = (id) => {
+    if (onToggleSlideshow) onToggleSlideshow(id, true);
+    setViewingReminder((prev) => (prev && prev.id === id ? { ...prev, removedFromSlideshow: true } : prev));
+  };
+
+  const handleRestoreToSlideshow = (id) => {
+    if (onToggleSlideshow) onToggleSlideshow(id, false);
+    setViewingReminder((prev) => (prev && prev.id === id ? { ...prev, removedFromSlideshow: false } : prev));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!subject.trim()) {
+      setErrorMessage('Please enter a subject.');
+      return;
+    }
+    if (!description.trim()) {
+      setErrorMessage('Please enter a description.');
+      return;
+    }
+
+    onSave(
+      {
+        subject: subject.trim(),
+        description: description.trim(),
+        isImportant: Boolean(isImportant)
+      },
+      currentEditItem ? currentEditItem.id : null
+    );
+
+    setCurrentEditItem(null);
+    setSubject('');
+    setDescription('');
+    setIsImportant(false);
+    setErrorMessage('');
+    if (onClearEditing) onClearEditing();
+    setViewingReminder(null);
+    setCurrentModalSource('view_reminders');
+    setActiveTab('all');
+  };
+
+  const formatDate = (isoString) => {
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+    } catch {
+      return '';
+    }
+  };
+
+  // Top header is hidden in Full View, and only shown on + Add Reminder if opened via View Reminders
+  const showTopHeader = viewingReminder
+    ? false
+    : activeTab === 'all' && !currentEditItem
+      ? true
+      : currentModalSource === 'view_reminders';
+
+  const handleOverlayClick = () => {
+    // You cannot close via blur background when in + add reminder tab or editing
+    if (activeTab === 'add' || currentEditItem) {
+      return;
+    }
+    // In Full View (or list view), click blur background to back / close
+    onClose();
+  };
+
+  return (
+    <div
+      className="break-modal-overlay"
+      onClick={handleOverlayClick}
+      style={{ cursor: activeTab === 'add' || currentEditItem ? 'default' : 'pointer' }}
+    >
+      <div
+        className="break-modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: 680, padding: 24, cursor: 'default' }}
+      >
+        {/* Top Header Section */}
+        {showTopHeader && (
+          <div className="break-modal-header" style={{ padding: '0 0 16px', marginBottom: 16 }}>
+            <div>
+              <h2 className="modal-title modal-title-row" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className="bi bi-bell-fill" style={{ color: '#f59e0b' }} aria-hidden="true"></i> Team Reminders
+              </h2>
+              <p className="modal-subtitle">Share important notices and announcements with the entire team</p>
+            </div>
+            <button onClick={onClose} className="break-close-btn" aria-label="Close reminders modal" title="Close">
+              <i className="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+          </div>
+        )}
+
+        {/* Tab Headers (Only shown when opened via "View Reminders" and not viewing reminder details) */}
+        {currentModalSource !== 'slide' && !viewingReminder && (
+          <div className="reminder-modal-tabs-bar">
+            <div className="reminder-modal-tabs" role="tablist">
+              <button
+                type="button"
+                className={`reminder-modal-tab ${activeTab === 'all' && !currentEditItem ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('all');
+                  setViewingReminder(null);
+                  if (currentEditItem) handleCancelEdit();
+                }}
+                role="tab"
+                aria-selected={activeTab === 'all' && !currentEditItem}
+              >
+                <i className="bi bi-collection" aria-hidden="true"></i>
+                <span>All Reminders ({reminders.length})</span>
+              </button>
+            </div>
+
+            <div className="reminder-modal-tabs-actions">
+              {activeTab !== 'add' && !currentEditItem && (
+                <button
+                  type="button"
+                  className="btn-add-reminder btn-plus-only"
+                  onClick={() => {
+                    if (currentEditItem) handleCancelEdit();
+                    setActiveTab('add');
+                    setViewingReminder(null);
+                  }}
+                  title="Add a new reminder"
+                  aria-label="Add reminder"
+                >
+                  <i className="bi bi-plus-lg" aria-hidden="true"></i>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Dedicated header when in slide mode and creating/editing a reminder */}
+        {currentModalSource === 'slide' && (activeTab === 'add' || currentEditItem) && (
+          <div className="break-modal-header" style={{ padding: '0 0 16px', marginBottom: 16 }}>
+            <h2 className="modal-title modal-title-row" style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0, fontSize: '1.1rem' }}>
+              <i className="bi bi-plus-circle" style={{ color: '#d97706' }} aria-hidden="true"></i> {currentEditItem ? 'Edit Reminder' : 'Add Reminder'}
+            </h2>
+            <button onClick={onClose} className="break-close-btn" aria-label="Close reminders modal" title="Close">
+              <i className="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+          </div>
+        )}
+
+        {/* Tab 1: All Reminders List & Full Detail View */}
+        {activeTab === 'all' && !currentEditItem && (
+          <div>
+            {viewingReminder ? (
+              /* Full Reminder View (Subject and multiline Description) */
+              <div className="reminder-full-detail-view">
+                <div
+                  className="reminder-detail-header-bar"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}
+                >
+                  {currentModalSource === 'slide' ? (
+                    <button
+                      type="button"
+                      className="btn-add-reminder"
+                      onClick={() => {
+                        setActiveTab('add');
+                      }}
+                      title="Add a new reminder"
+                    >
+                      <i className="bi bi-plus-lg" aria-hidden="true"></i>
+                      <span>Reminder</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn-reminder-back"
+                      onClick={() => setViewingReminder(null)}
+                      title="Back to reminders list"
+                    >
+                      <i className="bi bi-arrow-left" aria-hidden="true"></i>
+                      <span>Back</span>
+                    </button>
+                  )}
+
+                  <div className="reminder-detail-quick-actions" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      type="button"
+                      className="btn-reminder-action"
+                      onClick={() => handleStartEdit(viewingReminder)}
+                      title="Edit this reminder"
+                      aria-label="Edit reminder"
+                    >
+                      <i className="bi bi-pencil" aria-hidden="true"></i>
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-reminder-action danger"
+                      onClick={() => {
+                        if (window.confirm(`Delete reminder "${viewingReminder.subject}"?`)) {
+                          onDelete(viewingReminder.id);
+                          setViewingReminder(null);
+                          if (currentModalSource === 'slide') onClose();
+                        }
+                      }}
+                      title="Delete this reminder"
+                      aria-label="Delete reminder"
+                    >
+                      <i className="bi bi-trash3" aria-hidden="true"></i>
+                      <span>Delete</span>
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="break-close-btn"
+                      aria-label="Close reminder modal"
+                      title="Close"
+                      style={{ marginLeft: 4 }}
+                    >
+                      <i className="bi bi-x-lg" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="reminder-detail-content-card">
+                  <div className="reminder-detail-title-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      <h3 className="reminder-detail-subject">{viewingReminder.subject}</h3>
+                      {viewingReminder.isImportant ? (
+                        <span className="reminder-tag-important">
+                          <i className="bi bi-star-fill me-1" aria-hidden="true"></i> Important
+                        </span>
+                      ) : (
+                        <span className="reminder-tag-standard">
+                          <i className="bi bi-clock me-1" aria-hidden="true"></i> 7 Days
+                        </span>
+                      )}
+                    </div>
+                    {viewingReminder.createdAt && (
+                      <span className="reminder-detail-date">
+                        <i className="bi bi-clock me-1" aria-hidden="true"></i>
+                        {formatDate(viewingReminder.createdAt)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="reminder-detail-divider"></div>
+
+                  <div className="reminder-detail-body">
+                    {viewingReminder.description}
+                  </div>
+                </div>
+
+                {/* Bottom Footer Section: Remove / Restore Slideshow */}
+                <div className="reminder-detail-footer">
+                  <div className="reminder-detail-status-info">
+                    {isReminderInSlideshow(viewingReminder) ? (
+                      <span className="reminder-status-text in-slideshow">
+                        <i className="bi bi-broadcast me-1" aria-hidden="true"></i>
+                        {viewingReminder.isImportant ? 'Permanent' : 'Expiration after 7 days'}
+                      </span>
+                    ) : (
+                      <span className="reminder-status-text off-slideshow">
+                        <i className="bi bi-eye-slash me-1" aria-hidden="true"></i>
+                        {viewingReminder.removedFromSlideshow
+                          ? 'Manually removed from Dashboard slideshow'
+                          : 'Expired from Dashboard slideshow (available in All Reminders)'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="reminder-detail-footer-actions">
+                    {isReminderInSlideshow(viewingReminder) ? (
+                      <button
+                        type="button"
+                        className="btn-remove-slideshow"
+                        onClick={() => handleRemoveFromSlideshow(viewingReminder.id)}
+                        title="Remove this reminder from the Dashboard slideshow"
+                      >
+                        <i className="bi bi-eye-slash" aria-hidden="true"></i>
+                        <span>Remove from Slideshow</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-restore-slideshow"
+                        onClick={() => handleRestoreToSlideshow(viewingReminder.id)}
+                        title="Restore this reminder to the Dashboard slideshow"
+                      >
+                        <i className="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                        <span>Restore to Slideshow</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : reminders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-muted)' }}>
+                <i className="bi bi-clipboard-x" style={{ fontSize: '2.4rem', opacity: 0.6, display: 'block', marginBottom: 12 }}></i>
+                <p style={{ margin: '0 0 16px', fontSize: '0.92rem' }}>No reminders yet. Add a new reminder for the team.</p>
+                <button
+                  type="button"
+                  className="btn-add-reminder"
+                  onClick={() => setActiveTab('add')}
+                >
+                  <i className="bi bi-plus-lg" aria-hidden="true"></i> Add Reminder
+                </button>
+              </div>
+            ) : (
+              /* All Reminders List: Only display the Subject of each reminder */
+              <div className="reminder-cards-list">
+                {reminders.map((reminder) => (
+                  <div key={reminder.id} className="reminder-card-item">
+                    <div className="reminder-card-main-info">
+                      <div className="reminder-card-title-group" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <i className="bi bi-pin-angle-fill reminder-pin-icon" aria-hidden="true"></i>
+                        <h4
+                          className="reminder-card-subject"
+                          onClick={() => setViewingReminder(reminder)}
+                          style={{ cursor: 'pointer' }}
+                          title="Click to view details"
+                        >
+                          {reminder.subject}
+                        </h4>
+                        {reminder.isImportant ? (
+                          <span className="reminder-tag-important">
+                            <i className="bi bi-star-fill me-1" aria-hidden="true"></i> Important
+                          </span>
+                        ) : (
+                          <span className="reminder-tag-standard">
+                            <i className="bi bi-clock me-1" aria-hidden="true"></i> 7 Days
+                          </span>
+                        )}
+                        {reminder.removedFromSlideshow ? (
+                          <span className="reminder-tag-removed" title="Manually removed from Dashboard slideshow">
+                            Off Slideshow
+                          </span>
+                        ) : !isReminderInSlideshow(reminder) ? (
+                          <span className="reminder-tag-expired" title="Expired from Dashboard slideshow after 7 days">
+                            Slideshow Expired
+                          </span>
+                        ) : null}
+                      </div>
+                      {reminder.createdAt && (
+                        <span className="reminder-card-date">{formatDate(reminder.createdAt)}</span>
+                      )}
+                    </div>
+
+                    <div className="reminder-card-actions">
+                      <button
+                        type="button"
+                        className="btn-reminder-action primary-view"
+                        onClick={() => setViewingReminder(reminder)}
+                        title="View full reminder details"
+                      >
+                        <i className="bi bi-eye" aria-hidden="true"></i> View Details
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-reminder-action icon-only"
+                        onClick={() => handleStartEdit(reminder)}
+                        title="Edit this reminder"
+                        aria-label="Edit reminder"
+                      >
+                        <i className="bi bi-pencil" aria-hidden="true"></i>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-reminder-action danger icon-only"
+                        onClick={() => {
+                          if (window.confirm(`Delete reminder "${reminder.subject}"?`)) {
+                            onDelete(reminder.id);
+                          }
+                        }}
+                        title="Delete this reminder"
+                        aria-label="Delete reminder"
+                      >
+                        <i className="bi bi-trash3" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 2: Add / Edit Form */}
+        {(activeTab === 'add' || currentEditItem) && (
+          <form onSubmit={handleSubmit}>
+            {errorMessage && (
+              <div style={{ padding: '8px 12px', background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: 6, fontSize: '0.84rem', marginBottom: 14 }}>
+                <i className="bi bi-exclamation-triangle-fill me-1"></i> {errorMessage}
+              </div>
+            )}
+            <div className="reminder-form-group">
+              <label className="reminder-form-label" htmlFor="reminder-subject-input">
+                Subject *
+              </label>
+              <input
+                id="reminder-subject-input"
+                type="text"
+                className="reminder-form-input"
+                placeholder="e.g., Scheduled Maintenance, Break Schedule Changes, Support Notice"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                maxLength={120}
+                required
+                autoFocus
+              />
+            </div>
+            <div className="reminder-form-group">
+              <label className="reminder-form-label" htmlFor="reminder-description-input">
+                Description *
+              </label>
+              <textarea
+                id="reminder-description-input"
+                className="reminder-form-textarea"
+                rows={5}
+                placeholder="Enter details, instructions, or notes for the team..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+              ></textarea>
+            </div>
+            <div className="reminder-form-group">
+              <label className="reminder-form-label">Duration</label>
+              <div className="reminder-type-selector">
+                <label className={`reminder-type-option ${!isImportant ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="reminder-importance"
+                    value="standard"
+                    checked={!isImportant}
+                    onChange={() => setIsImportant(false)}
+                    className="reminder-type-radio"
+                  />
+                  <span className="reminder-type-label">
+                    <i className="bi bi-clock-history me-1" aria-hidden="true"></i> 7 days
+                  </span>
+                </label>
+
+                <label className={`reminder-type-option ${isImportant ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="reminder-importance"
+                    value="important"
+                    checked={isImportant}
+                    onChange={() => setIsImportant(true)}
+                    className="reminder-type-radio"
+                  />
+                  <span className="reminder-type-label">
+                    <i className="bi bi-star-fill me-1" style={{ color: isImportant ? '#f59e0b' : 'inherit' }} aria-hidden="true"></i> Important
+                  </span>
+                </label>
+              </div>
+            </div>
+            <div className="reminder-form-actions">
+              {currentEditItem ? (
+                <button
+                  type="button"
+                  className="btn-reminder-action"
+                  onClick={handleCancelEdit}
+                >
+                  Cancel Edit
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-reminder-action"
+                  onClick={() => {
+                    setActiveTab('all');
+                    setViewingReminder(currentModalSource === 'slide' ? (initialViewingReminder || viewingReminder) : null);
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                type="submit"
+                className="btn-add-reminder"
+                style={{ padding: '8px 20px', fontSize: '0.88rem' }}
+              >
+                <i className={`bi ${currentEditItem ? 'bi-check-lg' : 'bi-plus-lg'}`} aria-hidden="true"></i>
+                <span>{currentEditItem ? 'Save Changes' : 'Add Reminder'}</span>
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
 // ✅ MAIN APP WRAPPER
 // ==========================================
 
@@ -1930,10 +2669,108 @@ export default function App() {
     return localStorage.getItem('sidebar_collapsed_creditcard') === 'true';
   });
 
+  // Team Reminders state (stored locally in localStorage)
+  const [reminders, setReminders] = useState(() => {
+    try {
+      const saved = localStorage.getItem(REMINDERS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load reminders:', e);
+    }
+    return [];
+  });
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminderModalTab, setReminderModalTab] = useState('all');
+  const [editingReminder, setEditingReminder] = useState(null);
+  const [viewingReminder, setViewingReminder] = useState(null);
+  const [reminderModalSource, setReminderModalSource] = useState('view_reminders');
+
+  const handleOpenReminderModal = (tab = 'all', itemToEdit = null, itemToView = null, source = 'view_reminders') => {
+    setReminderModalTab(tab);
+    setEditingReminder(itemToEdit);
+    setViewingReminder(itemToView);
+    setReminderModalSource(source);
+    setShowReminderModal(true);
+  };
+
+  const handleSaveReminder = (data, editId) => {
+    setReminders((prev) => {
+      let updated;
+      const now = new Date().toISOString();
+      if (editId) {
+        updated = prev.map((rem) =>
+          rem.id === editId
+            ? {
+                ...rem,
+                subject: data.subject,
+                description: data.description,
+                isImportant: Boolean(data.isImportant),
+                updatedAt: now
+              }
+            : rem
+        );
+      } else {
+        const newRem = {
+          id: 'rem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          subject: data.subject,
+          description: data.description,
+          isImportant: Boolean(data.isImportant),
+          removedFromSlideshow: false,
+          createdAt: now,
+          updatedAt: now
+        };
+        updated = [newRem, ...prev];
+      }
+      try {
+        localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save reminders:', e);
+      }
+      return updated;
+    });
+
+    setViewingReminder(null);
+    setReminderModalSource('view_reminders');
+    setReminderModalTab('all');
+  };
+
+  const handleToggleSlideshow = (id, shouldRemove) => {
+    setReminders((prev) => {
+      const updated = prev.map((rem) =>
+        rem.id === id ? { ...rem, removedFromSlideshow: shouldRemove } : rem
+      );
+      try {
+        localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save reminders:', e);
+      }
+      return updated;
+    });
+
+    setViewingReminder((prev) =>
+      prev && prev.id === id ? { ...prev, removedFromSlideshow: shouldRemove } : prev
+    );
+  };
+
+  const handleDeleteReminder = (id) => {
+    setReminders((prev) => {
+      const updated = prev.filter((r) => r.id !== id);
+      try {
+        localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to delete reminder:', e);
+      }
+      return updated;
+    });
+  };
+
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.7.5';
+      const currentVersion = latestAnnouncement?.version || 'v2.7.6';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -1949,7 +2786,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.7.5';
+      const currentVersion = latestAnnouncement?.version || 'v2.7.6';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -2084,8 +2921,8 @@ export default function App() {
           }
 
           @keyframes overlayFadeIn {
-            from { opacity: 0; backdrop-filter: blur(0px); }
-            to { opacity: 1; backdrop-filter: blur(5px); }
+            from { opacity: 0; }
+            to { opacity: 1; }
           }
           @keyframes modalSlideUp {
             from { opacity: 0; transform: translateY(30px) scale(0.95); }
@@ -2157,6 +2994,10 @@ export default function App() {
           <div className="dashboard-view-wrapper" style={{ display: currentView === 'dashboard' ? 'flex' : 'none' }}>
             <AppBanner />
             <Header />
+            <ReminderBar
+              reminders={reminders}
+              onOpenModal={handleOpenReminderModal}
+            />
             <DashboardGrid />
             <Tabs currentView={currentView} onSelectView={setCurrentView} />
             <div className="app-container">
@@ -2214,6 +3055,24 @@ export default function App() {
       {showTemplates && <TidTemplatesModal onClose={() => setShowTemplates(false)} />}
       {showBreakSchedule && <BreakScheduleModal onClose={() => setShowBreakSchedule(false)} />}
       {showTeamPhoto && <TeamPhotoModal onClose={() => setShowTeamPhoto(false)} />}
+      {showReminderModal && (
+        <ReminderModal
+          onClose={() => {
+            setShowReminderModal(false);
+            setEditingReminder(null);
+            setViewingReminder(null);
+          }}
+          reminders={reminders}
+          onSave={handleSaveReminder}
+          onDelete={handleDeleteReminder}
+          onToggleSlideshow={handleToggleSlideshow}
+          initialTab={reminderModalTab}
+          editingReminder={editingReminder}
+          initialViewingReminder={viewingReminder}
+          modalSource={reminderModalSource}
+          onClearEditing={() => setEditingReminder(null)}
+        />
+      )}
     </>
   );
 }
