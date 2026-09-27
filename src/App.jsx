@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { initCreditcardApp } from './creditcardController';
 import teamPhoto from './group-photo.jpeg';
 import teamBanner from './groupcc.jpeg';
+import appreciationBanner from './Slide2.png';
 import appLogo from './logo2.png';
 import ShiftReportPage from './ShiftReportPage';
 
@@ -1212,19 +1213,7 @@ function Header() {
                 <i className="bi bi-x-lg" aria-hidden="true"></i>
               </button>
             </div>
-          ) : (
-            <span
-              className="header-search-kbd is-clickable"
-              aria-hidden="true"
-              title="Press Ctrl+K or ⌘K to search"
-              onClick={() => {
-                const input = document.getElementById('headerSearch');
-                if (input) input.focus();
-              }}
-            >
-              ⌘K
-            </span>
-          )}
+          ) : null}
         </div>
         <button
           className="team-chip"
@@ -1859,6 +1848,75 @@ function TeamPhotoModal({ onClose }) {
   );
 }
 
+function AppBanner() {
+  const slides = [
+    {
+      id: 'group',
+      src: teamBanner,
+      alt: 'Credit Card support team',
+      position: 'center top'
+    },
+    {
+      id: 'appreciation',
+      src: appreciationBanner,
+      alt: 'Appreciation message for coworker',
+      position: 'center center'
+    }
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % slides.length);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [isPaused, slides.length]);
+
+  return (
+    <div
+      className="app-banner"
+      role="region"
+      aria-label="Support team header slideshow"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {slides.map((slide, index) => (
+        <div
+          key={slide.id}
+          className={`app-banner-slide ${index === currentIndex ? 'active' : ''}`}
+          style={{
+            backgroundImage: `url(${slide.src})`,
+            backgroundPosition: slide.position
+          }}
+          role="img"
+          aria-label={slide.alt}
+          aria-hidden={index !== currentIndex}
+        />
+      ))}
+
+      {/* Slide Navigation Indicators */}
+      <div className="app-banner-dots" role="tablist" aria-label="Slideshow controls">
+        {slides.map((slide, index) => (
+          <button
+            key={slide.id}
+            type="button"
+            className={`app-banner-dot ${index === currentIndex ? 'active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentIndex(index);
+            }}
+            aria-label={`Go to slide ${index + 1}: ${slide.alt}`}
+            title={`Slide ${index + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ==========================================
 // ✅ MAIN APP WRAPPER
 // ==========================================
@@ -2097,12 +2155,7 @@ export default function App() {
         <main className="main-area">
           {/* ✅ TICKETING DASHBOARD VIEW (Preserved in DOM to retain Quill, form drafts & event listeners) */}
           <div className="dashboard-view-wrapper" style={{ display: currentView === 'dashboard' ? 'flex' : 'none' }}>
-            <div
-              className="app-banner"
-              style={{ backgroundImage: `url(${teamBanner})` }}
-              role="img"
-              aria-label="Credit Card support team"
-            ></div>
+            <AppBanner />
             <Header />
             <DashboardGrid />
             <Tabs currentView={currentView} onSelectView={setCurrentView} />

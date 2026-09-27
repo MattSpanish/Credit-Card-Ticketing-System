@@ -235,9 +235,10 @@ button, a, [role="button"], input, select, textarea,
 }
 
 /* ============================================================
-   TOP BANNER (full-width team image, sits above the sticky top bar)
+   TOP BANNER SLIDESHOW (full-width team & appreciation slides)
    ============================================================ */
 .app-banner {
+    position: relative;
     width: 100%;
     height: 350px;
     margin: 0 0 4px;
@@ -246,32 +247,82 @@ button, a, [role="button"], input, select, textarea,
     border: 1px solid var(--line, #e5e9f0);
     box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.05));
     background-color: var(--bg-soft, #f5f7fa);
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center top;
-}
-@media (max-width: 720px) {
-    .app-banner { height: 160px; }
 }
 
-/* ============================================================
-   TOP BANNER (full-width team image, sits above the sticky top bar)
-   ============================================================ */
-.app-banner {
+.app-banner-slide {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    height: 350px;
-    margin: 0 0 4px;
-    border-radius: var(--r-md, 12px);
-    overflow: hidden;
-    border: 1px solid var(--line, #e5e9f0);
-    box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.05));
-    background-color: var(--bg-soft, #f5f7fa);
+    height: 100%;
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center top;
+    opacity: 0;
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 1;
 }
+
+.app-banner-slide.active {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 2;
+}
+
+.app-banner-dots {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 5px 10px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.app-banner-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.3s ease;
+}
+
+.app-banner-dot:hover {
+    background: rgba(255, 255, 255, 0.95);
+    transform: scale(1.2);
+}
+
+.app-banner-dot.active {
+    background: #ffffff;
+    width: 22px;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
 @media (max-width: 720px) {
     .app-banner { height: 160px; }
+    .app-banner-dots {
+        bottom: 8px;
+        right: 10px;
+        padding: 4px 8px;
+        gap: 6px;
+    }
+    .app-banner-dot {
+        width: 6px;
+        height: 6px;
+    }
+    .app-banner-dot.active {
+        width: 16px;
+    }
 }
 
 /* ============================================================
