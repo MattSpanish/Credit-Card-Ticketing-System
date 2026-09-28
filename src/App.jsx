@@ -87,13 +87,13 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-28-v281",
-    version: "v2.8.1",
+    id: "rel-2026-09-28-v282",
+    version: "v2.8.2",
     date: "September 28, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
     title: "What's New?",
-    summary: "Integrated a dedicated real-time Supabase cloud database exclusively for Team Reminders with automatic local caching.",
+    summary: "Refined Team Reminders header design and integrated dedicated real-time Supabase cloud database.",
     items: [
       {
         type: "feature",
@@ -460,7 +460,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.8.1';
+  const version = latestAnnouncement.version || 'v2.8.2';
   const title = latestAnnouncement.title || 'System Update';
   const summary = latestAnnouncement.summary || '';
   const date = latestAnnouncement.date || 'September 28, 2026';
@@ -835,7 +835,7 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.8.1</span>
+          <span className="announcement-stat-val">v2.8.2</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
@@ -1079,11 +1079,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.8.1">
+          <div className="logo" title="Tickets v2.8.2">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.8.1</span>
+              <span className="logo-version">v2.8.2</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -2316,14 +2316,9 @@ function ReminderModal({
         {showTopHeader && (
           <div className="break-modal-header" style={{ padding: '0 0 16px', marginBottom: 16 }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <h2 className="modal-title modal-title-row" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <i className="bi bi-bell-fill" style={{ color: '#f59e0b' }} aria-hidden="true"></i> Team Reminders
-                </h2>
-                <span className="reminder-cloud-badge" title="Team Reminders are synced to dedicated Supabase cloud database">
-                  <i className="bi bi-cloud-check-fill me-1"></i> Cloud Synced
-                </span>
-              </div>
+              <h2 className="modal-title modal-title-row" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className="bi bi-bell-fill" style={{ color: '#f59e0b' }} aria-hidden="true"></i> Team Reminders
+              </h2>
               <p className="modal-subtitle">Share important notices and announcements with the entire team in real time</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -2843,7 +2838,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.8.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.8.2';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -2859,7 +2854,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.8.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.8.2';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
