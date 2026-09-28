@@ -68,17 +68,19 @@ const BREAK_SCHEDULE = {
 };
 
 const TID_TEMPLATES = {
-  "PAX": `(PAX) - MSD\n /\n[]\nPAX BROADPOS [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001`,
-  "NEXGO": `(NEXGO)\n /\n[ADDRESS]\nNexgo MFE V201 DwSrsSs [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
-  "FD150": `(FD150) - FD150\n /\n[]\nFD150 [NASHVILLE] OR FD150 W/ RP10 [NASHVILLE]\nAUTO CLOSE - 12:23AM\nNMID -\nTID# , DLID#, RESET KEY:\nAPP: 751UN150\nD/L# 855-641-1001\nD/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
-  "FD130": `(FD130) - FD130\n /\n[]\nEQUIPMENT: FD130 [NASHVILLE]\nAUTO CLOSE - 12:00AM\nNMID -\nTID#, DLID# , RESET KEY:\nAPP: 751UN130\nD/L# 855-641-1001\nD/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
-  "VALOR": `(VALOR) -ValorPay GTW RC SRS\n /\n[]\nValorPay GTW RC SRS [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
-  "DEJAVOO": `(DEJAVOO) - DVC\n /\n[ ]\nDejavooDvCreditRC1.20 [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001\nMCC#`,
-  "NMI": `(NMI) - Network Merchants Gateway\n /\n[]\nNetwork Merchants Gateway\nNMID#\nTID#\nGROUP ID# 30001`,
-  "AUTH.NET": `(AUTH.NET) - AUTHORIZENET(G/W)\nDBA Name:\nFirst Data Merchant ID Number:\n[,  - ]\nNashville Short MID:\nNetwork: FDC Nashville\nManufacturer: AUTHORIZE.NET\nEquipment Name: AUTHORIZENET(G/W)\nEquipment Type: TSOL\nProduct ID: 815300\nTerminal ID:\nTerminal PW:\nProgram ID: 000\nFD Data wire: (800) 704-4202`,
-  "VERIFONE COMMANDER / RUBY": `BUYPASS TID \nVERIFONE COMMANDER / RUBY 2 / RUBY CI\n\n /\n[]\nEQUIPMENT: VERIFONE COMMANDER / RUBY 2 / RUBY CI  \nBUYPASS ID: \nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`,
-  "GILBARCO PASSPORT": `GILBARCO PASSPORT\n[Address, City State - Zipcode]\nEQUIPMENT: GILBARCO PASSPORT\nBUYPASS ID: L3(State) (BuypassID) 001\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`,
-  "FD150 W/ RP10 (BUYPASS)": `FD150 W/ RP10 (BUYPASS)\n /\n[]\nEQUIPMENT: FD150 W/ RP10 (BUYPASS)\nBUYPASS ID: , DLID: [CALL BUYPASS]\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`
+  "NEXGO": `(NEXGO)\nStorename / MID\n[Address, City State - Zipcode]\nNexgo MFE V201 DwSrsSs [NASHVILLE]\nNMID# \nTID# \nGROUP ID# 10001`,
+  "PAX": `(PAX)\nStorename / MID\n[Address, City State - Zipcode]\nPAX BROADPOS [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001`,
+  "FD150": `(FD150)\nStorename / MID\n[Address, City State - Zipcode]\nFD150 [NASHVILLE] \tOR \tFD150 W/ RP10 [NASHVILLE]\n(if Terminal Close) AUTO CLOSE - 12:23AM\nNMID -\nTID# , DLID# , RESET KEY:\nAPP: 751UN150\nD/L# 855-641-1001\nD/L IP ADDR: GDSPROD.FIRSTDATA.COM`,
+  "VALOR": `(VALOR)\nStorename / MID\n[Address, City State - Zipcode]\nValorPay GTW RC SRS [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001`,
+  "DEJAVOO": `(DEJAVOO)\nStorename / MID\n[Address, City State - Zipcode]\nDejavooDvCreditRC1.20 [NASHVILLE]\nNMID#\nTID#\nGROUP ID# 10001`,
+  "NMI": `(NMI)\nStorename / MID\n[Address, City State - Zipcode]\nNetwork Merchants Gateway\nNMID# \nTID# \nGROUP ID# 30001`,
+  "VERIFONE COMMANDER / RUBY": `(VERIFONE COMMANDER / RUBY)\nStorename / MID\n[Address, City State - Zipcode]\nEQUIPMENT: VERIFONE COMMANDER / RUBY 2 / RUBY CI\nBUYPASS ID: RB(State) (BuypassID) 001\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`,
+  "GILBARCO PASSPORT": `(GILBARCO PASSPORT)\nStorename / MID\n[Address, City State - Zipcode]\nEQUIPMENT: GILBARCO PASSPORT\nBUYPASS ID: L3(State) (BuypassID) 001\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`,
+  "FD150 W/ RP10 BUYPASS": `(FD150 W/ RP10 BUYPASS)\nStorename / MID\n[Address, City State - Zipcode]\nEQUIPMENT: FD150 W/ RP10 (BUYPASS)\nBUYPASS ID: KS(State) (BuypassID) 001, DLID: [CALL BUYPASS]\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`,
+  "AUTH.NET": `(AUTH.NET)\nDBA Name:\nFirst Data Merchant ID Number:\n[Address, City State - Zipcode]\nNashville Short MID:\nNetwork: FDC Nashville\nManufacturer: AUTHORIZE.NET\nEquipment Name: AUTHORIZENET(G/W)\nEquipment Type: TSOL\nProduct ID: 815300\nTerminal ID:\nTerminal PW: (LAST 4 OF THE NMID) (YOU CAN SEE ALSO ON THE PROGRAMMING IN FDPOS)\nProgram ID: 000\nFD Datawire: (800) 704-4202`,
+  "World Bcard RC GTW": `(World Bcard RC GTW)\nStorename / MID\n[Address, City State - Zipcode]\nWorld Bcard RC GTW [NASHVILLE]\nNMID#\nTID# 4016974\nGROUP ID# 10001`,
+  "DATACAP": `(DATACAP)\n[Address, City State - Zipcode]\nDTCP NETePAY 5.05 GTW RC\nNMID#\nTID#\nGROUP ID# 10001`,
+  "NCR (RADIANT SYSTEMS)": `NCR (RADIANT SYSTEMS)\nStorename / MID\n[Address, City State - Zipcode]\nEQUIPMENT: NCR (RADIANT SYSTEMS)\nBUYPASS ID: RB(State) (BuypassID) 001\nFD Datawire: (800) 704-4202\nFD Buypass: (800) 733-3322`
 };
 
 // ==========================================
