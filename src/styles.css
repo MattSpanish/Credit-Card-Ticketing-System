@@ -869,6 +869,25 @@ body.dark-mode .btn-view-reminders:hover {
 }
 
 /* Modal styles for Reminders */
+.reminder-cloud-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #059669;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+}
+
+body.dark-mode .reminder-cloud-badge {
+    color: #34d399;
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(52, 211, 153, 0.35);
+}
+
 .reminder-modal-tabs-bar {
     display: flex;
     align-items: flex-end;

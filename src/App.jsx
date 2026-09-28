@@ -5,6 +5,13 @@ import teamBanner from './groupcc.jpeg';
 import tatiBanner from './tati2.png';
 import appLogo from './logo2.png';
 import ShiftReportPage from './ShiftReportPage';
+import {
+  fetchReminders,
+  addReminder,
+  updateReminder,
+  deleteReminder,
+  getLocalReminders,
+} from './supabaseReminders';
 
 // ✅ GLOBAL DATA
 const BREAK_SCHEDULE = {
@@ -80,12 +87,37 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-28-v280",
-    version: "v2.8.0",
+    id: "rel-2026-09-28-v281",
+    version: "v2.8.1",
     date: "September 28, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
     title: "What's New?",
+    summary: "Integrated a dedicated real-time Supabase cloud database exclusively for Team Reminders with automatic local caching.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-cloud-check-fill",
+        title: "Dedicated Cloud Database for Reminders",
+        desc: "Team Reminders are now synced to a dedicated Supabase cloud database. All team members see the same active reminders across devices in real time with automatic offline fallback.",
+        tag: "Cloud Sync"
+      },
+      {
+        type: "ui",
+        icon: "bi-aspect-ratio",
+        title: "Update Popup Frosted Backdrop Blur",
+        desc: "Restored frosted glass backdrop blur exclusively to the update popup modal overlay so release announcements stand out cleanly.",
+        tag: "UI / UX"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-09-28-v280",
+    version: "v2.8.0",
+    date: "September 28, 2026",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
+    title: "Frosted Blur Update Modal & Appreciation Header",
     summary: "Added frosted background blur exclusively to the update notification popup, refined transparent glass dashboard panels, and updated appreciation slideshow header.",
     items: [
       {
@@ -428,7 +460,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.8.0';
+  const version = latestAnnouncement.version || 'v2.8.1';
   const title = latestAnnouncement.title || 'System Update';
   const summary = latestAnnouncement.summary || '';
   const date = latestAnnouncement.date || 'September 28, 2026';
@@ -803,7 +835,7 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.8.0</span>
+          <span className="announcement-stat-val">v2.8.1</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
@@ -1047,11 +1079,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.8.0">
+          <div className="logo" title="Tickets v2.8.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.8.0</span>
+              <span className="logo-version">v2.8.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -2138,6 +2170,8 @@ function ReminderModal({
   onSave,
   onDelete,
   onToggleSlideshow,
+  onRefreshReminders,
+  isSyncing = false,
   initialTab = 'all',
   editingReminder = null,
   initialViewingReminder = null,
@@ -2282,14 +2316,32 @@ function ReminderModal({
         {showTopHeader && (
           <div className="break-modal-header" style={{ padding: '0 0 16px', marginBottom: 16 }}>
             <div>
-              <h2 className="modal-title modal-title-row" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <i className="bi bi-bell-fill" style={{ color: '#f59e0b' }} aria-hidden="true"></i> Team Reminders
-              </h2>
-              <p className="modal-subtitle">Share important notices and announcements with the entire team</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h2 className="modal-title modal-title-row" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="bi bi-bell-fill" style={{ color: '#f59e0b' }} aria-hidden="true"></i> Team Reminders
+                </h2>
+                <span className="reminder-cloud-badge" title="Team Reminders are synced to dedicated Supabase cloud database">
+                  <i className="bi bi-cloud-check-fill me-1"></i> Cloud Synced
+                </span>
+              </div>
+              <p className="modal-subtitle">Share important notices and announcements with the entire team in real time</p>
             </div>
-            <button onClick={onClose} className="break-close-btn" aria-label="Close reminders modal" title="Close">
-              <i className="bi bi-x-lg" aria-hidden="true"></i>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {onRefreshReminders && (
+                <button
+                  type="button"
+                  className="feed-refresh-btn"
+                  onClick={onRefreshReminders}
+                  title="Sync / Refresh reminders from cloud"
+                  style={{ width: 34, height: 34 }}
+                >
+                  <i className={`bi bi-arrow-clockwise ${isSyncing ? 'spin-anim' : ''}`}></i>
+                </button>
+              )}
+              <button onClick={onClose} className="break-close-btn" aria-label="Close reminders modal" title="Close">
+                <i className="bi bi-x-lg" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
         )}
 
@@ -2701,24 +2753,35 @@ export default function App() {
     return localStorage.getItem('sidebar_collapsed_creditcard') === 'true';
   });
 
-  // Team Reminders state (stored locally in localStorage)
+  // Team Reminders state (cached in localStorage, synced in real-time to Supabase)
   const [reminders, setReminders] = useState(() => {
-    try {
-      const saved = localStorage.getItem(REMINDERS_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (e) {
-      console.error('Failed to load reminders:', e);
-    }
-    return [];
+    return getLocalReminders();
   });
+  const [isSyncingReminders, setIsSyncingReminders] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderModalTab, setReminderModalTab] = useState('all');
   const [editingReminder, setEditingReminder] = useState(null);
   const [viewingReminder, setViewingReminder] = useState(null);
   const [reminderModalSource, setReminderModalSource] = useState('view_reminders');
+
+  // Load reminders from dedicated Supabase database on mount & on demand
+  const loadRemindersFromDb = async () => {
+    setIsSyncingReminders(true);
+    try {
+      const res = await fetchReminders();
+      if (res && res.reminders) {
+        setReminders(res.reminders);
+      }
+    } catch (e) {
+      console.error('Failed to sync reminders from Supabase:', e);
+    } finally {
+      setIsSyncingReminders(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRemindersFromDb();
+  }, []);
 
   const handleOpenReminderModal = (tab = 'all', itemToEdit = null, itemToView = null, source = 'view_reminders') => {
     setReminderModalTab(tab);
@@ -2728,81 +2791,59 @@ export default function App() {
     setShowReminderModal(true);
   };
 
-  const handleSaveReminder = (data, editId) => {
-    setReminders((prev) => {
-      let updated;
+  const handleSaveReminder = async (data, editId) => {
+    if (editId) {
+      // Optimistic update
       const now = new Date().toISOString();
-      if (editId) {
-        updated = prev.map((rem) =>
+      setReminders((prev) =>
+        prev.map((rem) =>
           rem.id === editId
             ? {
                 ...rem,
                 subject: data.subject,
                 description: data.description,
                 isImportant: Boolean(data.isImportant),
-                updatedAt: now
+                updatedAt: now,
               }
             : rem
-        );
-      } else {
-        const newRem = {
-          id: 'rem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-          subject: data.subject,
-          description: data.description,
-          isImportant: Boolean(data.isImportant),
-          removedFromSlideshow: false,
-          createdAt: now,
-          updatedAt: now
-        };
-        updated = [newRem, ...prev];
+        )
+      );
+      await updateReminder(editId, {
+        subject: data.subject,
+        description: data.description,
+        isImportant: Boolean(data.isImportant),
+      });
+    } else {
+      const res = await addReminder(data);
+      if (res && res.reminder) {
+        setReminders((prev) => [res.reminder, ...prev.filter((r) => r.id !== res.reminder.id)]);
       }
-      try {
-        localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.error('Failed to save reminders:', e);
-      }
-      return updated;
-    });
+    }
 
     setViewingReminder(null);
     setReminderModalSource('view_reminders');
     setReminderModalTab('all');
   };
 
-  const handleToggleSlideshow = (id, shouldRemove) => {
-    setReminders((prev) => {
-      const updated = prev.map((rem) =>
-        rem.id === id ? { ...rem, removedFromSlideshow: shouldRemove } : rem
-      );
-      try {
-        localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.error('Failed to save reminders:', e);
-      }
-      return updated;
-    });
-
+  const handleToggleSlideshow = async (id, shouldRemove) => {
+    setReminders((prev) =>
+      prev.map((rem) => (rem.id === id ? { ...rem, removedFromSlideshow: shouldRemove } : rem))
+    );
     setViewingReminder((prev) =>
       prev && prev.id === id ? { ...prev, removedFromSlideshow: shouldRemove } : prev
     );
+    await updateReminder(id, { removedFromSlideshow: shouldRemove });
   };
 
-  const handleDeleteReminder = (id) => {
-    setReminders((prev) => {
-      const updated = prev.filter((r) => r.id !== id);
-      try {
-        localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.error('Failed to delete reminder:', e);
-      }
-      return updated;
-    });
+  const handleDeleteReminder = async (id) => {
+    setReminders((prev) => prev.filter((r) => r.id !== id));
+    await deleteReminder(id);
   };
 
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.8.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.8.1';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -2818,7 +2859,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.8.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.8.1';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -3098,6 +3139,8 @@ export default function App() {
           onSave={handleSaveReminder}
           onDelete={handleDeleteReminder}
           onToggleSlideshow={handleToggleSlideshow}
+          onRefreshReminders={loadRemindersFromDb}
+          isSyncing={isSyncingReminders}
           initialTab={reminderModalTab}
           editingReminder={editingReminder}
           initialViewingReminder={viewingReminder}
