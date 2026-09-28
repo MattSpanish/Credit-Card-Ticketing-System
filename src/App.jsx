@@ -87,12 +87,37 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-28-v282",
-    version: "v2.8.2",
+    id: "rel-2026-09-28-v283",
+    version: "v2.8.3",
     date: "September 28, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
     title: "What's New?",
+    summary: "Fixed mobile responsive sidebar layout so the 1 HR break card and Gemini API key panel collapse cleanly when the mobile menu is closed.",
+    items: [
+      {
+        type: "bugfix",
+        icon: "bi-layout-sidebar-inset",
+        title: "Mobile Sidebar Auto-Collapse Fix",
+        desc: "Fixed an issue on smaller/shrunk screens where the 1 HR Break card and Set Gemini API Key button remained visible under the header bar when navigation was closed.",
+        tag: "Mobile / Responsive"
+      },
+      {
+        type: "feature",
+        icon: "bi-cloud-check-fill",
+        title: "Dedicated Cloud Database for Reminders",
+        desc: "Team Reminders are synced to a dedicated Supabase cloud database across devices in real time with automatic offline fallback.",
+        tag: "Cloud Sync"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-09-28-v282",
+    version: "v2.8.2",
+    date: "September 28, 2026",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
+    title: "Dedicated Cloud Database for Reminders",
     summary: "Refined Team Reminders header design and integrated dedicated real-time Supabase cloud database.",
     items: [
       {
@@ -460,7 +485,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.8.2';
+  const version = latestAnnouncement.version || 'v2.8.3';
   const title = latestAnnouncement.title || 'System Update';
   const summary = latestAnnouncement.summary || '';
   const date = latestAnnouncement.date || 'September 28, 2026';
@@ -835,7 +860,7 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.8.2</span>
+          <span className="announcement-stat-val">v2.8.3</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
@@ -1065,7 +1090,7 @@ function Sidebar({
   };
 
   return (
-    <aside className={`sidebar ${isCollapsed ? 'is-collapsed' : ''}`} aria-label="Primary navigation">
+    <aside className={`sidebar ${isCollapsed ? 'is-collapsed' : ''} ${isMobileView && isMobileNavOpen ? 'mobile-open' : ''}`} aria-label="Primary navigation">
       {/* Edge toggle pill button on the middle of the dividing line */}
       <button
         type="button"
@@ -1079,11 +1104,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.8.2">
+          <div className="logo" title="Tickets v2.8.3">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.8.2</span>
+              <span className="logo-version">v2.8.3</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1101,79 +1126,83 @@ function Sidebar({
                 type="button"
                 className="sidebar-toggle"
                 onClick={() => setIsMobileNavOpen((prev) => !prev)}
-                aria-label="Toggle navigation"
-                title="Toggle navigation"
+                aria-label={isMobileNavOpen ? "Close navigation" : "Open navigation"}
+                title={isMobileNavOpen ? "Close navigation" : "Open navigation"}
               >
-                <i className="bi bi-list" aria-hidden="true"></i>
+                <i className={`bi ${isMobileNavOpen ? 'bi-x-lg' : 'bi-list'}`} aria-hidden="true"></i>
               </button>
             )}
           </div>
         </div>
-        <nav className={`nav-list ${isMobileView && !isMobileNavOpen ? 'nav-list-collapsed' : 'nav-list-open'}`} aria-label="Primary">
-          <button 
-            className={`nav-item ${currentView === 'dashboard' ? 'active' : ''}`} 
-            onClick={() => handleNavAction(() => {
-              onSelectView && onSelectView('dashboard');
-              window.switchToTab && window.switchToTab('creditcard');
-            })} 
-            aria-current={currentView === 'dashboard' ? 'page' : undefined} 
-            title="Dashboard"
-          >
-            <i className="bi bi-speedometer2 me-2" aria-hidden="true"></i>
-            <span className="nav-text">Dashboard</span>
-          </button>
 
-          <button className="nav-item" onClick={() => handleNavAction(onOpenTemplates)} title="TID Templates">
-            <i className="bi bi-clipboard-data me-2" aria-hidden="true"></i>
-            <span className="nav-text">TID Templates</span>
-          </button>
-          <button className="nav-item" onClick={() => handleNavAction(onOpenBreakSchedule)} title="Break Schedule">
-            <i className="bi bi-cup-hot me-2" aria-hidden="true"></i>
-            <span className="nav-text">Break Schedule</span>
-          </button>
+        {/* Collapsible content on mobile: Nav, Break Card, User foot, Gemini Key */}
+        <div className={`sidebar-collapse-content ${isMobileView && !isMobileNavOpen ? 'is-closed' : 'is-open'}`}>
+          <nav className={`nav-list ${isMobileView && !isMobileNavOpen ? 'nav-list-collapsed' : 'nav-list-open'}`} aria-label="Primary">
+            <button 
+              className={`nav-item ${currentView === 'dashboard' ? 'active' : ''}`} 
+              onClick={() => handleNavAction(() => {
+                onSelectView && onSelectView('dashboard');
+                window.switchToTab && window.switchToTab('creditcard');
+              })} 
+              aria-current={currentView === 'dashboard' ? 'page' : undefined} 
+              title="Dashboard"
+            >
+              <i className="bi bi-speedometer2 me-2" aria-hidden="true"></i>
+              <span className="nav-text">Dashboard</span>
+            </button>
 
-          {/* Dedicated Announcement Tab */}
-          <button 
-            className={`nav-item ${currentView === 'announcement' ? 'active' : ''}`}
-            onClick={() => handleNavAction(() => {
-              onSelectView && onSelectView('announcement');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            })}
-            aria-current={currentView === 'announcement' ? 'page' : undefined}
-            title="Announcement"
-          >
-            <i className="bi bi-megaphone me-2" aria-hidden="true"></i>
-            <span className="nav-text">Announcement</span>
-          </button>
+            <button className="nav-item" onClick={() => handleNavAction(onOpenTemplates)} title="TID Templates">
+              <i className="bi bi-clipboard-data me-2" aria-hidden="true"></i>
+              <span className="nav-text">TID Templates</span>
+            </button>
+            <button className="nav-item" onClick={() => handleNavAction(onOpenBreakSchedule)} title="Break Schedule">
+              <i className="bi bi-cup-hot me-2" aria-hidden="true"></i>
+              <span className="nav-text">Break Schedule</span>
+            </button>
 
-          {/* Dedicated Shift Report Tab */}
-          <button 
-            className={`nav-item ${currentView === 'shift-report' ? 'active' : ''}`}
-            onClick={() => handleNavAction(() => {
-              onSelectView && onSelectView('shift-report');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            })}
-            aria-current={currentView === 'shift-report' ? 'page' : undefined}
-            title="Shift Report"
-          >
-            <i className="bi bi-file-earmark-bar-graph me-1" aria-hidden="true"></i>
-            <span className="nav-text">Shift Report</span>
-            <span className="nav-item-badge">BETA</span>
-          </button>
-        </nav>
+            {/* Dedicated Announcement Tab */}
+            <button 
+              className={`nav-item ${currentView === 'announcement' ? 'active' : ''}`}
+              onClick={() => handleNavAction(() => {
+                onSelectView && onSelectView('announcement');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              })}
+              aria-current={currentView === 'announcement' ? 'page' : undefined}
+              title="Announcement"
+            >
+              <i className="bi bi-megaphone me-2" aria-hidden="true"></i>
+              <span className="nav-text">Announcement</span>
+            </button>
 
-        {/* ☕ DAYOFF / 1 HR Break Card positioned at bottom of left panel */}
-        <SidebarBreakCard />
+            {/* Dedicated Shift Report Tab */}
+            <button 
+              className={`nav-item ${currentView === 'shift-report' ? 'active' : ''}`}
+              onClick={() => handleNavAction(() => {
+                onSelectView && onSelectView('shift-report');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              })}
+              aria-current={currentView === 'shift-report' ? 'page' : undefined}
+              title="Shift Report"
+            >
+              <i className="bi bi-file-earmark-bar-graph me-1" aria-hidden="true"></i>
+              <span className="nav-text">Shift Report</span>
+              <span className="nav-item-badge">BETA</span>
+            </button>
+          </nav>
 
-        <div className="sidebar-foot">
-          <span className="sidebar-foot-full">Logged in as <strong>Support</strong></span>
-          <span className="sidebar-foot-compact" title="Logged in as Support"><i className="bi bi-person-circle" aria-hidden="true"></i></span>
-        </div>
-        <div className="sidebar-key">
-          <button id="saveGeminiKeyBtn" className="btn btn-sm btn-primary sidebar-key-btn" title="Set Gemini API Key" style={{marginTop:8, width:'100%'}}>
-            <i className="bi bi-key-fill sidebar-key-icon me-1" aria-hidden="true"></i>
-            <span className="sidebar-key-text">Set Gemini API Key</span>
-          </button>
+          {/* ☕ DAYOFF / 1 HR Break Card positioned at bottom of left panel */}
+          <SidebarBreakCard />
+
+          <div className="sidebar-foot">
+            <span className="sidebar-foot-full">Logged in as <strong>Support</strong></span>
+            <span className="sidebar-foot-compact" title="Logged in as Support"><i className="bi bi-person-circle" aria-hidden="true"></i></span>
+          </div>
+          <div className="sidebar-key">
+            <button id="saveGeminiKeyBtn" className="btn btn-sm btn-primary sidebar-key-btn" title="Set Gemini API Key" style={{marginTop:8, width:'100%'}}>
+              <i className="bi bi-key-fill sidebar-key-icon me-1" aria-hidden="true"></i>
+              <span className="sidebar-key-text">Set Gemini API Key</span>
+            </button>
+          </div>
         </div>
       </div>
     </aside>
@@ -2838,7 +2867,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.8.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.8.3';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -2854,7 +2883,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.8.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.8.3';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
