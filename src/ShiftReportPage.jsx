@@ -495,21 +495,6 @@ export default function ShiftReportPage({ onBackToDashboard }) {
                 className="shift-paste-textarea"
                 rows={13}
                 onPaste={handlePaste}
-                placeholder={`Paste your completed shift report here...
-
-Tip: Copy any image or screenshot and press Ctrl + V here to attach it automatically!
-
-Example:
-SHIFT REPORT 09:00PM TO 06:00AM
-
-September 20, 2026
-
-TOTAL CALLS - 0
-
-RESOLVE - 0
-PENDING - 0
-
-OTHER - 0`}
                 value={reportText}
                 onChange={handleReportTextChange}
               ></textarea>
