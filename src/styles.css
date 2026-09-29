@@ -6262,3 +6262,160 @@ body.dark-mode .update-view-all-link:hover {
     transform: translateY(0);
 }
 
+/* =========================================================
+   NEW REMINDER NOTIFICATION POPUP MODAL
+   ========================================================= */
+
+.reminder-popup-card::before {
+    background: linear-gradient(90deg, #f59e0b, #f97316, #eab308) !important;
+}
+
+body.dark-mode .reminder-popup-card {
+    box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.8), 0 0 26px rgba(245, 158, 11, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.reminder-popup-glow {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.24));
+    border: 1px solid rgba(245, 158, 11, 0.38);
+    color: #f59e0b;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2);
+}
+
+body.dark-mode .reminder-popup-glow {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.35));
+    border-color: rgba(251, 191, 36, 0.45);
+    color: #fbbf24;
+}
+
+.reminder-popup-pill {
+    font-size: 0.76rem;
+    font-weight: 800;
+    font-family: var(--font-mono, monospace);
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    letter-spacing: 0.02em;
+    display: inline-flex;
+    align-items: center;
+}
+
+body.dark-mode .reminder-popup-pill {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, 0.4);
+}
+
+.reminder-popup-subject-card {
+    background: var(--bg-soft, #f8fafc);
+    border: 1px solid var(--line, #e2e8f0);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: all var(--t-fast) var(--ease);
+}
+
+body.dark-mode .reminder-popup-subject-card {
+    background: rgba(15, 26, 44, 0.65);
+    border-color: rgba(245, 158, 11, 0.25);
+}
+
+.reminder-popup-subject-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.reminder-popup-subject-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #d97706;
+    display: inline-flex;
+    align-items: center;
+}
+
+body.dark-mode .reminder-popup-subject-label {
+    color: #fbbf24;
+}
+
+.reminder-popup-important-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    text-transform: uppercase;
+}
+
+.reminder-popup-subject-text {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.reminder-popup-desc-preview {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.btn-update-view-details {
+    background: var(--bg-soft, #f1f5f9);
+    border: 1px solid var(--line, #cbd5e1);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-update-view-details:hover {
+    background: var(--bg-elevated);
+    border-color: #d97706;
+    color: #d97706;
+    transform: translateY(-1px);
+}
+
+body.dark-mode .btn-update-view-details {
+    background: rgba(15, 26, 44, 0.65);
+    border-color: var(--line, #334155);
+}
+
+body.dark-mode .btn-update-view-details:hover {
+    border-color: #f59e0b;
+    color: #fbbf24;
+}
+
+.btn-reminder-popup-ok {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25) !important;
+}
+
+.btn-reminder-popup-ok:hover {
+    background: linear-gradient(135deg, #d97706, #b45309) !important;
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35) !important;
+}
+
+

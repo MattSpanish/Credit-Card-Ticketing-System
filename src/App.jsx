@@ -568,6 +568,138 @@ function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   );
 }
 
+function formatReminderDate(isoString) {
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  } catch {
+    return '';
+  }
+}
+
+function NewReminderNotificationModal({ reminder, onConfirm, onViewReminder }) {
+  const [doNotShowAgain, setDoNotShowAgain] = useState(false);
+  if (!reminder) return null;
+
+  const dateStr = formatReminderDate(reminder.createdAt);
+
+  return (
+    <div className="update-modal-overlay" onClick={() => onConfirm(doNotShowAgain)}>
+      <div 
+        className="update-modal-card reminder-popup-card" 
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reminder-popup-title"
+      >
+        {/* Header */}
+        <div className="update-modal-header">
+          <div className="update-icon-glow reminder-popup-glow">
+            <i className="bi bi-bell-fill" aria-hidden="true"></i>
+          </div>
+          <div className="update-header-info">
+            <div className="update-header-tags">
+              <div className="update-header-left-meta">
+                <span className="reminder-popup-pill">
+                  <i className="bi bi-bell me-1" aria-hidden="true"></i> Notice
+                </span>
+                {dateStr && (
+                  <span className="update-date-text">
+                    <i className="bi bi-clock me-1" aria-hidden="true"></i> {dateStr}
+                  </span>
+                )}
+              </div>
+              {reminder.isImportant ? (
+                <span className="reminder-important-chip">
+                  <i className="bi bi-star-fill me-1" aria-hidden="true"></i> IMPORTANT
+                </span>
+              ) : (
+                <span className="update-pill-badge">
+                  <i className="bi bi-stars"></i> TEAM REMINDER
+                </span>
+              )}
+            </div>
+            <h3 id="reminder-popup-title" className="update-title" style={{ fontSize: '1.18rem' }}>
+              New Reminder Added
+            </h3>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="update-modal-body">
+          <p className="update-summary-text" style={{ color: 'var(--text-muted)' }}>
+            A new team reminder has been posted. Please review the subject below:
+          </p>
+
+          <div className="reminder-popup-subject-card">
+            <div className="reminder-popup-subject-header">
+              <span className="reminder-popup-subject-label">
+                <i className="bi bi-pin-angle-fill me-1" aria-hidden="true"></i> Reminder Subject
+              </span>
+              {reminder.isImportant && (
+                <span className="reminder-popup-important-tag">Important</span>
+              )}
+            </div>
+            <div className="reminder-popup-subject-text">
+              {reminder.subject}
+            </div>
+            {reminder.description && (
+              <p className="reminder-popup-desc-preview">
+                {reminder.description}
+              </p>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="update-view-all-link"
+            onClick={onViewReminder}
+            title="Open View Reminders modal to see full details"
+          >
+            <i className="bi bi-eye me-1"></i> Open full reminder details
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div className="update-modal-footer">
+          <label className="update-checkbox-label">
+            <input
+              type="checkbox"
+              checked={doNotShowAgain}
+              onChange={(e) => setDoNotShowAgain(e.target.checked)}
+            />
+            <span>Do not show again for this reminder</span>
+          </label>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              className="btn-update-view-details"
+              onClick={onViewReminder}
+            >
+              <i className="bi bi-journal-text me-1"></i> View Details
+            </button>
+            <button
+              type="button"
+              className="btn-update-ok btn-reminder-popup-ok"
+              onClick={() => onConfirm(doNotShowAgain)}
+            >
+              <i className="bi bi-check-lg me-1"></i> OK, got it
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TidTemplatesModal({ onClose }) {
   const copySpecificTemplate = (device) => {
     const text = TID_TEMPLATES[device];
@@ -843,7 +975,7 @@ function AnnouncementPage({ onBackToDashboard }) {
         <div>
           <div className="announcement-kicker">
             <span className="kicker-pill"><i className="bi bi-broadcast me-1" aria-hidden="true"></i> System News & Updates</span>
-            <span className="kicker-release">Nashville CC Support</span>
+            <span className="kicker-release">CC Support</span>
           </div>
           <h1>System Announcements</h1>
           <p className="panel-subtitle">Official release updates, new tools, and upcoming platform improvements.</p>
@@ -2869,6 +3001,30 @@ export default function App() {
   const [viewingReminder, setViewingReminder] = useState(null);
   const [reminderModalSource, setReminderModalSource] = useState('view_reminders');
 
+  const [newReminderNotification, setNewReminderNotification] = useState(null);
+
+  const checkForNewReminderNotification = (reminderList) => {
+    if (!reminderList || reminderList.length === 0) return;
+    try {
+      const sorted = [...reminderList].sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
+      const latest = sorted[0];
+      if (!latest || !latest.id) return;
+
+      const lastSeenId = localStorage.getItem('last_seen_reminder_id');
+      const isDismissed = localStorage.getItem(`dismissed_reminder_pop_${latest.id}`) === 'true';
+
+      if (lastSeenId !== latest.id && !isDismissed) {
+        setNewReminderNotification(latest);
+      }
+    } catch (e) {
+      console.error('Error checking for new reminder notification:', e);
+    }
+  };
+
   // Load reminders from dedicated Supabase database on mount & on demand
   const loadRemindersFromDb = async () => {
     setIsSyncingReminders(true);
@@ -2876,6 +3032,7 @@ export default function App() {
       const res = await fetchReminders();
       if (res && res.reminders) {
         setReminders(res.reminders);
+        checkForNewReminderNotification(res.reminders);
       }
     } catch (e) {
       console.error('Failed to sync reminders from Supabase:', e);
@@ -2885,6 +3042,10 @@ export default function App() {
   };
 
   useEffect(() => {
+    const cached = getLocalReminders();
+    if (cached && cached.length > 0) {
+      checkForNewReminderNotification(cached);
+    }
     loadRemindersFromDb();
   }, []);
 
@@ -2894,6 +3055,23 @@ export default function App() {
     setViewingReminder(itemToView);
     setReminderModalSource(source);
     setShowReminderModal(true);
+  };
+
+  const handleDismissNewReminderModal = (reminderId, doNotShowAgain = false) => {
+    try {
+      localStorage.setItem('last_seen_reminder_id', reminderId);
+      if (doNotShowAgain) {
+        localStorage.setItem(`dismissed_reminder_pop_${reminderId}`, 'true');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setNewReminderNotification(null);
+  };
+
+  const handleViewReminderFromNotification = (reminder) => {
+    handleDismissNewReminderModal(reminder.id, true);
+    handleOpenReminderModal('all', null, reminder, 'view_reminders');
   };
 
   const handleSaveReminder = async (data, editId) => {
@@ -2921,6 +3099,10 @@ export default function App() {
     } else {
       const res = await addReminder(data);
       if (res && res.reminder) {
+        try {
+          localStorage.setItem('last_seen_reminder_id', res.reminder.id);
+          localStorage.setItem(`dismissed_reminder_pop_${res.reminder.id}`, 'true');
+        } catch {}
         setReminders((prev) => [res.reminder, ...prev.filter((r) => r.id !== res.reminder.id)]);
       }
     }
@@ -3223,11 +3405,17 @@ export default function App() {
         </main>
       </div>
 
-      {/* MODALS OUTSIDE LAYOUT */}
       {showUpdateModal && (
         <UpdateNotificationModal
           onConfirm={handleConfirmUpdateModal}
           onViewAnnouncements={handleViewAnnouncementsFromModal}
+        />
+      )}
+      {!showUpdateModal && newReminderNotification && (
+        <NewReminderNotificationModal
+          reminder={newReminderNotification}
+          onConfirm={(doNotShowAgain) => handleDismissNewReminderModal(newReminderNotification.id, doNotShowAgain)}
+          onViewReminder={() => handleViewReminderFromNotification(newReminderNotification)}
         />
       )}
       {showTemplates && <TidTemplatesModal onClose={() => setShowTemplates(false)} />}
