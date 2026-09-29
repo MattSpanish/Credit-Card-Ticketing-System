@@ -989,70 +989,11 @@ body.dark-mode .reminder-modal-tab.active {
     margin-bottom: 4px;
 }
 
-.btn-reminder-tab-search {
-    width: 30px;
-    height: 30px;
-    min-width: 30px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.90rem;
-    border-radius: 6px;
-    background: var(--bg-soft);
-    border: 1px solid var(--line);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all var(--t-fast) var(--ease);
-}
-
-.btn-reminder-tab-search:hover {
-    background: var(--bg-elevated);
-    color: #d97706;
-    border-color: #d97706;
-}
-
-.btn-reminder-tab-search.active {
-    background: rgba(217, 119, 6, 0.15);
-    border-color: #d97706;
-    color: #d97706;
-}
-
-body.dark-mode .btn-reminder-tab-search {
-    background: rgba(15, 26, 44, 0.55);
-    border-color: var(--glass-border-subtle);
-    color: var(--text-secondary);
-}
-
-body.dark-mode .btn-reminder-tab-search:hover {
-    background: rgba(217, 119, 6, 0.20);
-    border-color: #f59e0b;
-    color: #f59e0b;
-}
-
-body.dark-mode .btn-reminder-tab-search.active {
-    background: rgba(217, 119, 6, 0.25);
-    border-color: #f59e0b;
-    color: #fbbf24;
-}
-
 .reminder-inline-search-box {
     position: relative;
     display: inline-flex;
     align-items: center;
-    width: clamp(160px, 30vw, 240px);
-    animation: searchSlideIn 0.2s var(--ease) forwards;
-}
-
-@keyframes searchSlideIn {
-    from {
-        opacity: 0;
-        transform: translateX(8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    width: clamp(170px, 30vw, 240px);
 }
 
 .reminder-inline-search-icon {

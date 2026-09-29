@@ -2242,20 +2242,12 @@ function ReminderModal({
   const [isImportant, setIsImportant] = useState(editingReminder?.isImportant || false);
   const [errorMessage, setErrorMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const searchInputRef = useRef(null);
 
   const filteredReminders = useMemo(() => {
     if (!searchQuery.trim()) return reminders;
     const q = searchQuery.toLowerCase().trim();
     return reminders.filter((r) => (r.subject || '').toLowerCase().includes(q));
   }, [reminders, searchQuery]);
-
-  useEffect(() => {
-    if (isSearchOpen && searchInputRef.current) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    }
-  }, [isSearchOpen]);
 
   useEffect(() => {
     setCurrentModalSource(modalSource);
@@ -2433,53 +2425,33 @@ function ReminderModal({
             <div className="reminder-modal-tabs-actions">
               {activeTab !== 'add' && !currentEditItem && (
                 <>
-                  {isSearchOpen && (
-                    <div className="reminder-inline-search-box">
-                      <i className="bi bi-search reminder-inline-search-icon" aria-hidden="true"></i>
-                      <input
-                        ref={searchInputRef}
-                        type="text"
-                        className="reminder-inline-search-input"
-                        placeholder="Search subject..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Escape') {
-                            setSearchQuery('');
-                            setIsSearchOpen(false);
-                          }
-                        }}
-                        aria-label="Search reminder subjects"
-                      />
-                      {searchQuery && (
-                        <button
-                          type="button"
-                          className="reminder-inline-search-clear"
-                          onClick={() => setSearchQuery('')}
-                          title="Clear search"
-                          aria-label="Clear search"
-                        >
-                          <i className="bi bi-x-circle-fill" aria-hidden="true"></i>
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    className={`btn-reminder-tab-search ${isSearchOpen || searchQuery ? 'active' : ''}`}
-                    onClick={() => {
-                      setIsSearchOpen((prev) => {
-                        const next = !prev;
-                        if (!next && searchQuery) setSearchQuery('');
-                        return next;
-                      });
-                    }}
-                    title={isSearchOpen ? "Close search" : "Search reminders by subject"}
-                    aria-label="Search reminders by subject"
-                  >
-                    <i className={`bi ${isSearchOpen ? 'bi-x-lg' : 'bi-search'}`} aria-hidden="true"></i>
-                  </button>
+                  <div className="reminder-inline-search-box">
+                    <i className="bi bi-search reminder-inline-search-icon" aria-hidden="true"></i>
+                    <input
+                      type="text"
+                      className="reminder-inline-search-input"
+                      placeholder="Search subject..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setSearchQuery('');
+                        }
+                      }}
+                      aria-label="Search reminder subjects"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        className="reminder-inline-search-clear"
+                        onClick={() => setSearchQuery('')}
+                        title="Clear search"
+                        aria-label="Clear search"
+                      >
+                        <i className="bi bi-x-circle-fill" aria-hidden="true"></i>
+                      </button>
+                    )}
+                  </div>
 
                   <button
                     type="button"
