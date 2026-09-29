@@ -1092,8 +1092,7 @@ body.dark-mode .reminder-inline-search-clear:hover {
     letter-spacing: 0.03em;
 }
 
-.reminder-form-input,
-.reminder-form-textarea {
+.reminder-form-input {
     width: 100%;
     padding: 9px 12px;
     border-radius: var(--r-sm);
@@ -1104,6 +1103,40 @@ body.dark-mode .reminder-inline-search-clear:hover {
     font-size: 0.88rem;
     transition: all var(--t-fast) var(--ease);
     box-sizing: border-box;
+}
+
+.reminder-form-textarea {
+    width: 100%;
+    min-height: 120px;
+    max-height: 220px;
+    padding: 9px 12px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    resize: vertical;
+    overflow-y: auto;
+    transition: all var(--t-fast) var(--ease);
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+}
+
+.reminder-form-textarea::-webkit-scrollbar {
+    width: 6px;
+}
+.reminder-form-textarea::-webkit-scrollbar-track {
+    background: transparent;
+}
+.reminder-form-textarea::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 4px;
+}
+.reminder-form-textarea::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
 }
 
 .reminder-form-input:focus,
@@ -3783,7 +3816,6 @@ body.dark-mode .ai-mode-panel .text-grammar { color: var(--accent); }
     overflow-y: auto;
     box-shadow: var(--shadow-lg);
     animation: modalSlideUp var(--t-slow) var(--ease) forwards;
-    overflow: hidden;
 }
 
 body.dark-mode .break-modal-content {

@@ -89,11 +89,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-30-v299",
-    version: "v2.9.9",
+    id: "rel-2026-09-30-v2910",
+    version: "v2.9.10",
     date: "September 30, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
+    title: "Reminder Description Field Scrolling",
+    summary: "Enabled smooth vertical scrolling and custom scrollbar for the reminder description textarea.",
+    items: [
+      {
+        type: "improvement",
+        icon: "bi-arrows-vertical",
+        title: "Scrollable Reminder Description",
+        desc: "Added vertical scrolling with custom themed scrollbars to the description field when creating or editing reminders.",
+        tag: "Reminders"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-09-30-v299",
+    version: "v2.9.9",
+    date: "September 30, 2026",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
     title: "Announcements Card Clean-up",
     summary: "Streamlined announcement release cards by removing the secondary summary header.",
     items: [
@@ -645,7 +663,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.9';
+  const version = latestAnnouncement.version || 'v2.9.10';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1362,11 +1380,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.9.9">
+          <div className="logo" title="PH Portal v2.9.10">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.9.9</span>
+              <span className="logo-version">v2.9.10</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3245,7 +3263,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.9';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.10';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3261,7 +3279,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.9';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.10';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
