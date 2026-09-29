@@ -989,6 +989,142 @@ body.dark-mode .reminder-modal-tab.active {
     margin-bottom: 4px;
 }
 
+.btn-reminder-tab-search {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.90rem;
+    border-radius: 6px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+}
+
+.btn-reminder-tab-search:hover {
+    background: var(--bg-elevated);
+    color: #d97706;
+    border-color: #d97706;
+}
+
+.btn-reminder-tab-search.active {
+    background: rgba(217, 119, 6, 0.15);
+    border-color: #d97706;
+    color: #d97706;
+}
+
+body.dark-mode .btn-reminder-tab-search {
+    background: rgba(15, 26, 44, 0.55);
+    border-color: var(--glass-border-subtle);
+    color: var(--text-secondary);
+}
+
+body.dark-mode .btn-reminder-tab-search:hover {
+    background: rgba(217, 119, 6, 0.20);
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+
+body.dark-mode .btn-reminder-tab-search.active {
+    background: rgba(217, 119, 6, 0.25);
+    border-color: #f59e0b;
+    color: #fbbf24;
+}
+
+.reminder-inline-search-box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: clamp(160px, 30vw, 240px);
+    animation: searchSlideIn 0.2s var(--ease) forwards;
+}
+
+@keyframes searchSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.reminder-inline-search-icon {
+    position: absolute;
+    left: 9px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.reminder-inline-search-input {
+    width: 100%;
+    height: 30px;
+    padding: 0 28px 0 28px;
+    font-size: 0.82rem;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    transition: all var(--t-fast) var(--ease);
+    outline: none;
+    box-sizing: border-box;
+}
+
+.reminder-inline-search-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.75;
+}
+
+.reminder-inline-search-input:focus {
+    border-color: #d97706;
+    background: var(--bg-elevated);
+    box-shadow: 0 0 0 2.5px rgba(217, 119, 6, 0.18);
+}
+
+body.dark-mode .reminder-inline-search-input {
+    background: rgba(15, 26, 44, 0.65);
+    border-color: var(--glass-border-subtle);
+    color: var(--text-primary);
+}
+
+body.dark-mode .reminder-inline-search-input:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2.5px rgba(245, 158, 11, 0.22);
+}
+
+.reminder-inline-search-clear {
+    position: absolute;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.82rem;
+    padding: 0;
+}
+
+.reminder-inline-search-clear:hover {
+    color: #d97706;
+}
+
+body.dark-mode .reminder-inline-search-clear:hover {
+    color: #fbbf24;
+}
+
 .btn-add-reminder.btn-plus-only {
     width: 30px;
     height: 30px;
@@ -1044,114 +1180,6 @@ body.dark-mode .reminder-modal-tab.active {
     margin-top: 20px;
 }
 
-/* Reminder Modal Search Bar */
-.reminder-search-container {
-    margin-bottom: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.reminder-search-box {
-    position: relative;
-    display: flex;
-    align-items: center;
-    width: 100%;
-}
-
-.reminder-search-icon {
-    position: absolute;
-    left: 12px;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    pointer-events: none;
-    transition: color var(--t-fast) var(--ease);
-}
-
-.reminder-search-input {
-    width: 100%;
-    height: 38px;
-    padding: 0 34px 0 34px;
-    font-size: 0.86rem;
-    font-family: var(--font-sans);
-    color: var(--text-primary);
-    background: var(--bg-soft);
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    transition: all var(--t-fast) var(--ease);
-    outline: none;
-    box-sizing: border-box;
-}
-
-.reminder-search-input::placeholder {
-    color: var(--text-muted);
-    opacity: 0.8;
-}
-
-.reminder-search-input:focus {
-    border-color: #d97706;
-    background: var(--bg-elevated);
-    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18);
-}
-
-.reminder-search-box:focus-within .reminder-search-icon {
-    color: #d97706;
-}
-
-body.dark-mode .reminder-search-input {
-    background: rgba(15, 26, 44, 0.55);
-    border-color: var(--glass-border-subtle);
-    color: var(--text-primary);
-}
-
-body.dark-mode .reminder-search-input:focus {
-    border-color: #f59e0b;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22);
-}
-
-body.dark-mode .reminder-search-box:focus-within .reminder-search-icon {
-    color: #f59e0b;
-}
-
-.reminder-search-clear-btn {
-    position: absolute;
-    right: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 0.95rem;
-    padding: 0;
-    transition: all var(--t-fast) var(--ease);
-}
-
-.reminder-search-clear-btn:hover {
-    color: #d97706;
-}
-
-body.dark-mode .reminder-search-clear-btn:hover {
-    color: #fbbf24;
-}
-
-.reminder-search-status {
-    font-size: 0.76rem;
-    color: var(--text-muted);
-    padding: 0 2px;
-}
-
-.reminder-search-status strong {
-    color: #d97706;
-}
-
-body.dark-mode .reminder-search-status strong {
-    color: #fbbf24;
-}
 
 /* Empty Search Results */
 .reminder-empty-search-state {

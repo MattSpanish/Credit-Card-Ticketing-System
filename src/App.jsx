@@ -2242,12 +2242,20 @@ function ReminderModal({
   const [isImportant, setIsImportant] = useState(editingReminder?.isImportant || false);
   const [errorMessage, setErrorMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchInputRef = useRef(null);
 
   const filteredReminders = useMemo(() => {
     if (!searchQuery.trim()) return reminders;
     const q = searchQuery.toLowerCase().trim();
     return reminders.filter((r) => (r.subject || '').toLowerCase().includes(q));
   }, [reminders, searchQuery]);
+
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [isSearchOpen]);
 
   useEffect(() => {
     setCurrentModalSource(modalSource);
@@ -2418,25 +2426,75 @@ function ReminderModal({
                 aria-selected={activeTab === 'all' && !currentEditItem}
               >
                 <i className="bi bi-collection" aria-hidden="true"></i>
-                <span>All Reminders ({reminders.length})</span>
+                <span>All Reminders ({searchQuery.trim() ? `${filteredReminders.length}/${reminders.length}` : reminders.length})</span>
               </button>
             </div>
 
             <div className="reminder-modal-tabs-actions">
               {activeTab !== 'add' && !currentEditItem && (
-                <button
-                  type="button"
-                  className="btn-add-reminder btn-plus-only"
-                  onClick={() => {
-                    if (currentEditItem) handleCancelEdit();
-                    setActiveTab('add');
-                    setViewingReminder(null);
-                  }}
-                  title="Add a new reminder"
-                  aria-label="Add reminder"
-                >
-                  <i className="bi bi-plus-lg" aria-hidden="true"></i>
-                </button>
+                <>
+                  {isSearchOpen && (
+                    <div className="reminder-inline-search-box">
+                      <i className="bi bi-search reminder-inline-search-icon" aria-hidden="true"></i>
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        className="reminder-inline-search-input"
+                        placeholder="Search subject..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            setSearchQuery('');
+                            setIsSearchOpen(false);
+                          }
+                        }}
+                        aria-label="Search reminder subjects"
+                      />
+                      {searchQuery && (
+                        <button
+                          type="button"
+                          className="reminder-inline-search-clear"
+                          onClick={() => setSearchQuery('')}
+                          title="Clear search"
+                          aria-label="Clear search"
+                        >
+                          <i className="bi bi-x-circle-fill" aria-hidden="true"></i>
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    className={`btn-reminder-tab-search ${isSearchOpen || searchQuery ? 'active' : ''}`}
+                    onClick={() => {
+                      setIsSearchOpen((prev) => {
+                        const next = !prev;
+                        if (!next && searchQuery) setSearchQuery('');
+                        return next;
+                      });
+                    }}
+                    title={isSearchOpen ? "Close search" : "Search reminders by subject"}
+                    aria-label="Search reminders by subject"
+                  >
+                    <i className={`bi ${isSearchOpen ? 'bi-x-lg' : 'bi-search'}`} aria-hidden="true"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-add-reminder btn-plus-only"
+                    onClick={() => {
+                      if (currentEditItem) handleCancelEdit();
+                      setActiveTab('add');
+                      setViewingReminder(null);
+                    }}
+                    title="Add a new reminder"
+                    aria-label="Add reminder"
+                  >
+                    <i className="bi bi-plus-lg" aria-hidden="true"></i>
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -2601,44 +2659,6 @@ function ReminderModal({
               </div>
             ) : (
               <div>
-                {/* Search Bar for Reminder Subjects */}
-                {reminders.length > 0 && (
-                  <div className="reminder-search-container">
-                    <div className="reminder-search-box">
-                      <i className="bi bi-search reminder-search-icon" aria-hidden="true"></i>
-                      <input
-                        type="text"
-                        className="reminder-search-input"
-                        placeholder="Search reminder subjects..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Escape') setSearchQuery('');
-                        }}
-                        aria-label="Search reminder subjects"
-                      />
-                      {searchQuery && (
-                        <button
-                          type="button"
-                          className="reminder-search-clear-btn"
-                          onClick={() => setSearchQuery('')}
-                          title="Clear search"
-                          aria-label="Clear search"
-                        >
-                          <i className="bi bi-x-circle-fill" aria-hidden="true"></i>
-                        </button>
-                      )}
-                    </div>
-                    {searchQuery.trim() && (
-                      <div className="reminder-search-status">
-                        <span>
-                          Found <strong>{filteredReminders.length}</strong> matching {filteredReminders.length === 1 ? 'reminder' : 'reminders'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {reminders.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-muted)' }}>
                     <i className="bi bi-clipboard-x" style={{ fontSize: '2.4rem', opacity: 0.6, display: 'block', marginBottom: 12 }}></i>
