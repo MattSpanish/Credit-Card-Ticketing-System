@@ -89,11 +89,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-30-v294",
-    version: "v2.9.4",
+    id: "rel-2026-09-30-v295",
+    version: "v2.9.5",
     date: "September 30, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
+    title: "Stat Cards Clean-up",
+    summary: "Removed secondary sub-labels from dashboard stat cards for a streamlined appearance.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-bar-chart-fill",
+        title: "Clean Stat Cards",
+        desc: "Removed sub-labels below stat numbers across all metric cards.",
+        tag: "Dashboard"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-09-30-v294",
+    version: "v2.9.4",
+    date: "September 30, 2026",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
     title: "Shift Report Composer Cleanup",
     summary: "Cleaned up the Shift Report composer card header to show only 'Shift Report'.",
     items: [
@@ -555,7 +573,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.4';
+  const version = latestAnnouncement.version || 'v2.9.5';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1273,11 +1291,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.9.4">
+          <div className="logo" title="PH Portal v2.9.5">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.9.4</span>
+              <span className="logo-version">v2.9.5</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1581,7 +1599,6 @@ function DashboardGrid() {
           <i className="bi bi-collection-fill" aria-hidden="true"></i> Your Tickets
         </div>
         <div className="stat-value" id="dashboardYourTickets">0</div>
-        <div className="stat-meta">Overall total tickets</div>
         <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,18 12,14 24,16 36,8 48,12 60,5 72,9 84,3 100,7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -1593,7 +1610,6 @@ function DashboardGrid() {
           <i className="bi bi-clock-history" aria-hidden="true"></i> Yesterday Tickets
         </div>
         <div className="stat-value" id="dashboardYesterdayTickets">0</div>
-        <div className="stat-meta">Created yesterday</div>
         <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,16 12,14 24,15 36,11 48,13 60,8 72,10 84,6 100,8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -1605,7 +1621,6 @@ function DashboardGrid() {
           <i className="bi bi-calendar2-check-fill" aria-hidden="true"></i> Today Tickets
         </div>
         <div className="stat-value" id="dashboardTodayTickets">0</div>
-        <div className="stat-meta">Created today</div>
         <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,18 12,14 24,16 36,8 48,12 60,5 72,9 84,3 100,7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -1617,7 +1632,6 @@ function DashboardGrid() {
           <i className="bi bi-check-circle-fill" aria-hidden="true"></i> Resolved
         </div>
         <div className="stat-value" id="dashboardResolvedTickets">0</div>
-        <div className="stat-meta">Total resolved tickets</div>
         <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,16 12,12 24,14 36,10 48,12 60,7 72,9 84,4 100,6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -1633,7 +1647,6 @@ function DashboardGrid() {
           <i className="bi bi-cpu-fill" aria-hidden="true"></i> Backend
         </div>
         <div className="stat-value" id="dashboardBackendTickets">0</div>
-        <div className="stat-meta">Other task tickets</div>
         <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,15 12,18 24,10 36,14 48,9 60,13 72,8 84,11 100,6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -1651,7 +1664,6 @@ function DashboardGrid() {
           <i className="bi bi-hourglass-split" aria-hidden="true"></i> Pending
         </div>
         <div className="stat-value" id="dashboardPendingTickets">0</div>
-        <div className="stat-meta">Total pending tickets</div>
         <svg className="stat-sparkline" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,20 12,18 24,16 36,14 48,16 60,12 72,14 84,10 100,12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -3165,7 +3177,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.4';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.5';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3181,7 +3193,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.4';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.5';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
