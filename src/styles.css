@@ -4746,7 +4746,7 @@ body.dark-mode .shift-feed-card {
 .composer-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
     margin-bottom: 18px;
     padding-bottom: 14px;
@@ -4758,7 +4758,7 @@ body.dark-mode .composer-header {
 }
 
 .composer-title-group h3 {
-    margin: 0 0 4px 0;
+    margin: 0;
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-primary);

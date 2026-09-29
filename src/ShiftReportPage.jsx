@@ -403,9 +403,8 @@ export default function ShiftReportPage({ onBackToDashboard }) {
             <div className="composer-title-group">
               <h3>
                 <i className="bi bi-pencil-square me-2" aria-hidden="true"></i>
-                Paste Shift Report
+                Shift Report
               </h3>
-              <p className="composer-hint">Paste your formatted report here. Press <strong>Ctrl + V</strong> with an image copied to attach screenshots!</p>
             </div>
             <button
               type="button"
