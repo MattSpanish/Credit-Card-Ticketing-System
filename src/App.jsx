@@ -584,7 +584,7 @@ function formatReminderDate(isoString) {
   }
 }
 
-function NewReminderNotificationModal({ reminder, onConfirm, onViewReminder }) {
+function NewReminderNotificationModal({ reminder, onConfirm }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   if (!reminder) return null;
 
@@ -600,10 +600,7 @@ function NewReminderNotificationModal({ reminder, onConfirm, onViewReminder }) {
         aria-labelledby="reminder-popup-title"
       >
         {/* Header */}
-        <div className="update-modal-header">
-          <div className="update-icon-glow reminder-popup-glow">
-            <i className="bi bi-bell-fill" aria-hidden="true"></i>
-          </div>
+        <div className="update-modal-header reminder-popup-header">
           <div className="update-header-info">
             <div className="update-header-tags">
               <div className="update-header-left-meta">
@@ -616,17 +613,8 @@ function NewReminderNotificationModal({ reminder, onConfirm, onViewReminder }) {
                   </span>
                 )}
               </div>
-              {reminder.isImportant ? (
-                <span className="reminder-important-chip">
-                  <i className="bi bi-star-fill me-1" aria-hidden="true"></i> IMPORTANT
-                </span>
-              ) : (
-                <span className="update-pill-badge">
-                  <i className="bi bi-stars"></i> TEAM REMINDER
-                </span>
-              )}
             </div>
-            <h3 id="reminder-popup-title" className="update-title" style={{ fontSize: '1.18rem' }}>
+            <h3 id="reminder-popup-title" className="update-title" style={{ fontSize: '1.16rem', margin: '4px 0 0' }}>
               New Reminder Added
             </h3>
           </div>
@@ -656,44 +644,26 @@ function NewReminderNotificationModal({ reminder, onConfirm, onViewReminder }) {
               </p>
             )}
           </div>
-
-          <button
-            type="button"
-            className="update-view-all-link"
-            onClick={onViewReminder}
-            title="Open View Reminders modal to see full details"
-          >
-            <i className="bi bi-eye me-1"></i> Open full reminder details
-          </button>
         </div>
 
         {/* Footer */}
-        <div className="update-modal-footer">
+        <div className="update-modal-footer reminder-popup-footer">
           <label className="update-checkbox-label">
             <input
               type="checkbox"
               checked={doNotShowAgain}
               onChange={(e) => setDoNotShowAgain(e.target.checked)}
             />
-            <span>Do not show again for this reminder</span>
+            <span>Don’t show again</span>
           </label>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              type="button"
-              className="btn-update-view-details"
-              onClick={onViewReminder}
-            >
-              <i className="bi bi-journal-text me-1"></i> View Details
-            </button>
-            <button
-              type="button"
-              className="btn-update-ok btn-reminder-popup-ok"
-              onClick={() => onConfirm(doNotShowAgain)}
-            >
-              <i className="bi bi-check-lg me-1"></i> OK, got it
-            </button>
-          </div>
+          <button
+            type="button"
+            className="btn-reminder-popup-ok"
+            onClick={() => onConfirm(doNotShowAgain)}
+          >
+            <i className="bi bi-check-lg" aria-hidden="true"></i> OK, Got It
+          </button>
         </div>
       </div>
     </div>
@@ -3415,7 +3385,6 @@ export default function App() {
         <NewReminderNotificationModal
           reminder={newReminderNotification}
           onConfirm={(doNotShowAgain) => handleDismissNewReminderModal(newReminderNotification.id, doNotShowAgain)}
-          onViewReminder={() => handleViewReminderFromNotification(newReminderNotification)}
         />
       )}
       {showTemplates && <TidTemplatesModal onClose={() => setShowTemplates(false)} />}

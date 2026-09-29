@@ -6266,6 +6266,10 @@ body.dark-mode .update-view-all-link:hover {
    NEW REMINDER NOTIFICATION POPUP MODAL
    ========================================================= */
 
+.reminder-popup-card {
+    max-width: 520px;
+}
+
 .reminder-popup-card::before {
     background: linear-gradient(90deg, #f59e0b, #f97316, #eab308) !important;
 }
@@ -6274,17 +6278,8 @@ body.dark-mode .reminder-popup-card {
     box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.8), 0 0 26px rgba(245, 158, 11, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-.reminder-popup-glow {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.24));
-    border: 1px solid rgba(245, 158, 11, 0.38);
-    color: #f59e0b;
-    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2);
-}
-
-body.dark-mode .reminder-popup-glow {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.35));
-    border-color: rgba(251, 191, 36, 0.45);
-    color: #fbbf24;
+.reminder-popup-header {
+    padding: 22px 24px 12px;
 }
 
 .reminder-popup-pill {
@@ -6311,7 +6306,7 @@ body.dark-mode .reminder-popup-pill {
     background: var(--bg-soft, #f8fafc);
     border: 1px solid var(--line, #e2e8f0);
     border-radius: 12px;
-    padding: 16px 18px;
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -6356,7 +6351,7 @@ body.dark-mode .reminder-popup-subject-label {
 }
 
 .reminder-popup-subject-text {
-    font-size: 1.05rem;
+    font-size: 1.02rem;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.4;
@@ -6364,7 +6359,7 @@ body.dark-mode .reminder-popup-subject-label {
 }
 
 .reminder-popup-desc-preview {
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     color: var(--text-secondary);
     line-height: 1.45;
     margin: 0;
@@ -6376,46 +6371,44 @@ body.dark-mode .reminder-popup-subject-label {
     word-break: break-word;
 }
 
-.btn-update-view-details {
+.reminder-popup-footer {
+    padding: 14px 24px 18px;
+}
+
+.btn-reminder-popup-ok {
     background: var(--bg-soft, #f1f5f9);
     border: 1px solid var(--line, #cbd5e1);
     color: var(--text-primary);
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 0.85rem;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-}
-
-.btn-update-view-details:hover {
-    background: var(--bg-elevated);
-    border-color: #d97706;
-    color: #d97706;
-    transform: translateY(-1px);
-}
-
-body.dark-mode .btn-update-view-details {
-    background: rgba(15, 26, 44, 0.65);
-    border-color: var(--line, #334155);
-}
-
-body.dark-mode .btn-update-view-details:hover {
-    border-color: #f59e0b;
-    color: #fbbf24;
-}
-
-.btn-reminder-popup-ok {
-    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25) !important;
+    gap: 5px;
+    transition: all var(--t-fast) var(--ease);
+    box-shadow: none !important;
 }
 
 .btn-reminder-popup-ok:hover {
-    background: linear-gradient(135deg, #d97706, #b45309) !important;
-    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35) !important;
+    background: var(--bg-elevated);
+    border-color: #d97706;
+    color: #d97706;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+body.dark-mode .btn-reminder-popup-ok {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--glass-border-subtle, rgba(255, 255, 255, 0.12));
+    color: var(--text-primary);
+}
+
+body.dark-mode .btn-reminder-popup-ok:hover {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: #f59e0b;
+    color: #fbbf24;
 }
 
 
