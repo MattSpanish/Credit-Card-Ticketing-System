@@ -1995,7 +1995,12 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
 
     // ─── INIT & TAB MANGEMENT ───
     function initTheme() {
-      if (localStorage.getItem('theme_creditcard') === 'dark') document.body.classList.add('dark-mode');
+      const saved = localStorage.getItem('theme_creditcard');
+      if (saved === 'light') {
+        document.body.classList.remove('dark-mode');
+      } else {
+        document.body.classList.add('dark-mode');
+      }
     }
 
     window.switchToTab = function(tab) {

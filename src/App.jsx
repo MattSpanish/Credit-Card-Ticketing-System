@@ -1183,9 +1183,15 @@ function Sidebar({
     if (!isMobileView) setIsMobileNavOpen(false);
   }, [isMobileView]);
 
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    const saved = localStorage.getItem('theme_creditcard');
+    return saved !== 'light';
+  });
+
   const toggleTheme = () => {
     const isDark = document.body.classList.toggle('dark-mode');
     localStorage.setItem('theme_creditcard', isDark ? 'dark' : 'light');
+    setIsDarkTheme(isDark);
   };
 
   const handleNavAction = (action) => {
@@ -1220,10 +1226,10 @@ function Sidebar({
               type="button"
               className="theme-toggle"
               onClick={toggleTheme}
-              aria-label="Toggle dark mode"
-              title="Toggle theme"
+              aria-label={isDarkTheme ? "Switch to light mode" : "Switch to dark mode"}
+              title={isDarkTheme ? "Switch to light mode" : "Switch to dark mode"}
             >
-              <i className="bi bi-moon-stars-fill" aria-hidden="true"></i>
+              <i className={`bi ${isDarkTheme ? 'bi-sun-fill' : 'bi-moon-stars-fill'}`} aria-hidden="true"></i>
             </button>
             {isMobileView && (
               <button
@@ -3145,6 +3151,14 @@ export default function App() {
     window.openTeamPhoto = () => setShowTeamPhoto(true);
     window.switchToFormTab = () => setCurrentView('dashboard');
     window.switchToDashboardView = () => setCurrentView('dashboard');
+
+    const savedTheme = localStorage.getItem('theme_creditcard');
+    if (savedTheme === 'light') {
+      document.body.classList.remove('dark-mode');
+    } else {
+      document.body.classList.add('dark-mode');
+    }
+
     initCreditcardApp();
     return () => { 
       delete window.openTeamPhoto; 
@@ -3260,11 +3274,18 @@ export default function App() {
           }
           .break-modal-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: rgba(15, 23, 42, 0.75);
+            background-color: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(14px) saturate(160%);
+            -webkit-backdrop-filter: blur(14px) saturate(160%);
             display: flex; align-items: center; justify-content: center;
             z-index: 99999 !important; 
             padding: 16px; box-sizing: border-box;
             animation: overlayFadeIn 0.3s ease forwards;
+          }
+          body.dark-mode .break-modal-overlay {
+            background-color: rgba(3, 7, 18, 0.72);
+            backdrop-filter: blur(16px) saturate(160%);
+            -webkit-backdrop-filter: blur(16px) saturate(160%);
           }
           .break-modal-content {
             background-color: var(--panel-bg, #ffffff);
