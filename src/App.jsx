@@ -89,8 +89,8 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-30-v291",
-    version: "v2.9.1",
+    id: "rel-2026-09-30-v292",
+    version: "v2.9.2",
     date: "September 30, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
@@ -519,9 +519,8 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.1';
+  const version = latestAnnouncement.version || 'v2.9.2';
   const title = latestAnnouncement.title || 'System Update';
-  const summary = latestAnnouncement.summary || '';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
 
@@ -546,21 +545,18 @@ function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
 
         {/* Body */}
         <div className="update-modal-body">
-          <p className="update-summary-text">{summary}</p>
-
           {items.length > 0 && (
             <div className="update-highlights-list">
               {items.slice(0, 3).map((item, idx) => (
-                <div key={idx} className="update-highlight-item">
+                <div key={idx} className="update-highlight-item" style={{ alignItems: 'center' }}>
                   <div className="update-highlight-icon-box">
                     <i className={`bi ${item.icon || 'bi-check-circle-fill'}`}></i>
                   </div>
                   <div className="update-highlight-content">
-                    <div className="update-highlight-header-row">
+                    <div className="update-highlight-header-row" style={{ marginBottom: 0 }}>
                       <span className="update-highlight-title">{item.title}</span>
                       {item.tag && <span className="update-highlight-tag">{item.tag}</span>}
                     </div>
-                    <p className="update-highlight-desc">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -572,7 +568,7 @@ function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
             className="update-view-all-link"
             onClick={onViewAnnouncements}
           >
-            <i className="bi bi-journal-text me-1"></i> View full update details in Announcements
+            <i className="bi bi-journal-text me-1"></i> View full details
           </button>
         </div>
 
@@ -584,7 +580,7 @@ function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
               checked={doNotShowAgain}
               onChange={(e) => setDoNotShowAgain(e.target.checked)}
             />
-            <span>Do not show again for this update</span>
+            <span>Don’t show again</span>
           </label>
 
           <button
@@ -1241,11 +1237,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.9.1">
+          <div className="logo" title="Tickets v2.9.2">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.9.1</span>
+              <span className="logo-version">v2.9.2</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3133,7 +3129,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.2';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3149,7 +3145,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.2';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
