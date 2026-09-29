@@ -4410,7 +4410,7 @@ body.dark-mode .release-badge-latest {
     font-size: 0.98rem;
     font-weight: 700;
     color: var(--text-primary);
-    margin: 2px 0 4px;
+    margin: 2px 0 10px;
     line-height: 1.35;
 }
 .release-summary {
