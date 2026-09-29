@@ -2132,29 +2132,53 @@ function ReminderBar({ reminders = [], onOpenModal }) {
             </p>
           </div>
         ) : (
-          <div
-            key={currentReminder.id || currentIndex}
-            className="reminder-slide-item"
-            onClick={() => onOpenModal('all', null, currentReminder, 'slide')}
-            title="Click to view full details"
-          >
-            <div className="reminder-header-row">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
-                <h4 className="reminder-title">{currentReminder.subject}</h4>
-                {currentReminder.isImportant && (
-                  <span className="reminder-tag-important">
-                    <i className="bi bi-star-fill me-1" aria-hidden="true"></i> Important
-                  </span>
-                )}
+          (() => {
+            const rawDesc = currentReminder.description || '';
+            const cleanPreviewText = rawDesc.replace(/\s+/g, ' ').trim();
+            const isLongText = rawDesc.length > 120 || rawDesc.includes('\n');
+
+            return (
+              <div
+                key={currentReminder.id || currentIndex}
+                className="reminder-slide-item"
+                onClick={() => onOpenModal('all', null, currentReminder, 'slide')}
+                title="Click to view full details"
+              >
+                <div className="reminder-header-row">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
+                    <h4 className="reminder-title">{currentReminder.subject}</h4>
+                    {currentReminder.isImportant && (
+                      <span className="reminder-tag-important">
+                        <i className="bi bi-star-fill me-1" aria-hidden="true"></i> Important
+                      </span>
+                    )}
+                  </div>
+                  {activeReminders.length > 1 && (
+                    <span className="reminder-counter-tag">
+                      {currentIndex + 1} of {activeReminders.length}
+                    </span>
+                  )}
+                </div>
+                <div className="reminder-desc-preview-wrap">
+                  <p className="reminder-desc-text">{cleanPreviewText}</p>
+                  {isLongText && (
+                    <button
+                      type="button"
+                      className="reminder-view-details-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenModal('all', null, currentReminder, 'slide');
+                      }}
+                      title="View full reminder details"
+                    >
+                      <span>View Details</span>
+                      <i className="bi bi-arrow-right" aria-hidden="true"></i>
+                    </button>
+                  )}
+                </div>
               </div>
-              {activeReminders.length > 1 && (
-                <span className="reminder-counter-tag">
-                  {currentIndex + 1} of {activeReminders.length}
-                </span>
-              )}
-            </div>
-            <p className="reminder-desc-text">{currentReminder.description}</p>
-          </div>
+            );
+          })()
         )}
       </div>
 
