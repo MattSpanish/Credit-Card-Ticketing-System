@@ -89,11 +89,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-30-v295",
-    version: "v2.9.5",
+    id: "rel-2026-09-30-v296",
+    version: "v2.9.6",
     date: "September 30, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
+    title: "Header Subtitle Cleanup",
+    summary: "Removed 'Capture issues quickly and resolve faster' subtitle from the top header.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layout-text-window-reverse",
+        title: "Clean Header Branding",
+        desc: "Removed the secondary subtitle under the Credit Card Support Center title in the header.",
+        tag: "Header"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-09-30-v295",
+    version: "v2.9.5",
+    date: "September 30, 2026",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
     title: "Stat Cards Clean-up",
     summary: "Removed secondary sub-labels from dashboard stat cards for a streamlined appearance.",
     items: [
@@ -573,7 +591,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.5';
+  const version = latestAnnouncement.version || 'v2.9.6';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1291,11 +1309,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.9.5">
+          <div className="logo" title="PH Portal v2.9.6">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.9.5</span>
+              <span className="logo-version">v2.9.6</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1485,7 +1503,6 @@ function Header() {
           <img src={appLogo} alt="CC Support Logo" className="header-logo-img" />
           <div className="header-titles">
             <h1>Credit Card Support Center</h1>
-            <p className="small">Capture issues quickly and resolve faster.</p>
           </div>
         </div>
       </div>
@@ -3177,7 +3194,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.5';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.6';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3193,7 +3210,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.5';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.6';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
