@@ -89,13 +89,13 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-30-v2910",
-    version: "v2.9.10",
+    id: "rel-2026-09-30-v2911",
+    version: "v2.9.11",
     date: "September 30, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
-    title: "Reminder Description Field Scrolling",
-    summary: "Enabled smooth vertical scrolling and custom scrollbar for the reminder description textarea.",
+    title: "PH Portal System & UX Updates",
+    summary: "Consolidated release featuring PH Portal branding, reminder pop-ups & scrolling, cleaner stat cards, and interface clean-ups.",
     items: [
       {
         type: "improvement",
@@ -103,144 +103,56 @@ const ANNOUNCEMENTS_DATA = [
         title: "Scrollable Reminder Description",
         desc: "Added vertical scrolling with custom themed scrollbars to the description field when creating or editing reminders.",
         tag: "Reminders"
-      }
-    ]
-  },
-  {
-    id: "rel-2026-09-30-v299",
-    version: "v2.9.9",
-    date: "September 30, 2026",
-    isLatest: false,
-    badge: "PREVIOUS RELEASE",
-    title: "Announcements Card Clean-up",
-    summary: "Streamlined announcement release cards by removing the secondary summary header.",
-    items: [
+      },
       {
         type: "ui",
         icon: "bi-card-heading",
         title: "Clean Announcement Cards",
         desc: "Removed the secondary summary text under update titles on the announcements feed.",
         tag: "Announcements"
-      }
-    ]
-  },
-  {
-    id: "rel-2026-09-30-v298",
-    version: "v2.9.8",
-    date: "September 30, 2026",
-    isLatest: false,
-    badge: "PREVIOUS RELEASE",
-    title: "Shift Report Placeholder Clean-up",
-    summary: "Removed default placeholder instructions and example text from the Shift Report textarea.",
-    items: [
+      },
       {
         type: "ui",
         icon: "bi-textarea-t",
         title: "Clean Shift Report Textarea",
         desc: "Removed the multi-line placeholder from the shift report composer textarea for a clean input view.",
         tag: "Shift Report"
-      }
-    ]
-  },
-  {
-    id: "rel-2026-09-30-v297",
-    version: "v2.9.7",
-    date: "September 30, 2026",
-    isLatest: false,
-    badge: "PREVIOUS RELEASE",
-    title: "Panel Subtitles Clean-up",
-    summary: "Removed descriptive subtitles from Ticket Form and Activity Feed headers.",
-    items: [
-      {
-        type: "ui",
-        icon: "bi-layout-text-sidebar",
-        title: "Simplified Form & Feed Headers",
-        desc: "Removed secondary description text under Ticket form and Credit Card History headers.",
-        tag: "UI Clean-up"
-      }
-    ]
-  },
-  {
-    id: "rel-2026-09-30-v296",
-    version: "v2.9.6",
-    date: "September 30, 2026",
-    isLatest: false,
-    badge: "PREVIOUS RELEASE",
-    title: "Header Subtitle Cleanup",
-    summary: "Removed 'Capture issues quickly and resolve faster' subtitle from the top header.",
-    items: [
-      {
-        type: "ui",
-        icon: "bi-layout-text-window-reverse",
-        title: "Clean Header Branding",
-        desc: "Removed the secondary subtitle under the Credit Card Support Center title in the header.",
-        tag: "Header"
-      }
-    ]
-  },
-  {
-    id: "rel-2026-09-30-v295",
-    version: "v2.9.5",
-    date: "September 30, 2026",
-    isLatest: false,
-    badge: "PREVIOUS RELEASE",
-    title: "Stat Cards Clean-up",
-    summary: "Removed secondary sub-labels from dashboard stat cards for a streamlined appearance.",
-    items: [
-      {
-        type: "ui",
-        icon: "bi-bar-chart-fill",
-        title: "Clean Stat Cards",
-        desc: "Removed sub-labels below stat numbers across all metric cards.",
-        tag: "Dashboard"
-      }
-    ]
-  },
-  {
-    id: "rel-2026-09-30-v294",
-    version: "v2.9.4",
-    date: "September 30, 2026",
-    isLatest: false,
-    badge: "PREVIOUS RELEASE",
-    title: "Shift Report Composer Cleanup",
-    summary: "Cleaned up the Shift Report composer card header to show only 'Shift Report'.",
-    items: [
+      },
       {
         type: "ui",
         icon: "bi-pencil-square",
         title: "Clean Shift Report Header",
         desc: "Simplified the composer header to 'Shift Report' and removed unnecessary instruction text.",
         tag: "Shift Report"
-      }
-    ]
-  },
-  {
-    id: "rel-2026-09-30-v293",
-    version: "v2.9.3",
-    date: "September 30, 2026",
-    isLatest: false,
-    badge: "PREVIOUS RELEASE",
-    title: "PH Portal Branding Update",
-    summary: "Updated sidebar branding name to PH Portal.",
-    items: [
+      },
+      {
+        type: "ui",
+        icon: "bi-layout-text-sidebar",
+        title: "Simplified Form & Feed Headers",
+        desc: "Removed secondary description text under Ticket form and Credit Card History headers.",
+        tag: "UI Clean-up"
+      },
+      {
+        type: "ui",
+        icon: "bi-layout-text-window-reverse",
+        title: "Clean Header Branding",
+        desc: "Removed the secondary subtitle under the Credit Card Support Center title in the header.",
+        tag: "Header"
+      },
+      {
+        type: "ui",
+        icon: "bi-bar-chart-fill",
+        title: "Clean Stat Cards",
+        desc: "Removed sub-labels below stat numbers across all metric cards.",
+        tag: "Dashboard"
+      },
       {
         type: "ui",
         icon: "bi-tag-fill",
         title: "Branding Update to PH Portal",
         desc: "Updated sidebar logo title and text from 'Tickets' to 'PH Portal'.",
         tag: "Branding"
-      }
-    ]
-  },
-  {
-    id: "rel-2026-09-30-v292",
-    version: "v2.9.2",
-    date: "September 30, 2026",
-    isLatest: false,
-    badge: "PREVIOUS RELEASE",
-    title: "New Reminder Pop-ups, Search & Default Dark Mode",
-    summary: "Added new team reminder pop-up notification, inline search in View Reminders, default dark mode on first visit, and backdrop blur on modals.",
-    items: [
+      },
       {
         type: "feature",
         icon: "bi-bell-fill",
@@ -663,7 +575,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.10';
+  const version = latestAnnouncement.version || 'v2.9.11';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -691,7 +603,7 @@ function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
         <div className="update-modal-body">
           {items.length > 0 && (
             <div className="update-highlights-list">
-              {items.slice(0, 3).map((item, idx) => (
+              {items.map((item, idx) => (
                 <div key={idx} className="update-highlight-item" style={{ alignItems: 'center' }}>
                   <div className="update-highlight-icon-box">
                     <i className={`bi ${item.icon || 'bi-check-circle-fill'}`}></i>
@@ -1380,11 +1292,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.9.10">
+          <div className="logo" title="PH Portal v2.9.11">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.9.10</span>
+              <span className="logo-version">v2.9.11</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3263,7 +3175,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.10';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.11';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3279,7 +3191,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.10';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.11';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
