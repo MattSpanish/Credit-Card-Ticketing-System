@@ -2241,6 +2241,13 @@ function ReminderModal({
   const [description, setDescription] = useState(editingReminder?.description || '');
   const [isImportant, setIsImportant] = useState(editingReminder?.isImportant || false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredReminders = useMemo(() => {
+    if (!searchQuery.trim()) return reminders;
+    const q = searchQuery.toLowerCase().trim();
+    return reminders.filter((r) => (r.subject || '').toLowerCase().includes(q));
+  }, [reminders, searchQuery]);
 
   useEffect(() => {
     setCurrentModalSource(modalSource);
@@ -2592,92 +2599,148 @@ function ReminderModal({
                   </div>
                 </div>
               </div>
-            ) : reminders.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-muted)' }}>
-                <i className="bi bi-clipboard-x" style={{ fontSize: '2.4rem', opacity: 0.6, display: 'block', marginBottom: 12 }}></i>
-                <p style={{ margin: '0 0 16px', fontSize: '0.92rem' }}>No reminders yet. Add a new reminder for the team.</p>
-                <button
-                  type="button"
-                  className="btn-add-reminder"
-                  onClick={() => setActiveTab('add')}
-                >
-                  <i className="bi bi-plus-lg" aria-hidden="true"></i> Add Reminder
-                </button>
-              </div>
             ) : (
-              /* All Reminders List: Only display the Subject of each reminder */
-              <div className="reminder-cards-list">
-                {reminders.map((reminder) => (
-                  <div key={reminder.id} className="reminder-card-item">
-                    <div className="reminder-card-main-info">
-                      <div className="reminder-card-title-group" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <i className="bi bi-pin-angle-fill reminder-pin-icon" aria-hidden="true"></i>
-                        <h4
-                          className="reminder-card-subject"
-                          onClick={() => setViewingReminder(reminder)}
-                          style={{ cursor: 'pointer' }}
-                          title="Click to view details"
+              <div>
+                {/* Search Bar for Reminder Subjects */}
+                {reminders.length > 0 && (
+                  <div className="reminder-search-container">
+                    <div className="reminder-search-box">
+                      <i className="bi bi-search reminder-search-icon" aria-hidden="true"></i>
+                      <input
+                        type="text"
+                        className="reminder-search-input"
+                        placeholder="Search reminder subjects..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') setSearchQuery('');
+                        }}
+                        aria-label="Search reminder subjects"
+                      />
+                      {searchQuery && (
+                        <button
+                          type="button"
+                          className="reminder-search-clear-btn"
+                          onClick={() => setSearchQuery('')}
+                          title="Clear search"
+                          aria-label="Clear search"
                         >
-                          {reminder.subject}
-                        </h4>
-                        {reminder.isImportant ? (
-                          <span className="reminder-tag-important">
-                            <i className="bi bi-star-fill me-1" aria-hidden="true"></i> Important
-                          </span>
-                        ) : (
-                          <span className="reminder-tag-standard">
-                            <i className="bi bi-clock me-1" aria-hidden="true"></i> 7 Days
-                          </span>
-                        )}
-                        {reminder.removedFromSlideshow ? (
-                          <span className="reminder-tag-removed" title="Manually removed from Dashboard slideshow">
-                            Off Slideshow
-                          </span>
-                        ) : !isReminderInSlideshow(reminder) ? (
-                          <span className="reminder-tag-expired" title="Expired from Dashboard slideshow after 7 days">
-                            Slideshow Expired
-                          </span>
-                        ) : null}
-                      </div>
-                      {reminder.createdAt && (
-                        <span className="reminder-card-date">{formatDate(reminder.createdAt)}</span>
+                          <i className="bi bi-x-circle-fill" aria-hidden="true"></i>
+                        </button>
                       )}
                     </div>
-
-                    <div className="reminder-card-actions">
-                      <button
-                        type="button"
-                        className="btn-reminder-action primary-view"
-                        onClick={() => setViewingReminder(reminder)}
-                        title="View full reminder details"
-                      >
-                        <i className="bi bi-eye" aria-hidden="true"></i> View Details
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-reminder-action icon-only"
-                        onClick={() => handleStartEdit(reminder)}
-                        title="Edit this reminder"
-                        aria-label="Edit reminder"
-                      >
-                        <i className="bi bi-pencil" aria-hidden="true"></i>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-reminder-action danger icon-only"
-                        onClick={() => {
-                          if (window.confirm(`Delete reminder "${reminder.subject}"?`)) {
-                            onDelete(reminder.id);
-                          }
-                        }}
-                        title="Delete this reminder"
-                        aria-label="Delete reminder"
-                      >
-                        <i className="bi bi-trash3" aria-hidden="true"></i>
-                      </button>
-                    </div>
+                    {searchQuery.trim() && (
+                      <div className="reminder-search-status">
+                        <span>
+                          Found <strong>{filteredReminders.length}</strong> matching {filteredReminders.length === 1 ? 'reminder' : 'reminders'}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                ))}
+                )}
+
+                {reminders.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-muted)' }}>
+                    <i className="bi bi-clipboard-x" style={{ fontSize: '2.4rem', opacity: 0.6, display: 'block', marginBottom: 12 }}></i>
+                    <p style={{ margin: '0 0 16px', fontSize: '0.92rem' }}>No reminders yet. Add a new reminder for the team.</p>
+                    <button
+                      type="button"
+                      className="btn-add-reminder"
+                      onClick={() => setActiveTab('add')}
+                    >
+                      <i className="bi bi-plus-lg" aria-hidden="true"></i> Add Reminder
+                    </button>
+                  </div>
+                ) : filteredReminders.length === 0 ? (
+                  <div className="reminder-empty-search-state">
+                    <i className="bi bi-search reminder-empty-search-icon" aria-hidden="true"></i>
+                    <p className="reminder-empty-search-text">
+                      No reminders match "<strong>{searchQuery}</strong>" in the subject
+                    </p>
+                    <button
+                      type="button"
+                      className="btn-clear-reminder-search"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <i className="bi bi-x-lg me-1" aria-hidden="true"></i> Clear search
+                    </button>
+                  </div>
+                ) : (
+                  /* All Reminders List: Only display the Subject of each reminder */
+                  <div className="reminder-cards-list">
+                    {filteredReminders.map((reminder) => (
+                      <div key={reminder.id} className="reminder-card-item">
+                        <div className="reminder-card-main-info">
+                          <div className="reminder-card-title-group" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <i className="bi bi-pin-angle-fill reminder-pin-icon" aria-hidden="true"></i>
+                            <h4
+                              className="reminder-card-subject"
+                              onClick={() => setViewingReminder(reminder)}
+                              style={{ cursor: 'pointer' }}
+                              title="Click to view details"
+                            >
+                              {reminder.subject}
+                            </h4>
+                            {reminder.isImportant ? (
+                              <span className="reminder-tag-important">
+                                <i className="bi bi-star-fill me-1" aria-hidden="true"></i> Important
+                              </span>
+                            ) : (
+                              <span className="reminder-tag-standard">
+                                <i className="bi bi-clock me-1" aria-hidden="true"></i> 7 Days
+                              </span>
+                            )}
+                            {reminder.removedFromSlideshow ? (
+                              <span className="reminder-tag-removed" title="Manually removed from Dashboard slideshow">
+                                Off Slideshow
+                              </span>
+                            ) : !isReminderInSlideshow(reminder) ? (
+                              <span className="reminder-tag-expired" title="Expired from Dashboard slideshow after 7 days">
+                                Slideshow Expired
+                              </span>
+                            ) : null}
+                          </div>
+                          {reminder.createdAt && (
+                            <span className="reminder-card-date">{formatDate(reminder.createdAt)}</span>
+                          )}
+                        </div>
+
+                        <div className="reminder-card-actions">
+                          <button
+                            type="button"
+                            className="btn-reminder-action primary-view"
+                            onClick={() => setViewingReminder(reminder)}
+                            title="View full reminder details"
+                          >
+                            <i className="bi bi-eye" aria-hidden="true"></i> View Details
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-reminder-action icon-only"
+                            onClick={() => handleStartEdit(reminder)}
+                            title="Edit this reminder"
+                            aria-label="Edit reminder"
+                          >
+                            <i className="bi bi-pencil" aria-hidden="true"></i>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-reminder-action danger icon-only"
+                            onClick={() => {
+                              if (window.confirm(`Delete reminder "${reminder.subject}"?`)) {
+                                onDelete(reminder.id);
+                              }
+                            }}
+                            title="Delete this reminder"
+                            aria-label="Delete reminder"
+                          >
+                            <i className="bi bi-trash3" aria-hidden="true"></i>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
