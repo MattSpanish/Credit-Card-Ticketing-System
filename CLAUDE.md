@@ -106,3 +106,16 @@ Run the test suite with `node --test src/draftStorage.test.js` from the project 
 - Do not add backend calls or API keys — the Google Sheets CSV is the only network fetch and it is read-only.
 - Do not switch the test runner to Jest / Vitest — `draftStorage.test.js` uses `node:test` and runs directly under Node.
 - Do not change `vite.config.js#base` without updating the GitHub Pages URL expectations and any hard-coded asset links.
+
+---
+
+## Versioning Rules (MANDATORY ON EVERY UPDATE)
+
+Always apply this semantic versioning convention automatically for every update without waiting for explicit reminders:
+1. **Minor changes / small tweaks / bug fixes**: Increase the **last** number (`x.y.Z`, e.g., `2.8.3` -> `2.8.4`).
+2. **Major changes / new feature sets**: Increase the **second** number (`x.Y.0`, e.g., `2.8.4` -> `2.9.0`).
+3. **Extensive changes / massive overhaul in a single update**: Increase the **first** number (`X.0.0`, e.g., `2.9.0` -> `3.0.0`).
+
+### Locations to update on each version bump:
+- `package.json` (`"version": "X.Y.Z"`)
+- `src/App.jsx` (`<span className="logo-version">vX.Y.Z</span>`, `<div className="logo" title="Tickets vX.Y.Z">`, `ANNOUNCEMENTS_DATA`, and fallback strings)
