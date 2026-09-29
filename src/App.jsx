@@ -89,8 +89,8 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-09-30-v290",
-    version: "v2.9.0",
+    id: "rel-2026-09-30-v291",
+    version: "v2.9.1",
     date: "September 30, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
@@ -519,7 +519,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.0';
+  const version = latestAnnouncement.version || 'v2.9.1';
   const title = latestAnnouncement.title || 'System Update';
   const summary = latestAnnouncement.summary || '';
   const date = latestAnnouncement.date || 'September 30, 2026';
@@ -670,11 +670,6 @@ function NewReminderNotificationModal({ reminder, onConfirm }) {
             <div className="reminder-popup-subject-text">
               {reminder.subject}
             </div>
-            {reminder.description && (
-              <p className="reminder-popup-desc-preview">
-                {reminder.description}
-              </p>
-            )}
           </div>
         </div>
 
@@ -1246,11 +1241,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="Tickets v2.9.0">
+          <div className="logo" title="Tickets v2.9.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">Tickets</span>
-              <span className="logo-version">v2.9.0</span>
+              <span className="logo-version">v2.9.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3138,7 +3133,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.1';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3154,7 +3149,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.1';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
