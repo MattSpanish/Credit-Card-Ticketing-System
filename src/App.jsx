@@ -5,6 +5,7 @@ import teamBanner from './groupcc.jpeg';
 import tatiBanner from './tati2.png';
 import appLogo from './logo2.png';
 import ShiftReportPage from './ShiftReportPage';
+import ToolsPage from './ToolsPage';
 import {
   fetchReminders,
   addReminder,
@@ -89,11 +90,36 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-02-v2100",
+    version: "v2.10.0",
+    date: "October 2, 2026",
+    isLatest: true,
+    badge: "MAJOR UPDATE",
+    title: "Tools Tab & Close Account PDF Generator",
+    summary: "Introduced a dedicated Tools hub under Shift Report featuring the new Close Account PDF Generator supporting TSYS and NASHVILLE workflow variants, folder output configuration, and live template preview.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-tools",
+        title: "Dedicated Tools Workspace",
+        desc: "Added a dedicated Tools tab to the navigation panel providing productivity utilities and PDF generators designed to streamline support workflows.",
+        tag: "Tools"
+      },
+      {
+        type: "feature",
+        icon: "bi-file-earmark-pdf-fill",
+        title: "Close Account PDF Generator",
+        desc: "Easily generate 2-page account closure PDFs for TSYS and NASHVILLE processors with customized reason input, automatic checkbox rule mapping, live mockup preview, and custom download/save directory selection.",
+        tag: "PDF Generator"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-02-v2922",
     version: "v2.9.22",
     date: "October 2, 2026",
-    isLatest: true,
-    badge: "TODAY'S RELEASE",
+    isLatest: false,
+    badge: "RELEASED",
     title: "Clean Shift Report Gallery Header",
     summary: "Removed secondary instruction text under the Shift Report Attached Screenshots header.",
     items: [
@@ -801,7 +827,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.22';
+  const version = latestAnnouncement.version || 'v2.10.0';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1519,11 +1545,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.9.22">
+          <div className="logo" title="PH Portal v2.10.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.9.22</span>
+              <span className="logo-version">v2.10.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1601,6 +1627,21 @@ function Sidebar({
             >
               <i className="bi bi-file-earmark-bar-graph me-1" aria-hidden="true"></i>
               <span className="nav-text">Shift Report</span>
+            </button>
+
+            {/* Tools Tab */}
+            <button 
+              id="nav-tools"
+              className={`nav-item ${currentView === 'tools' ? 'active' : ''}`}
+              onClick={() => handleNavAction(() => {
+                onSelectView && onSelectView('tools');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              })}
+              aria-current={currentView === 'tools' ? 'page' : undefined}
+              title="Tools"
+            >
+              <i className="bi bi-tools me-1" aria-hidden="true"></i>
+              <span className="nav-text">Tools</span>
             </button>
           </nav>
 
@@ -2029,6 +2070,18 @@ function Tabs({ currentView = 'dashboard', onSelectView }) {
         title="Open Shift Reports"
       >
         <i className="bi bi-file-earmark-bar-graph me-1" aria-hidden="true"></i> SHIFT REPORT
+      </button>
+
+      <button 
+        id="tabBtn-tools" 
+        className={`tab-btn ${currentView === 'tools' ? 'active' : ''}`} 
+        onClick={() => {
+          onSelectView && onSelectView('tools');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        title="Open Tools & Utilities"
+      >
+        <i className="bi bi-tools me-1" aria-hidden="true"></i> TOOLS
       </button>
     </div>
   );
@@ -3419,7 +3472,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.22';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.0';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3435,7 +3488,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.22';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.0';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -3703,6 +3756,11 @@ export default function App() {
           {/* ✅ INDEPENDENT SHIFT REPORT PAGE (Paste-only, Supabase shared sync) */}
           <div style={{ display: currentView === 'shift-report' ? 'block' : 'none' }}>
             <ShiftReportPage onBackToDashboard={() => setCurrentView('dashboard')} />
+          </div>
+
+          {/* ✅ INDEPENDENT TOOLS PAGE (Utilities & PDF Generators) */}
+          <div style={{ display: currentView === 'tools' ? 'block' : 'none' }}>
+            <ToolsPage onBackToDashboard={() => setCurrentView('dashboard')} />
           </div>
 
           <div id="notification"></div>
