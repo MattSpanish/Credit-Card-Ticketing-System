@@ -90,10 +90,28 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-02-v21014",
+    version: "v2.10.14",
+    date: "October 2, 2026",
+    isLatest: true,
+    badge: "TODAY'S TWEAK",
+    title: "NEW Badge on Tools Navigation Tab",
+    summary: "Added a vibrant 'NEW' indicator badge on the Tools navigation tab to highlight the new utility workspace for the support team.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-tag-fill",
+        title: "Tools 'NEW' Badge",
+        desc: "Added a styled 'NEW' badge next to Tools in the navigation menu to highlight the new productivity hub.",
+        tag: "Navigation"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-02-v21013",
     version: "v2.10.13",
     date: "October 2, 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "TODAY'S SUMMARY",
     title: "Close Account PDF Generator & Daily Improvements",
     summary: "Comprehensive group of all updates and features released today: Close Account PDF generator matching original templates, team hierarchy chart, and streamlined UI improvements.",
@@ -1104,7 +1122,7 @@ function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
   const todayDate = latestAnnouncement.date || 'October 2, 2026';
-  const version = latestAnnouncement.version || 'v2.10.13';
+  const version = latestAnnouncement.version || 'v2.10.14';
 
   // Gather all updates released today
   const todayAnnouncements = ANNOUNCEMENTS_DATA.filter((a) => a.date === todayDate);
@@ -1841,11 +1859,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.13">
+          <div className="logo" title="PH Portal v2.10.14">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.13</span>
+              <span className="logo-version">v2.10.14</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1938,6 +1956,7 @@ function Sidebar({
             >
               <i className="bi bi-tools me-1" aria-hidden="true"></i>
               <span className="nav-text">Tools</span>
+              <span className="nav-item-badge">NEW</span>
             </button>
           </nav>
 
@@ -2378,6 +2397,7 @@ function Tabs({ currentView = 'dashboard', onSelectView }) {
         title="Open Tools & Utilities"
       >
         <i className="bi bi-tools me-1" aria-hidden="true"></i> TOOLS
+        <span className="nav-item-badge ms-1" style={{ fontSize: '0.60rem', padding: '1px 5px' }}>NEW</span>
       </button>
     </div>
   );
@@ -3768,7 +3788,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.13';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.14';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3784,7 +3804,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.13';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.14';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

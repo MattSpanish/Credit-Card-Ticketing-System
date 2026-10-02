@@ -2067,7 +2067,8 @@ body.dark-mode .sidebar-break-card .stat-value-break {
     width: 100%;
     gap: 0;
 }
-.sidebar.is-collapsed .nav-item .nav-text {
+.sidebar.is-collapsed .nav-item .nav-text,
+.sidebar.is-collapsed .nav-item .nav-item-badge {
     display: none;
 }
 .sidebar.is-collapsed .nav-item .bi {
