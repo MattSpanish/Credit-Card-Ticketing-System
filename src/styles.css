@@ -7272,34 +7272,34 @@ body:not(.dark-mode) .tool-input:focus {
     padding: 34px 38px;
     box-sizing: border-box;
     font-family: 'Calibri', 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-    font-size: 0.84rem;
-    line-height: 1.4;
+    font-size: 0.80rem;
+    line-height: 1.36;
     flex-shrink: 0;
 }
 
 .sheet-section {
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .sheet-sec-heading {
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.81rem;
     color: #000000;
-    margin-bottom: 5px;
-    padding-left: 18px;
+    margin-bottom: 4px;
+    padding-left: 15px;
 }
 
 .sheet-item {
     display: flex;
     align-items: baseline;
-    gap: 5px;
-    margin-bottom: 5px;
-    font-size: 0.83rem;
+    gap: 4px;
+    margin-bottom: 4px;
+    font-size: 0.79rem;
     color: #000000;
 }
 
 .sheet-check {
-    font-size: 0.95rem;
+    font-size: 0.82rem;
     line-height: 1;
     font-weight: normal;
     color: #000000;
@@ -7316,10 +7316,10 @@ body:not(.dark-mode) .tool-input:focus {
 }
 
 .sheet-reason-line {
-    padding-left: 17px;
-    font-size: 0.83rem;
+    padding-left: 15px;
+    font-size: 0.79rem;
     color: #000000;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
 }
 
 .sheet-reason-text {

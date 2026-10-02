@@ -113,10 +113,10 @@ export function buildCloseAccountPdf({ processor = 'NASHVILLE', reason = '', fon
   // Draw clean vector checkbox (square box with corner-to-corner X if checked)
   // Perfectly aligned with font baseline and cap-height
   function drawCheckbox(x, curY, checked) {
-    const size = 7.8;
+    const size = 6.8;
     const boxY = curY - size;
     doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.65);
+    doc.setLineWidth(0.55);
     doc.rect(x, boxY, size, size); // square box
 
     if (checked) {
@@ -127,26 +127,26 @@ export function buildCloseAccountPdf({ processor = 'NASHVILLE', reason = '', fon
   }
 
   // Draw section heading (e.g. "1.  Closure Request Verification")
-  // Section numbers are indented by 18pt so checkboxes sit to the left
+  // Section numbers are indented by 16pt so checkboxes sit to the left
   function drawSectionHeading(num, title) {
-    y += 10;
+    y += 9;
     doc.setFont(fontFamily, 'bold');
-    doc.setFontSize(11);
+    doc.setFontSize(10.5);
     doc.setTextColor(0, 0, 0);
-    doc.text(`${num}.  ${title}`, leftMargin + 18, y);
-    y += 20;
+    doc.text(`${num}.  ${title}`, leftMargin + 16, y);
+    y += 18.5;
   }
 
   // Draw a workflow item with checkbox and text
   function drawItem(text, checked) {
     drawCheckbox(leftMargin, y, checked);
     doc.setFont(fontFamily, 'normal');
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
 
     const splitText = doc.splitTextToSize(text, contentWidth - 14);
-    doc.text(splitText, leftMargin + 12, y);
-    y += (splitText.length - 1) * 14 + 20;
+    doc.text(splitText, leftMargin + 10.5, y);
+    y += (splitText.length - 1) * 13 + 18.5;
   }
 
   // ==========================================
@@ -160,13 +160,13 @@ export function buildCloseAccountPdf({ processor = 'NASHVILLE', reason = '', fon
 
   // Dynamic Reason for Closing line indented under Confirm closure reason
   doc.setFont(fontFamily, 'normal');
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
   const cleanReason = (reason || '').trim();
   const reasonText = cleanReason ? `Reason for Closing: ${cleanReason}` : 'Reason for Closing: ';
   const splitReason = doc.splitTextToSize(reasonText, contentWidth - 14);
-  doc.text(splitReason, leftMargin + 12, y);
-  y += (splitReason.length - 1) * 14 + 20;
+  doc.text(splitReason, leftMargin + 10.5, y);
+  y += (splitReason.length - 1) * 13 + 18.5;
 
   drawItem('Check contract terms / early termination fees', true);
 
