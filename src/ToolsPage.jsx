@@ -237,9 +237,7 @@ export default function ToolsPage({ onBackToDashboard }) {
         <div className="tool-detail-section">
           <div className="tool-detail-header">
             <div className="tool-detail-header-top">
-              <div className="tool-detail-badge">
-                <i className="bi bi-file-earmark-pdf-fill me-1"></i> Close Account PDF Generator
-              </div>
+              <h2 className="tool-detail-heading">Close Account PDF Generator</h2>
               <button
                 type="button"
                 className="btn-tools-settings"
@@ -256,14 +254,13 @@ export default function ToolsPage({ onBackToDashboard }) {
                 )}
               </button>
             </div>
-            <h2>Close Account Workflow PDF</h2>
           </div>
 
           <div className="tool-generator-grid">
             {/* Left Column: Form Controls */}
             <div className="tool-form-card">
               {/* 1. Processor Variant Selection */}
-              <div className="form-group mb-4">
+              <div className="form-group mb-3">
                 <label className="form-label-header">
                   <span className="form-step-badge">1</span>
                   <span>Select Processor Variant</span>
@@ -314,20 +311,20 @@ export default function ToolsPage({ onBackToDashboard }) {
               </div>
 
               {/* 2. Reason for Closing */}
-              <div className="form-group mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-2">
+              <div className="form-group mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-1">
                   <label htmlFor="close-account-reason" className="form-label-header m-0">
                     <span className="form-step-badge">2</span>
                     <span>Reason for Closing</span>
                   </label>
-                  <span className="text-muted" style={{ fontSize: '0.78rem' }}>
+                  <span className="text-muted" style={{ fontSize: '0.72rem' }}>
                     {reason.length} characters
                   </span>
                 </div>
                 <textarea
                   id="close-account-reason"
                   className="form-control tool-textarea"
-                  rows="4"
+                  rows="2"
                   value={reason}
                   placeholder="Enter reason for closing the account..."
                   onChange={(e) => setReason(e.target.value)}
@@ -335,12 +332,12 @@ export default function ToolsPage({ onBackToDashboard }) {
               </div>
 
               {/* 3. Output File Name */}
-              <div className="form-group mb-4">
+              <div className="form-group mb-3">
                 <label htmlFor="close-account-filename" className="form-label-header">
                   <span className="form-step-badge">3</span>
                   <span>PDF File Name</span>
                 </label>
-                <div className="input-group">
+                <div className="input-group input-group-sm">
                   <span className="input-group-text tool-input-addon">
                     <i className="bi bi-file-earmark-pdf"></i>
                   </span>
@@ -358,19 +355,16 @@ export default function ToolsPage({ onBackToDashboard }) {
                   {isCustomFileName && (
                     <button
                       type="button"
-                      className="btn btn-outline-secondary"
+                      className="btn btn-outline-secondary btn-sm"
                       onClick={() => {
                         setIsCustomFileName(false);
                         setFileName(`Close_Account_${processor}.pdf`);
                       }}
                       title="Reset to default file name"
                     >
-                      Reset Name
+                      Reset
                     </button>
                   )}
-                </div>
-                <div className="form-text-hint">
-                  The generated file will be saved with this name. (.pdf will be added automatically if omitted)
                 </div>
               </div>
 
@@ -378,39 +372,21 @@ export default function ToolsPage({ onBackToDashboard }) {
               <div className="tool-actions-bar">
                 <button
                   type="button"
-                  className="btn-tool-primary"
+                  className="btn-tool-primary btn-sm"
                   onClick={handleGeneratePdf}
                   disabled={isGenerating}
                 >
                   {isGenerating ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                       Generating PDF...
                     </>
                   ) : (
                     <>
-                      <i className="bi bi-file-earmark-pdf-fill me-2"></i>
-                      Generate & Save PDF
+                      <i className="bi bi-file-earmark-pdf-fill me-1"></i>
+                      Generate PDF
                     </>
                   )}
-                </button>
-
-                <button
-                  type="button"
-                  className="btn-tool-secondary"
-                  onClick={handlePreviewPdf}
-                  title="View PDF preview in browser tab"
-                >
-                  <i className="bi bi-box-arrow-up-right me-1"></i> Preview in Tab
-                </button>
-
-                <button
-                  type="button"
-                  className="btn-tool-ghost"
-                  onClick={handleResetForm}
-                  title="Reset reason and inputs"
-                >
-                  <i className="bi bi-arrow-counterclockwise me-1"></i> Reset
                 </button>
               </div>
             </div>

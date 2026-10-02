@@ -90,11 +90,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-02-v2103",
-    version: "v2.10.3",
+    id: "rel-2026-10-02-v2104",
+    version: "v2.10.4",
     date: "October 2, 2026",
     isLatest: true,
     badge: "TODAY'S TWEAK",
+    title: "Compact Tools & Minimalist Generator UI",
+    summary: "Cleaned up the Close Account PDF Generator by compacting navigation and input fields, removing preview-in-tab/reset buttons, and refining to a single sleek Generate PDF action.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layout-sidebar-inset",
+        title: "Compact Form & Minimalist Controls",
+        desc: "Optimized processor selectors, reason textarea, and file inputs for desktop view, removed redundant buttons, and simplified document generation.",
+        tag: "Tools"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-02-v2103",
+    version: "v2.10.3",
+    date: "October 2, 2026",
+    isLatest: false,
+    badge: "RELEASED",
     title: "Clean Document PDF Preview",
     summary: "Removed browser PDF reader toolbars from the Close Account generator preview, presenting a clean continuous 2-page document stream.",
     items: [
@@ -888,7 +906,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.10.3';
+  const version = latestAnnouncement.version || 'v2.10.4';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1606,11 +1624,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.3">
+          <div className="logo" title="PH Portal v2.10.4">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.3</span>
+              <span className="logo-version">v2.10.4</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3533,7 +3551,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.3';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.4';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3549,7 +3567,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.3';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.4';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
