@@ -89,11 +89,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-02-v2917",
-    version: "v2.9.17",
+    id: "rel-2026-10-02-v2918",
+    version: "v2.9.18",
     date: "October 2, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
+    title: "Official Shift Report Release",
+    summary: "Removed the 'BETA' tag from the Shift Report navigation item, graduating it to a core official feature.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-check2-circle",
+        title: "Graduated Shift Report",
+        desc: "Removed the 'BETA' badge from the Shift Report sidebar tab for a cleaner, unified menu.",
+        tag: "Sidebar"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-02-v2917",
+    version: "v2.9.17",
+    date: "October 2, 2026",
+    isLatest: false,
+    badge: "RELEASED",
     title: "Clean Announcements Header",
     summary: "Removed the 'CC Support' secondary tag from the System Announcements kicker header.",
     items: [
@@ -711,7 +729,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.17';
+  const version = latestAnnouncement.version || 'v2.9.18';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1429,11 +1447,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.9.17">
+          <div className="logo" title="PH Portal v2.9.18">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.9.17</span>
+              <span className="logo-version">v2.9.18</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1511,7 +1529,6 @@ function Sidebar({
             >
               <i className="bi bi-file-earmark-bar-graph me-1" aria-hidden="true"></i>
               <span className="nav-text">Shift Report</span>
-              <span className="nav-item-badge">BETA</span>
             </button>
           </nav>
 
@@ -3330,7 +3347,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.17';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.18';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3346,7 +3363,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.17';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.18';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
