@@ -137,7 +137,7 @@ export default function ToolsPage({ onBackToDashboard }) {
       if (result.method === 'direct-folder') {
         showToast(`PDF saved directly to "${savedFolderName}" as "${result.fileName}"!`, 'success');
       } else {
-        showToast(`PDF generated & downloaded as "${result.fileName}"!`, 'success');
+        showToast(`PDF saved to your Downloads folder as "${result.fileName}"!`, 'success');
       }
     } catch (err) {
       console.error(err);
@@ -207,7 +207,6 @@ export default function ToolsPage({ onBackToDashboard }) {
           <div className="tool-card-info">
             <div className="tool-card-title-row">
               <h4>Close Account PDF Generator</h4>
-              <span className="tool-badge-active">READY</span>
             </div>
           </div>
         </div>
@@ -401,15 +400,6 @@ export default function ToolsPage({ onBackToDashboard }) {
                       Page 2
                     </button>
                   </div>
-
-                  <button
-                    type="button"
-                    className="btn-preview-action"
-                    onClick={handlePreviewPdf}
-                    title="Open PDF in new tab"
-                  >
-                    <i className="bi bi-box-arrow-up-right"></i>
-                  </button>
                 </div>
               </div>
 
@@ -603,7 +593,7 @@ export default function ToolsPage({ onBackToDashboard }) {
             </div>
             <div className="folder-settings-modal-body">
               <p className="folder-settings-info">
-                Choose a local folder to save generated PDFs directly without download prompts.
+                By default, PDFs automatically save to your computer's <strong>Downloads</strong> folder. You can optionally select a custom folder below.
               </p>
               <div className="folder-config-card">
                 <div className="folder-icon-wrap">
@@ -613,17 +603,17 @@ export default function ToolsPage({ onBackToDashboard }) {
                   <div className="folder-name-label">
                     {savedFolderName ? (
                       <>
-                        <strong style={{ color: 'var(--text-primary, #ffffff)' }}>{savedFolderName}</strong>
+                        <strong style={{ color: 'var(--text-primary, #ffffff)' }}>Custom Folder: {savedFolderName}</strong>
                         {directoryHandle && <span className="folder-status-badge">Direct Write Active</span>}
                       </>
                     ) : (
-                      <span className="text-muted">Standard Browser Downloads (Default)</span>
+                      <strong style={{ color: 'var(--text-primary, #ffffff)' }}>Default Downloads Folder</strong>
                     )}
                   </div>
                   <div className="folder-sub">
                     {savedFolderName
-                      ? 'PDFs will be saved here automatically (remembered in browser).'
-                      : 'Choose a dedicated folder or keep standard Downloads.'}
+                      ? `PDFs will be saved directly into "${savedFolderName}".`
+                      : "Default: PDFs save automatically to your computer's Downloads folder."}
                   </div>
                 </div>
               </div>
