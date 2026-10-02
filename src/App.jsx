@@ -89,11 +89,47 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-02-v2920",
-    version: "v2.9.20",
+    id: "rel-2026-10-02-v2922",
+    version: "v2.9.22",
     date: "October 2, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
+    title: "Clean Shift Report Gallery Header",
+    summary: "Removed secondary instruction text under the Shift Report Attached Screenshots header.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-card-image",
+        title: "Clean Gallery Header",
+        desc: "Removed 'Click image to preview • Click Copy Image to paste into chat' instruction text for a clean layout.",
+        tag: "Shift Report"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-02-v2921",
+    version: "v2.9.21",
+    date: "October 2, 2026",
+    isLatest: false,
+    badge: "RELEASED",
+    title: "Compact Post Button Sizing",
+    summary: "Refined the Shift Report Post button dimensions to match the adjacent Attach Image button.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-aspect-ratio",
+        title: "Balanced Button Sizing",
+        desc: "Decreased padding and font size of the Post button to perfectly align with secondary composer buttons.",
+        tag: "Shift Report"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-02-v2920",
+    version: "v2.9.20",
+    date: "October 2, 2026",
+    isLatest: false,
+    badge: "RELEASED",
     title: "Simplified Shift Report Action Button",
     summary: "Shortened the Shift Report composer submit button label to 'Post'.",
     items: [
@@ -765,7 +801,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.20';
+  const version = latestAnnouncement.version || 'v2.9.22';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1483,11 +1519,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.9.20">
+          <div className="logo" title="PH Portal v2.9.22">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.9.20</span>
+              <span className="logo-version">v2.9.22</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3383,7 +3419,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.20';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.22';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3399,7 +3435,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.20';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.22';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

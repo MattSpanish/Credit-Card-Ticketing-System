@@ -778,7 +778,6 @@ export default function ShiftReportPage({ onBackToDashboard }) {
                         <div className="report-gallery-header">
                           <i className="bi bi-images me-1"></i>
                           <span>Attached Screenshots ({images.length})</span>
-                          <span className="report-gallery-sub">Click image to preview · Click "Copy Image" to paste into chat</span>
                         </div>
                         <div className="report-images-grid">
                           {images.map((imgItem, idx) => {
