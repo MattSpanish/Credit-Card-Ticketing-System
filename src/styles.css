@@ -6530,14 +6530,18 @@ body.dark-mode .btn-reminder-popup-ok:hover {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 16px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
+}
+
+.tools-nav-grid.tools-nav-single {
+    grid-template-columns: minmax(300px, 460px);
 }
 
 .tool-nav-card {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 14px;
-    padding: 16px 18px;
+    padding: 14px 18px;
     background: var(--bg-card);
     border: 1px solid var(--line);
     border-radius: var(--r-lg, 12px);
@@ -6587,7 +6591,6 @@ body.dark-mode .btn-reminder-popup-ok:hover {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 4px;
 }
 
 .tool-card-title-row h4 {
@@ -6641,6 +6644,15 @@ body.dark-mode .btn-reminder-popup-ok:hover {
     border-bottom: 1px solid var(--line);
 }
 
+.tool-detail-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
 .tool-detail-badge {
     display: inline-flex;
     align-items: center;
@@ -6650,22 +6662,49 @@ body.dark-mode .btn-reminder-popup-ok:hover {
     border-radius: 999px;
     background: var(--accent-soft);
     color: var(--accent);
-    margin-bottom: 8px;
+}
+
+.btn-tools-settings {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px;
+    border-radius: var(--r-md, 8px);
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+}
+
+.btn-tools-settings:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.settings-folder-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.16);
+    color: #10b981;
+    font-size: 0.7rem;
+    font-weight: 600;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .tool-detail-header h2 {
     font-size: 1.4rem;
     font-weight: 800;
-    margin: 0 0 6px;
-    color: var(--text-primary);
-}
-
-.tool-detail-desc {
     margin: 0;
-    font-size: 0.84rem;
-    color: var(--text-secondary);
-    max-width: 800px;
-    line-height: 1.5;
+    color: var(--text-primary);
 }
 
 .tool-generator-grid {
@@ -6690,24 +6729,33 @@ body.dark-mode .btn-reminder-popup-ok:hover {
 .form-label-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.88rem;
+    gap: 10px;
+    font-size: 0.92rem;
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 8px;
 }
 
-.step-num {
+.form-step-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: #ffffff;
-    font-size: 0.72rem;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 6px;
+    background: rgba(0, 210, 180, 0.12);
+    border: 1px solid rgba(0, 210, 180, 0.35);
+    color: var(--accent, #00d2b4);
+    font-size: 0.8rem;
     font-weight: 800;
+    line-height: 1;
+}
+
+body.light-theme .form-step-badge {
+    background: rgba(13, 148, 136, 0.12);
+    border-color: rgba(13, 148, 136, 0.35);
+    color: #0d9488;
 }
 
 /* Processor Toggle Grid */
@@ -6719,9 +6767,9 @@ body.dark-mode .btn-reminder-popup-ok:hover {
 
 .processor-card {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
-    padding: 14px;
+    padding: 14px 16px;
     border: 1px solid var(--line);
     border-radius: var(--r-md, 10px);
     background: var(--bg-elevated);
@@ -6741,41 +6789,29 @@ body.dark-mode .btn-reminder-popup-ok:hover {
 }
 
 .processor-card-radio {
-    margin-top: 2px;
+    display: flex;
+    align-items: center;
 }
 
 .processor-card-radio input[type="radio"] {
     cursor: pointer;
     accent-color: var(--accent);
+    width: 17px;
+    height: 17px;
+    margin: 0;
+}
+
+.processor-card-content {
+    display: flex;
+    align-items: center;
 }
 
 .processor-title {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 800;
     color: var(--text-primary);
-    margin-bottom: 2px;
-}
-
-.processor-subtitle {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-}
-
-.processor-pills {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.pill-check {
-    font-size: 0.68rem;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: rgba(16, 185, 129, 0.14);
-    color: #10b981;
-    display: inline-block;
+    margin: 0;
+    letter-spacing: 0.02em;
 }
 
 .pill-uncheck {
@@ -7223,6 +7259,62 @@ body.dark-mode .reason-filled {
     padding: 0;
     line-height: 1;
 }
+
+/* Folder Settings Modal */
+.folder-settings-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+    animation: fadeIn var(--t-fast) var(--ease) forwards;
+}
+
+.folder-settings-modal-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-xl, 14px);
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    animation: scaleUp var(--t-fast) var(--ease) forwards;
+}
+
+.folder-settings-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-elevated);
+}
+
+.folder-settings-modal-body {
+    padding: 20px;
+}
+
+.folder-settings-info {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0 0 16px;
+}
+
+.folder-settings-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--line);
+    background: var(--bg-elevated);
+}
+
 
 
 

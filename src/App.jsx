@@ -90,11 +90,36 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-02-v2101",
+    version: "v2.10.1",
+    date: "October 2, 2026",
+    isLatest: true,
+    badge: "TODAY'S TWEAK",
+    title: "Streamlined Tools & PDF Generator",
+    summary: "Refined the Tools workspace: removed placeholder items, simplified processor selector cards, added sleek top-right folder settings, and improved step number readability.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layout-text-window",
+        title: "Clean Generator Interface",
+        desc: "Removed placeholder cards and suggestions, streamlined processor selection to clean NASHVILLE and TSYS options, and placed folder configuration in a top-right settings button.",
+        tag: "Tools"
+      },
+      {
+        type: "ui",
+        icon: "bi-123",
+        title: "Readable Step Numbers",
+        desc: "Redesigned form step indicators with high-contrast, modern badges for effortless legibility.",
+        tag: "UI Refinement"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-02-v2100",
     version: "v2.10.0",
     date: "October 2, 2026",
-    isLatest: true,
-    badge: "MAJOR UPDATE",
+    isLatest: false,
+    badge: "RELEASED",
     title: "Tools Tab & Close Account PDF Generator",
     summary: "Introduced a dedicated Tools hub under Shift Report featuring the new Close Account PDF Generator supporting TSYS and NASHVILLE workflow variants, folder output configuration, and live template preview.",
     items: [
@@ -827,7 +852,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.10.0';
+  const version = latestAnnouncement.version || 'v2.10.1';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1545,11 +1570,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.0">
+          <div className="logo" title="PH Portal v2.10.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.0</span>
+              <span className="logo-version">v2.10.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3472,7 +3497,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.1';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3488,7 +3513,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.1';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

@@ -19,6 +19,7 @@ export default function ToolsPage({ onBackToDashboard }) {
     return localStorage.getItem('close_account_save_folder_name') || '';
   });
   const [directoryHandle, setDirectoryHandle] = useState(null);
+  const [showFolderSettings, setShowFolderSettings] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
 
@@ -28,16 +29,6 @@ export default function ToolsPage({ onBackToDashboard }) {
       setFileName(`Close_Account_${processor}.pdf`);
     }
   }, [processor, isCustomFileName]);
-
-  // Quick reason suggestions
-  const QUICK_REASONS = [
-    'Merchant requested closure',
-    'Business ceased operations / Store closed',
-    'Switched to another merchant provider',
-    'Seasonal account closure',
-    'High fees / rates dispute',
-    'Account inactive / zero processing volume'
-  ];
 
   // Configure save folder via File System Access API
   const handleChooseFolder = async () => {
@@ -164,7 +155,7 @@ export default function ToolsPage({ onBackToDashboard }) {
       </div>
 
       {/* Tools Hub Navigation Cards */}
-      <div className="tools-nav-grid">
+      <div className="tools-nav-grid tools-nav-single">
         <div
           className={`tool-nav-card ${activeTool === 'close-account-pdf' ? 'active' : ''}`}
           onClick={() => setActiveTool('close-account-pdf')}
@@ -177,33 +168,6 @@ export default function ToolsPage({ onBackToDashboard }) {
               <h4>Close Account PDF Generator</h4>
               <span className="tool-badge-active">READY</span>
             </div>
-            <p>Generate exact TSYS & NASHVILLE close processing workflow PDFs with auto-checkboxes and custom reason.</p>
-          </div>
-        </div>
-
-        <div className="tool-nav-card disabled" title="Coming soon">
-          <div className="tool-card-icon-wrap" style={{ background: 'rgba(168, 85, 247, 0.12)', color: '#a855f7' }}>
-            <i className="bi bi-cpu-fill"></i>
-          </div>
-          <div className="tool-card-info">
-            <div className="tool-card-title-row">
-              <h4>Terminal Parameter Decoder</h4>
-              <span className="tool-badge-soon">COMING SOON</span>
-            </div>
-            <p>Quick lookup and decoder for PAX, FD150, Valor, and Dejavoo merchant configuration strings.</p>
-          </div>
-        </div>
-
-        <div className="tool-nav-card disabled" title="Coming soon">
-          <div className="tool-card-icon-wrap" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}>
-            <i className="bi bi-calculator-fill"></i>
-          </div>
-          <div className="tool-card-info">
-            <div className="tool-card-title-row">
-              <h4>Interchange & Fee Estimator</h4>
-              <span className="tool-badge-soon">COMING SOON</span>
-            </div>
-            <p>Estimate interchange fee adjustments, terminal return fee calculations, and billing credits.</p>
           </div>
         </div>
       </div>
@@ -231,13 +195,27 @@ export default function ToolsPage({ onBackToDashboard }) {
       {activeTool === 'close-account-pdf' && (
         <div className="tool-detail-section">
           <div className="tool-detail-header">
-            <div className="tool-detail-badge">
-              <i className="bi bi-file-earmark-pdf-fill me-1"></i> Close Account PDF Generator
+            <div className="tool-detail-header-top">
+              <div className="tool-detail-badge">
+                <i className="bi bi-file-earmark-pdf-fill me-1"></i> Close Account PDF Generator
+              </div>
+              <button
+                type="button"
+                className="btn-tools-settings"
+                onClick={() => setShowFolderSettings(true)}
+                title="Configure Save Folder"
+              >
+                <i className="bi bi-gear-fill me-1"></i>
+                <span className="settings-btn-label">Folder Settings</span>
+                {savedFolderName && (
+                  <span className="settings-folder-chip" title={`Saving to ${savedFolderName}`}>
+                    <i className="bi bi-folder-check me-1"></i>
+                    {savedFolderName}
+                  </span>
+                )}
+              </button>
             </div>
             <h2>Close Account Workflow PDF</h2>
-            <p className="tool-detail-desc">
-              Select the processor variant (TSYS or NASHVILLE), enter the closure reason, and generate the official 2-page PDF ready for archiving and compliance.
-            </p>
           </div>
 
           <div className="tool-generator-grid">
@@ -246,7 +224,8 @@ export default function ToolsPage({ onBackToDashboard }) {
               {/* 1. Processor Variant Selection */}
               <div className="form-group mb-4">
                 <label className="form-label-header">
-                  <span className="step-num">1</span> Select Processor Variant:
+                  <span className="form-step-badge">1</span>
+                  <span>Select Processor Variant</span>
                 </label>
                 <div className="processor-toggle-grid">
                   <div
@@ -267,11 +246,6 @@ export default function ToolsPage({ onBackToDashboard }) {
                     </div>
                     <div className="processor-card-content">
                       <div className="processor-title">NASHVILLE</div>
-                      <div className="processor-subtitle">First Data (FD) Workflow</div>
-                      <div className="processor-pills">
-                        <span className="pill-check">FD Workflow: 4 Checked</span>
-                        <span className="pill-uncheck">TSYS: 5 Unchecked</span>
-                      </div>
                     </div>
                   </div>
 
@@ -293,11 +267,6 @@ export default function ToolsPage({ onBackToDashboard }) {
                     </div>
                     <div className="processor-card-content">
                       <div className="processor-title">TSYS</div>
-                      <div className="processor-subtitle">TSYS Processing Platform</div>
-                      <div className="processor-pills">
-                        <span className="pill-uncheck">FD: 4 Unchecked</span>
-                        <span className="pill-check">TSYS Workflow: 5 Checked</span>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -305,45 +274,30 @@ export default function ToolsPage({ onBackToDashboard }) {
 
               {/* 2. Reason for Closing */}
               <div className="form-group mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-1">
+                <div className="d-flex justify-content-between align-items-center mb-2">
                   <label htmlFor="close-account-reason" className="form-label-header m-0">
-                    <span className="step-num">2</span> Reason for Closing:
+                    <span className="form-step-badge">2</span>
+                    <span>Reason for Closing</span>
                   </label>
-                  <span className="text-muted" style={{ fontSize: '0.75rem' }}>
+                  <span className="text-muted" style={{ fontSize: '0.78rem' }}>
                     {reason.length} characters
                   </span>
                 </div>
                 <textarea
                   id="close-account-reason"
                   className="form-control tool-textarea"
-                  rows="3"
+                  rows="4"
                   value={reason}
-                  placeholder="e.g., Merchant requested closure due to store relocation..."
+                  placeholder="Enter reason for closing the account..."
                   onChange={(e) => setReason(e.target.value)}
                 ></textarea>
-
-                {/* Quick Reason Suggestions */}
-                <div className="quick-chips-wrap mt-2">
-                  <span className="quick-chips-label">Quick suggestions:</span>
-                  <div className="quick-chips-list">
-                    {QUICK_REASONS.map((qReason) => (
-                      <button
-                        key={qReason}
-                        type="button"
-                        className="quick-chip-btn"
-                        onClick={() => setReason(qReason)}
-                      >
-                        {qReason}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
 
               {/* 3. Output File Name */}
               <div className="form-group mb-4">
                 <label htmlFor="close-account-filename" className="form-label-header">
-                  <span className="step-num">3</span> PDF File Name:
+                  <span className="form-step-badge">3</span>
+                  <span>PDF File Name</span>
                 </label>
                 <div className="input-group">
                   <span className="input-group-text tool-input-addon">
@@ -376,55 +330,6 @@ export default function ToolsPage({ onBackToDashboard }) {
                 </div>
                 <div className="form-text-hint">
                   The generated file will be saved with this name. (.pdf will be added automatically if omitted)
-                </div>
-              </div>
-
-              {/* 4. Download / Save Path */}
-              <div className="form-group mb-4">
-                <label className="form-label-header">
-                  <span className="step-num">4</span> Save / Download Folder:
-                </label>
-                <div className="folder-config-card">
-                  <div className="folder-icon-wrap">
-                    <i className="bi bi-folder2-open"></i>
-                  </div>
-                  <div className="folder-details">
-                    <div className="folder-name-label">
-                      {savedFolderName ? (
-                        <>
-                          <strong style={{ color: 'var(--text-main, #ffffff)' }}>{savedFolderName}</strong>
-                          {directoryHandle && <span className="folder-status-badge">Direct Write Active</span>}
-                        </>
-                      ) : (
-                        <span className="text-muted">Standard Browser Downloads (Default)</span>
-                      )}
-                    </div>
-                    <div className="folder-sub">
-                      {savedFolderName
-                        ? 'PDFs will be saved here automatically (remembered in browser).'
-                        : 'Choose a dedicated folder or use your standard Downloads directory.'}
-                    </div>
-                  </div>
-                  <div className="folder-actions">
-                    <button
-                      type="button"
-                      className="btn-folder-action"
-                      onClick={handleChooseFolder}
-                      title="Choose or set custom save directory"
-                    >
-                      <i className="bi bi-folder-symlink me-1"></i> {savedFolderName ? 'Change Folder' : 'Set Save Folder'}
-                    </button>
-                    {savedFolderName && (
-                      <button
-                        type="button"
-                        className="btn-folder-action-reset"
-                        onClick={handleResetFolder}
-                        title="Reset to browser default"
-                      >
-                        <i className="bi bi-x-circle"></i>
-                      </button>
-                    )}
-                  </div>
                 </div>
               </div>
 
@@ -479,43 +384,23 @@ export default function ToolsPage({ onBackToDashboard }) {
                 <span className="preview-proc-badge">{processor} VARIANT</span>
               </div>
 
-              <div className="preview-doc-mockup">
-                <div className="preview-doc-title">
-                  Close Processing Accounts Workflow (First Data & TSYS)
-                </div>
-
+              <div className="preview-body">
+                {/* 1. Account Information */}
                 <div className="preview-section-group">
-                  <div className="preview-section-title">1. Closure Request Verification</div>
+                  <div className="preview-section-title">1. Account Information</div>
                   <div className="preview-item checked">
-                    <i className="bi bi-check-square-fill"></i> Confirm closure request from client (email/case/ticket)
-                  </div>
-                  <div className="preview-item checked">
-                    <i className="bi bi-check-square-fill"></i> Confirm closure reason
-                  </div>
-                  <div className="preview-reason-box">
-                    <strong>Reason for Closing: </strong>
-                    <span className={reason.trim() ? 'reason-filled' : 'reason-empty'}>
-                      {reason.trim() || '(Enter reason in the form on the left)'}
+                    <i className="bi bi-check-square-fill"></i> Reason for Closing:
+                    <span className="reason-snippet ms-1">
+                      {reason.trim() ? `"${reason.trim()}"` : '<Entered reason will be placed here>'}
                     </span>
                   </div>
-                  <div className="preview-item checked">
-                    <i className="bi bi-check-square-fill"></i> Check contract terms / early termination fees
-                  </div>
                 </div>
 
+                {/* 2. Verification */}
                 <div className="preview-section-group">
-                  <div className="preview-section-title">2. Account Review</div>
+                  <div className="preview-section-title">2. Merchant Identity Verification</div>
                   <div className="preview-item checked">
-                    <i className="bi bi-check-square-fill"></i> Ensure no pending transactions
-                  </div>
-                  <div className="preview-item checked">
-                    <i className="bi bi-check-square-fill"></i> Confirm all batches are settled
-                  </div>
-                  <div className="preview-item checked">
-                    <i className="bi bi-check-square-fill"></i> Check for disputes/chargebacks
-                  </div>
-                  <div className="preview-item checked">
-                    <i className="bi bi-check-square-fill"></i> Verify no pending deposits
+                    <i className="bi bi-check-square-fill"></i> Identity verified via security questions / recorded call
                   </div>
                 </div>
 
@@ -565,6 +450,80 @@ export default function ToolsPage({ onBackToDashboard }) {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Folder Settings Modal */}
+      {showFolderSettings && (
+        <div className="folder-settings-modal-overlay" onClick={() => setShowFolderSettings(false)}>
+          <div className="folder-settings-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="folder-settings-modal-header">
+              <div className="d-flex align-items-center gap-2">
+                <i className="bi bi-gear-fill" style={{ color: 'var(--accent, #00d2b4)', fontSize: '1.2rem' }}></i>
+                <h4 className="m-0" style={{ fontSize: '1.1rem', fontWeight: '700' }}>Save Folder Settings</h4>
+              </div>
+              <button
+                type="button"
+                className="btn-close-modal"
+                onClick={() => setShowFolderSettings(false)}
+                title="Close"
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
+            <div className="folder-settings-modal-body">
+              <p className="folder-settings-info">
+                Configure where generated PDFs are saved. When a folder is selected via the directory picker (supported in Chrome/Edge), PDFs are saved directly without standard download prompts.
+              </p>
+              <div className="folder-config-card">
+                <div className="folder-icon-wrap">
+                  <i className="bi bi-folder2-open"></i>
+                </div>
+                <div className="folder-details">
+                  <div className="folder-name-label">
+                    {savedFolderName ? (
+                      <>
+                        <strong style={{ color: 'var(--text-primary, #ffffff)' }}>{savedFolderName}</strong>
+                        {directoryHandle && <span className="folder-status-badge">Direct Write Active</span>}
+                      </>
+                    ) : (
+                      <span className="text-muted">Standard Browser Downloads (Default)</span>
+                    )}
+                  </div>
+                  <div className="folder-sub">
+                    {savedFolderName
+                      ? 'PDFs will be saved here automatically (remembered in browser).'
+                      : 'Choose a dedicated folder or keep standard Downloads.'}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="folder-settings-modal-footer">
+              {savedFolderName && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger me-auto"
+                  onClick={handleResetFolder}
+                >
+                  <i className="bi bi-arrow-counterclockwise me-1"></i> Reset to Default
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={handleChooseFolder}
+              >
+                <i className="bi bi-folder-symlink me-1"></i> {savedFolderName ? 'Change Folder' : 'Select Folder'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-secondary"
+                onClick={() => setShowFolderSettings(false)}
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
