@@ -267,11 +267,13 @@ export async function saveOrDownloadCloseAccountPdf({
     ? fileName.trim()
     : `${fileName.trim()}.pdf`;
 
-  const blob = await generateCloseAccountPdfBlob({ processor, reason });
+  const fonts = await loadCalibriFonts();
+  const doc = buildCloseAccountPdf({ processor, reason, fonts });
 
   // If a directory handle is configured (File System Access API)
   if (dirHandle && typeof dirHandle.getFileHandle === 'function') {
     try {
+      const blob = doc.output('blob');
       const fileHandle = await dirHandle.getFileHandle(safeFileName, { create: true });
       const writable = await fileHandle.createWritable();
       await writable.write(blob);
@@ -282,15 +284,23 @@ export async function saveOrDownloadCloseAccountPdf({
     }
   }
 
-  // Standard browser download
-  const blobUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = blobUrl;
-  anchor.download = safeFileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  // Standard browser download using jsPDF native save to avoid extension navigation
+  try {
+    doc.save(safeFileName);
+  } catch (err) {
+    // Robust fallback: download as octet-stream so Chrome saves straight to disk without opening broken extension URL
+    const pdfData = doc.output('arraybuffer');
+    const blob = new Blob([pdfData], { type: 'application/octet-stream' });
+    const blobUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = blobUrl;
+    anchor.download = safeFileName;
+    anchor.rel = 'noopener noreferrer';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+  }
 
   return { success: true, method: 'download', fileName: safeFileName };
 }
