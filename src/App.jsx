@@ -89,11 +89,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-02-v2915",
-    version: "v2.9.15",
+    id: "rel-2026-10-02-v2916",
+    version: "v2.9.16",
     date: "October 2, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
+    title: "Team Header Chip Label",
+    summary: "Updated the top header button to display 'Team' with the team logo.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-people",
+        title: "Team Label Display",
+        desc: "Set the header navigation chip label to 'Team', keeping a clean and friendly identifier next to the logo.",
+        tag: "Header"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-02-v2915",
+    version: "v2.9.15",
+    date: "October 2, 2026",
+    isLatest: false,
+    badge: "RELEASED",
     title: "Minimal CC Team Chip Icon",
     summary: "Removed the text label from the CC Team header button, leaving a clean logo-only chip.",
     items: [
@@ -675,7 +693,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.15';
+  const version = latestAnnouncement.version || 'v2.9.16';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1392,11 +1410,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.9.15">
+          <div className="logo" title="PH Portal v2.9.16">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.9.15</span>
+              <span className="logo-version">v2.9.16</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1633,11 +1651,11 @@ function Header() {
         <button
           className="team-chip"
           onClick={() => window.openTeamPhoto && window.openTeamPhoto()}
-          title="View CC team hierarchy"
+          title="View team hierarchy"
           type="button"
-          style={{ width: 38, padding: 0, justifyContent: 'center' }}
         >
-          <img src={appLogo} alt="CC Team Logo" className="team-chip-avatar" />
+          <img src={appLogo} alt="Team Logo" className="team-chip-avatar" />
+          <span className="team-chip-label">Team</span>
         </button>
       </div>
     </header>
@@ -3293,7 +3311,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.15';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.16';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3309,7 +3327,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.15';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.16';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
