@@ -23,12 +23,53 @@ export default function ToolsPage({ onBackToDashboard }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
 
+  // PDF Preview State
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+  const [previewMode, setPreviewMode] = useState('pdf'); // 'pdf' or 'sheet'
+  const [sheetPage, setSheetPage] = useState(1); // 1 or 2
+
   // Update default file name when processor changes (if user hasn't typed custom name)
   useEffect(() => {
     if (!isCustomFileName) {
       setFileName(`Close_Account_${processor}.pdf`);
     }
   }, [processor, isCustomFileName]);
+
+  // Live PDF preview blob generator with debounce to avoid reload flicker on typing
+  useEffect(() => {
+    let active = true;
+    const timer = setTimeout(() => {
+      try {
+        const blob = generateCloseAccountPdfBlob({
+          processor,
+          reason: reason.trim() || 'N/A'
+        });
+        const url = URL.createObjectURL(blob);
+        if (active) {
+          setPdfPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return url;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to create live PDF preview:', err);
+      }
+    }, 220);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [processor, reason]);
+
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (pdfPreviewUrl) {
+        URL.revokeObjectURL(pdfPreviewUrl);
+      }
+    };
+  }, [pdfPreviewUrl]);
 
   // Configure save folder via File System Access API
   const handleChooseFolder = async () => {
@@ -374,82 +415,246 @@ export default function ToolsPage({ onBackToDashboard }) {
               </div>
             </div>
 
-            {/* Right Column: Live Template Preview & Summary */}
-            <div className="tool-preview-card">
+            {/* Right Column: Live PDF Document Preview */}
+            <div className="tool-preview-card pdf-preview-card-wrap">
               <div className="preview-header">
                 <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-eye-fill" style={{ color: 'var(--accent, #00d2b4)' }}></i>
-                  <h5>Template Structure & Verification</h5>
+                  <i className="bi bi-file-earmark-pdf-fill" style={{ color: '#ef4444', fontSize: '1.15rem' }}></i>
+                  <h5 className="m-0" style={{ fontSize: '0.92rem', fontWeight: '700' }}>PDF Document Preview</h5>
+                  <span className="preview-proc-badge">{processor}</span>
                 </div>
-                <span className="preview-proc-badge">{processor} VARIANT</span>
+
+                <div className="preview-header-controls">
+                  <div className="preview-mode-toggle">
+                    <button
+                      type="button"
+                      className={`btn-preview-mode ${previewMode === 'pdf' ? 'active' : ''}`}
+                      onClick={() => setPreviewMode('pdf')}
+                      title="Embedded Vector PDF Viewer"
+                    >
+                      <i className="bi bi-file-earmark-pdf me-1"></i> PDF View
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn-preview-mode ${previewMode === 'sheet' ? 'active' : ''}`}
+                      onClick={() => setPreviewMode('sheet')}
+                      title="Document Paper Sheet View"
+                    >
+                      <i className="bi bi-file-text me-1"></i> Paper Sheet
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn-preview-action"
+                    onClick={handlePreviewPdf}
+                    title="Open PDF in new tab"
+                  >
+                    <i className="bi bi-box-arrow-up-right"></i>
+                  </button>
+                </div>
               </div>
 
-              <div className="preview-body">
-                {/* 1. Account Information */}
-                <div className="preview-section-group">
-                  <div className="preview-section-title">1. Account Information</div>
-                  <div className="preview-item checked">
-                    <i className="bi bi-check-square-fill"></i> Reason for Closing:
-                    <span className="reason-snippet ms-1">
-                      {reason.trim() ? `"${reason.trim()}"` : '<Entered reason will be placed here>'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 2. Verification */}
-                <div className="preview-section-group">
-                  <div className="preview-section-title">2. Merchant Identity Verification</div>
-                  <div className="preview-item checked">
-                    <i className="bi bi-check-square-fill"></i> Identity verified via security questions / recorded call
-                  </div>
-                </div>
-
-                {/* 3. First Data Workflow */}
-                <div className={`preview-section-group ${processor === 'NASHVILLE' ? 'highlight-section' : 'dimmed-section'}`}>
-                  <div className="preview-section-title d-flex justify-content-between">
-                    <span>3. First Data (FD) Workflow</span>
-                    <span className="badge-status">
-                      {processor === 'NASHVILLE' ? 'CHECKED (NASHVILLE)' : 'UNCHECKED'}
-                    </span>
-                  </div>
-                  {['Log in to First Data platform', 'Search merchant account', 'Verify account details and status', 'Close merchant account in FD system'].map(
-                    (text) => (
-                      <div key={text} className={`preview-item ${processor === 'NASHVILLE' ? 'checked' : 'unchecked'}`}>
-                        <i className={`bi ${processor === 'NASHVILLE' ? 'bi-check-square-fill' : 'bi-square'}`}></i>
-                        <span>{text}</span>
-                      </div>
-                    )
+              {previewMode === 'pdf' ? (
+                <div className="pdf-preview-canvas">
+                  {pdfPreviewUrl ? (
+                    <iframe
+                      src={`${pdfPreviewUrl}#toolbar=1&navpanes=0&view=FitH`}
+                      className="pdf-preview-iframe"
+                      title="Close Account PDF Live Preview"
+                    />
+                  ) : (
+                    <div className="pdf-loading-placeholder">
+                      <div className="spinner-border text-primary mb-2" role="status"></div>
+                      <span>Rendering PDF Preview...</span>
+                    </div>
                   )}
                 </div>
-
-                {/* 4. TSYS Workflow */}
-                <div className={`preview-section-group ${processor === 'TSYS' ? 'highlight-section' : 'dimmed-section'}`}>
-                  <div className="preview-section-title d-flex justify-content-between">
-                    <span>4. TSYS Workflow</span>
-                    <span className="badge-status">
-                      {processor === 'TSYS' ? 'CHECKED (TSYS)' : 'UNCHECKED'}
-                    </span>
+              ) : (
+                <div className="pdf-sheet-canvas">
+                  <div className="sheet-page-toolbar">
+                    <div className="d-flex align-items-center gap-2">
+                      <span className="sheet-page-label">Page:</span>
+                      <button
+                        type="button"
+                        className={`btn-sheet-page ${sheetPage === 1 ? 'active' : ''}`}
+                        onClick={() => setSheetPage(1)}
+                      >
+                        1
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn-sheet-page ${sheetPage === 2 ? 'active' : ''}`}
+                        onClick={() => setSheetPage(2)}
+                      >
+                        2
+                      </button>
+                    </div>
+                    <span className="sheet-page-count">Showing Page {sheetPage} of 2</span>
                   </div>
-                  {['Access TSYS system', 'Locate merchant account using MID', 'Verify account status and activity', 'Close account in TSYS', 'Remove terminal configurations'].map(
-                    (text) => (
-                      <div key={text} className={`preview-item ${processor === 'TSYS' ? 'checked' : 'unchecked'}`}>
-                        <i className={`bi ${processor === 'TSYS' ? 'bi-check-square-fill' : 'bi-square'}`}></i>
-                        <span>{text}</span>
+
+                  {/* Realistic White Paper Sheet */}
+                  <div className="pdf-sheet-paper">
+                    {sheetPage === 1 ? (
+                      <div className="sheet-content">
+                        {/* Title */}
+                        <div className="sheet-header">
+                          <h3 className="sheet-title">CLOSE ACCOUNT CHECKLIST AND PROCESS</h3>
+                        </div>
+
+                        {/* Section 1 */}
+                        <div className="sheet-section">
+                          <div className="sheet-sec-heading">1.  Closure Request Verification</div>
+                          <div className="sheet-item">
+                            <span className="sheet-check checked">&#x2612;</span>
+                            <span>Verify closure request directly with merchant owner / authorized signer</span>
+                          </div>
+                          <div className="sheet-item">
+                            <span className="sheet-check checked">&#x2612;</span>
+                            <span>
+                              Reason for Closing:{' '}
+                              <strong className="sheet-reason-text">
+                                {reason.trim() || '______________________________________'}
+                              </strong>
+                            </span>
+                          </div>
+                          <div className="sheet-item">
+                            <span className="sheet-check checked">&#x2612;</span>
+                            <span>Check for outstanding support tickets, disputes, or chargebacks</span>
+                          </div>
+                        </div>
+
+                        {/* Section 2 */}
+                        <div className="sheet-section">
+                          <div className="sheet-sec-heading">2.  Financial Obligations & Batch Settlement</div>
+                          <div className="sheet-item">
+                            <span className="sheet-check checked">&#x2612;</span>
+                            <span>Ensure all open batches are settled and confirmed</span>
+                          </div>
+                          <div className="sheet-item">
+                            <span className="sheet-check checked">&#x2612;</span>
+                            <span>Check for negative balance or pending processing fees</span>
+                          </div>
+                          <div className="sheet-item">
+                            <span className="sheet-check checked">&#x2612;</span>
+                            <span>Notify merchant of any final billing cycle or fee deductions</span>
+                          </div>
+                        </div>
+
+                        {/* Section 3 */}
+                        <div className="sheet-section">
+                          <div className="sheet-sec-heading">3.  First Data (FD) Workflow</div>
+                          {[
+                            'Log in to First Data processing platform / portal',
+                            'Search merchant using Merchant ID (MID) and verify account details',
+                            'Submit closure request / update account status to closed/inactive',
+                            'Verify terminal de-allocation in FD system'
+                          ].map((t) => (
+                            <div key={t} className="sheet-item">
+                              <span className={`sheet-check ${processor === 'NASHVILLE' ? 'checked' : 'unchecked'}`}>
+                                {processor === 'NASHVILLE' ? '\u2612' : '\u2610'}
+                              </span>
+                              <span className={processor === 'NASHVILLE' ? 'text-active' : 'text-muted-opt'}>{t}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Section 4 */}
+                        <div className="sheet-section">
+                          <div className="sheet-sec-heading">4.  TSYS Workflow</div>
+                          {[
+                            'Access TSYS merchant management platform',
+                            'Locate merchant account and review current processing parameters',
+                            'Process account closure / termination code in TSYS',
+                            'Confirm closure effective date and zero out recurring billing',
+                            'Archive TSYS terminal and processing profile'
+                          ].map((t) => (
+                            <div key={t} className="sheet-item">
+                              <span className={`sheet-check ${processor === 'TSYS' ? 'checked' : 'unchecked'}`}>
+                                {processor === 'TSYS' ? '\u2612' : '\u2610'}
+                              </span>
+                              <span className={processor === 'TSYS' ? 'text-active' : 'text-muted-opt'}>{t}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Section 5 (Start on Page 1) */}
+                        <div className="sheet-section">
+                          <div className="sheet-sec-heading">5.  Equipment Handling & Returns</div>
+                          <div className="sheet-item">
+                            <span className="sheet-check checked">&#x2612;</span>
+                            <span>Identify leased or owned physical POS terminal equipment</span>
+                          </div>
+                          <div className="sheet-item">
+                            <span className="sheet-check checked">&#x2612;</span>
+                            <span>If leased: issue return shipping labels and track delivery</span>
+                          </div>
+                        </div>
+
+                        <div className="sheet-page-footer">Page 1 of 2</div>
                       </div>
-                    )
-                  )}
-                </div>
+                    ) : (
+                      <div className="sheet-content">
+                        {/* Continuation of Section 5 */}
+                        <div className="sheet-section">
+                          <div className="sheet-item">
+                            <span className="sheet-check checked">&#x2612;</span>
+                            <span>If merchant-owned: ensure encryption keys and remote access are wiped</span>
+                          </div>
+                        </div>
 
-                <div className="preview-section-group">
-                  <div className="preview-section-title">5. Equipment Handling & Page 2</div>
-                  <div className="preview-item checked">
-                    <i className="bi bi-check-square-fill"></i> Terminals, return requirements & shipping instructions
-                  </div>
-                  <div className="preview-item checked">
-                    <i className="bi bi-check-square-fill"></i> Page 2: Financial Closure, Communication & Final Verification
+                        {/* Section 6 */}
+                        <div className="sheet-section">
+                          <div className="sheet-sec-heading">6.  Account Deactivation in Internal Systems</div>
+                          {[
+                            'Update CRM / ticketing system account status to "Closed"',
+                            'Disable gateway access (Authorize.Net, NMI, etc.) if applicable',
+                            'Remove or cancel active recurring subscription / software licenses',
+                            'Record closure reason and final agent notes in CRM'
+                          ].map((t) => (
+                            <div key={t} className="sheet-item">
+                              <span className="sheet-check checked">&#x2612;</span>
+                              <span>{t}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Section 7 */}
+                        <div className="sheet-section">
+                          <div className="sheet-sec-heading">7.  Merchant Confirmation & Communication</div>
+                          {[
+                            'Send official Close Account confirmation email to merchant of record',
+                            'Provide summary of final billing, equipment status, and effective date',
+                            'Advise merchant on PCI DSS record retention requirements (minimum 18 months)'
+                          ].map((t) => (
+                            <div key={t} className="sheet-item">
+                              <span className="sheet-check checked">&#x2612;</span>
+                              <span>{t}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Section 8 */}
+                        <div className="sheet-section">
+                          <div className="sheet-sec-heading">8.  Final Documentation & Ticket Resolution</div>
+                          {[
+                            'Attach completed Close Account checklist to support ticket',
+                            'Confirm no pending chargeback liabilities with risk department',
+                            'Close ticket and mark resolved in support portal'
+                          ].map((t) => (
+                            <div key={t} className="sheet-item">
+                              <span className="sheet-check checked">&#x2612;</span>
+                              <span>{t}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="sheet-page-footer">Page 2 of 2</div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
