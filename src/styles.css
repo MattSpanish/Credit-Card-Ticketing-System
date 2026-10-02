@@ -7277,6 +7277,20 @@ body:not(.dark-mode) .tool-input:focus {
     flex-shrink: 0;
 }
 
+.sheet-header {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.sheet-title {
+    font-size: 0.90rem;
+    font-weight: 700;
+    color: #2855a8;
+    text-decoration: underline;
+    margin: 0;
+    display: inline-block;
+}
+
 .sheet-section {
     margin-bottom: 12px;
 }

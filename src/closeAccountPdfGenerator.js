@@ -108,7 +108,6 @@ export function buildCloseAccountPdf({ processor = 'NASHVILLE', reason = '', fon
   const isNashville = (processor || 'NASHVILLE').toUpperCase() === 'NASHVILLE';
   const leftMargin = 72; // 1 inch standard margin
   const contentWidth = 612 - leftMargin * 2; // 468 pt
-  let y = 52;
 
   // Draw clean vector checkbox (square box with corner-to-corner X if checked)
   // Perfectly aligned with font baseline and cap-height
@@ -149,9 +148,25 @@ export function buildCloseAccountPdf({ processor = 'NASHVILLE', reason = '', fon
     y += (splitText.length - 1) * 13 + 18.5;
   }
 
+  let y = 60;
+
   // ==========================================
   // PAGE 1
   // ==========================================
+
+  // Document Title: Close Processing Accounts Workflow (First Data & TSYS)
+  doc.setFont(fontFamily, 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(40, 85, 168); // #2855a8 blue
+  const title = 'Close Processing Accounts Workflow (First Data & TSYS)';
+  const titleWidth = doc.getTextWidth(title);
+  const titleX = (612 - titleWidth) / 2;
+  doc.text(title, titleX, y);
+  doc.setDrawColor(40, 85, 168);
+  doc.setLineWidth(0.8);
+  doc.line(titleX, y + 2.5, titleX + titleWidth, y + 2.5); // Underline
+
+  y += 24;
 
   // 1. Closure Request Verification
   drawSectionHeading(1, 'Closure Request Verification');

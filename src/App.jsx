@@ -90,11 +90,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-02-v21011",
-    version: "v2.10.11",
+    id: "rel-2026-10-02-v21012",
+    version: "v2.10.12",
     date: "October 2, 2026",
     isLatest: true,
     badge: "TODAY'S TWEAK",
+    title: "Document Title Restored: Exact Original Template Fidelity",
+    summary: "Restored the centered, blue underlined workflow title 'Close Processing Accounts Workflow (First Data & TSYS)' on Page 1 to ensure 100% fidelity to the original template with only Reason dynamic.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-card-heading",
+        title: "Workflow Title Restored",
+        desc: "Restored the original centered blue underlined header title 'Close Processing Accounts Workflow (First Data & TSYS)' across both the generated PDF and the preview canvas.",
+        tag: "PDF Fidelity"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-02-v21011",
+    version: "v2.10.11",
+    date: "October 2, 2026",
+    isLatest: false,
+    badge: "RELEASED",
     title: "PDF Proportions: Refined Font & Checkbox Sizing",
     summary: "Fine-tuned PDF generator and live preview sizing by reducing the font size and checkbox dimensions slightly for a balanced, crisp look matching the original template.",
     items: [
@@ -1032,7 +1050,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.10.11';
+  const version = latestAnnouncement.version || 'v2.10.12';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1750,11 +1768,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.11">
+          <div className="logo" title="PH Portal v2.10.12">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.11</span>
+              <span className="logo-version">v2.10.12</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3677,7 +3695,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.11';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.12';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3693,7 +3711,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.11';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.12';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

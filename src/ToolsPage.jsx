@@ -389,6 +389,11 @@ export default function ToolsPage({ onBackToDashboard }) {
                 {/* PAGE 1 */}
                 <div id="doc-sheet-page-1" className="pdf-sheet-paper">
                   <div className="sheet-content">
+                    {/* Document Title */}
+                    <div className="sheet-header">
+                      <div className="sheet-title">Close Processing Accounts Workflow (First Data & TSYS)</div>
+                    </div>
+
                     {/* Section 1 */}
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">1.  Closure Request Verification</div>
