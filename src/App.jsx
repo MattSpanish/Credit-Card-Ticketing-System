@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { initCreditcardApp } from './creditcardController';
-import teamPhoto from './group-photo.jpeg';
+import hierarchyImg from './hierarchy.png';
 import teamBanner from './groupcc.jpeg';
 import tatiBanner from './tati2.png';
 import appLogo from './logo2.png';
@@ -89,11 +89,36 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-02-v2912",
+    version: "v2.9.12",
+    date: "October 2, 2026",
+    isLatest: true,
+    badge: "TODAY'S RELEASE",
+    title: "Support Team Hierarchy Chart",
+    summary: "Updated CC Team modal to display the Credit Card Support organizational hierarchy chart and removed legacy shift subtitle.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-diagram-3-fill",
+        title: "Credit Card Support Hierarchy Chart",
+        desc: "Integrated the official organizational hierarchy chart in the CC Team modal for easy team structure reference.",
+        tag: "Team"
+      },
+      {
+        type: "ui",
+        icon: "bi-layout-text-window-reverse",
+        title: "Clean Team Modal Layout",
+        desc: "Removed the 'Nashville credit-card support, 9 PM – 6 AM shift' subtitle from the CC Team modal for a cleaner view.",
+        tag: "UI Clean-up"
+      }
+    ]
+  },
+  {
     id: "rel-2026-09-30-v2911",
     version: "v2.9.11",
     date: "September 30, 2026",
-    isLatest: true,
-    badge: "TODAY'S RELEASE",
+    isLatest: false,
+    badge: "RELEASED",
     title: "PH Portal System & UX Updates",
     summary: "Consolidated release featuring PH Portal branding, reminder pop-ups & scrolling, cleaner stat cards, and interface clean-ups.",
     items: [
@@ -575,7 +600,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.11';
+  const version = latestAnnouncement.version || 'v2.9.12';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1292,11 +1317,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.9.11">
+          <div className="logo" title="PH Portal v2.9.12">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.9.11</span>
+              <span className="logo-version">v2.9.12</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -1533,11 +1558,11 @@ function Header() {
         <button
           className="team-chip"
           onClick={() => window.openTeamPhoto && window.openTeamPhoto()}
-          title="View team photo"
+          title="View CC team hierarchy"
           type="button"
         >
           <img src={appLogo} alt="Team Logo" className="team-chip-avatar" />
-          <span className="team-chip-label">Team</span>
+          <span className="team-chip-label">CC Team</span>
         </button>
       </div>
     </header>
@@ -2123,28 +2148,29 @@ function EntryTable() {
 function TeamPhotoModal({ onClose }) {
   return (
     <div className="break-modal-overlay" onClick={onClose}>
-      <div className="break-modal-content" style={{ maxWidth: 1040 }} onClick={(e) => e.stopPropagation()}>
-        <div className="break-modal-header">
+      <div className="break-modal-content" style={{ maxWidth: 1160 }} onClick={(e) => e.stopPropagation()}>
+        <div className="break-modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h2 className="modal-title modal-title-row">
-              <i className="bi bi-people-fill" aria-hidden="true"></i> Support Team
+            <h2 className="modal-title modal-title-row" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="bi bi-diagram-3-fill" style={{ color: 'var(--accent)' }} aria-hidden="true"></i> Support Team Hierarchy
             </h2>
-            <p className="modal-subtitle">Nashville credit-card support, 9 PM – 6 AM shift</p>
           </div>
-          <button onClick={onClose} className="icon-close" aria-label="Close team photo" title="Close">
+          <button onClick={onClose} className="icon-close" aria-label="Close team hierarchy" title="Close">
             <i className="bi bi-x-lg" aria-hidden="true"></i>
           </button>
         </div>
-        <div style={{ padding: 20 }}>
+        <div style={{ padding: '16px 20px 24px', display: 'flex', justifyContent: 'center' }}>
           <img
-            src={teamPhoto}
-            alt="Credit Card support team"
+            src={hierarchyImg}
+            alt="Credit Card Support Hierarchy"
             style={{
               width: '100%',
-              maxHeight: '70vh',
-              objectFit: 'cover',
+              height: 'auto',
+              maxHeight: '80vh',
+              objectFit: 'contain',
               borderRadius: 'var(--r-md)',
-              border: '1px solid var(--line)'
+              border: '1px solid var(--line)',
+              boxShadow: 'var(--shadow-sm)'
             }}
             loading="lazy"
             decoding="async"
@@ -3175,7 +3201,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.11';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.12';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3191,7 +3217,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.11';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.12';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
