@@ -7102,33 +7102,33 @@ body.light-theme .form-step-badge {
     gap: 8px;
 }
 
-.preview-mode-toggle {
+.sheet-quick-nav {
     display: flex;
     align-items: center;
+    gap: 4px;
     background: var(--bg-card);
     border: 1px solid var(--line);
     border-radius: 8px;
-    padding: 2px;
+    padding: 2px 4px;
 }
 
-.btn-preview-mode {
+.btn-quick-nav {
     display: inline-flex;
     align-items: center;
     background: transparent;
     border: none;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-size: 0.74rem;
-    font-weight: 600;
-    padding: 4px 9px;
-    border-radius: 6px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 5px;
     cursor: pointer;
     transition: all var(--t-fast) var(--ease);
 }
 
-.btn-preview-mode.active {
+.btn-quick-nav:hover {
     background: var(--accent-soft);
     color: var(--accent);
-    font-weight: 700;
 }
 
 .btn-preview-action {
@@ -7151,73 +7151,17 @@ body.light-theme .form-step-badge {
     color: var(--accent);
 }
 
-/* Live PDF Canvas (Iframe Embed) */
-.pdf-preview-canvas {
-    width: 100%;
-    height: 660px;
-    min-height: 600px;
-    background: #2b2b2b;
-    position: relative;
-    overflow: hidden;
-}
-
-.pdf-preview-iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    display: block;
-}
-
-.pdf-loading-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: #cbd5e1;
-    font-size: 0.85rem;
-}
-
-/* Paper Sheet Canvas */
+/* Paper Sheet Canvas - Continuous 2-Page Document */
 .pdf-sheet-canvas {
     background: #334155;
-    padding: 16px 14px 24px;
+    padding: 20px 16px 36px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
-    height: 660px;
+    gap: 24px;
+    height: 680px;
     overflow-y: auto;
-}
-
-.sheet-page-toolbar {
-    width: 100%;
-    max-width: 520px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: #e2e8f0;
-    font-size: 0.76rem;
-    font-weight: 600;
-}
-
-.btn-sheet-page {
-    width: 24px;
-    height: 24px;
-    border-radius: 5px;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    color: #ffffff;
-    font-size: 0.74rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all var(--t-fast) var(--ease);
-}
-
-.btn-sheet-page.active {
-    background: #38bdf8;
-    color: #0f172a;
-    border-color: #38bdf8;
+    scroll-behavior: smooth;
 }
 
 /* Realistic White Paper Sheet */
@@ -7225,14 +7169,15 @@ body.light-theme .form-step-badge {
     background: #ffffff;
     color: #1e293b;
     width: 100%;
-    max-width: 520px;
+    max-width: 530px;
     border-radius: 4px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-    padding: 28px 32px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+    padding: 34px 38px;
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 0.8rem;
     line-height: 1.45;
+    flex-shrink: 0;
 }
 
 .sheet-header {
