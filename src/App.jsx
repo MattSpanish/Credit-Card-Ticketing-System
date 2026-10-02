@@ -90,11 +90,64 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-02-v21013",
+    version: "v2.10.13",
+    date: "October 2, 2026",
+    isLatest: true,
+    badge: "TODAY'S SUMMARY",
+    title: "Close Account PDF Generator & Daily Improvements",
+    summary: "Comprehensive group of all updates and features released today: Close Account PDF generator matching original templates, team hierarchy chart, and streamlined UI improvements.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-file-earmark-pdf-fill",
+        title: "Close Account PDF Generator",
+        desc: "Added dedicated tool for TSYS and NASHVILLE processors with automatic checkbox configuration, custom reason input, and direct Downloads folder export.",
+        tag: "Tools Hub"
+      },
+      {
+        type: "ui",
+        icon: "bi-file-earmark-check-fill",
+        title: "Original PDF Template Fidelity",
+        desc: "Restored centered workflow header, embedded genuine Calibri font, corner-to-corner checkbox markers, and refined section indents for 1:1 original fidelity.",
+        tag: "PDF Fidelity"
+      },
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-contract",
+        title: "Proportional Sizing Adjustment",
+        desc: "Fine-tuned body font to 10pt and checkbox box to 6.8pt with 0.55pt stroke, providing an exact match to the original template proportions.",
+        tag: "PDF Sizing"
+      },
+      {
+        type: "ui",
+        icon: "bi-layout-text-window-reverse",
+        title: "Streamlined Clean Interface",
+        desc: "Removed toast notification banners, redundant preview buttons, cleaned up file name input, and applied high-contrast text tokens.",
+        tag: "UI Polish"
+      },
+      {
+        type: "feature",
+        icon: "bi-diagram-3-fill",
+        title: "Support Team Hierarchy Chart",
+        desc: "Integrated the official Credit Card Support organizational chart in the Team modal with a fixed 1200px clean reading layout.",
+        tag: "Team Roster"
+      },
+      {
+        type: "improvement",
+        icon: "bi-pencil-square",
+        title: "Shift Report Enhancements",
+        desc: "Graduated Shift Report from beta, streamlined gallery headers, and refined composer action buttons to a compact 'Post' button.",
+        tag: "Shift Report"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-02-v21012",
     version: "v2.10.12",
     date: "October 2, 2026",
-    isLatest: true,
-    badge: "TODAY'S TWEAK",
+    isLatest: false,
+    badge: "RELEASED",
     title: "Document Title Restored: Exact Original Template Fidelity",
     summary: "Restored the centered, blue underlined workflow title 'Close Processing Accounts Workflow (First Data & TSYS)' on Page 1 to ensure 100% fidelity to the original template with only Reason dynamic.",
     items: [
@@ -1050,10 +1103,28 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.10.12';
-  const title = latestAnnouncement.title || 'System Update';
-  const date = latestAnnouncement.date || 'September 30, 2026';
-  const items = latestAnnouncement.items || [];
+  const todayDate = latestAnnouncement.date || 'October 2, 2026';
+  const version = latestAnnouncement.version || 'v2.10.13';
+
+  // Gather all updates released today
+  const todayAnnouncements = ANNOUNCEMENTS_DATA.filter((a) => a.date === todayDate);
+
+  // Collect all unique highlight items from all updates released today
+  const allTodayItems = [];
+  const seenTitles = new Set();
+
+  todayAnnouncements.forEach((ann) => {
+    (ann.items || []).forEach((item) => {
+      const key = (item.title || '').trim().toLowerCase();
+      if (!seenTitles.has(key)) {
+        seenTitles.add(key);
+        allTodayItems.push({
+          ...item,
+          version: ann.version
+        });
+      }
+    });
+  });
 
   return (
     <div className="update-modal-overlay">
@@ -1064,21 +1135,21 @@ function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
             <div className="update-header-tags">
               <div className="update-header-left-meta">
                 <span className="update-version-chip">{version}</span>
-                <span className="update-date-text">{date}</span>
+                <span className="update-date-text">{todayDate}</span>
               </div>
               <span className="update-pill-badge">
-                <i className="bi bi-stars"></i> {latestAnnouncement.badge || "TODAY'S RELEASE"}
+                <i className="bi bi-stars"></i> TODAY'S UPDATES ({allTodayItems.length})
               </span>
             </div>
-            <h3 className="update-title">{title}</h3>
+            <h3 className="update-title">Today's System Updates & Tools</h3>
           </div>
         </div>
 
         {/* Body */}
         <div className="update-modal-body">
-          {items.length > 0 && (
-            <div className="update-highlights-list">
-              {items.map((item, idx) => (
+          {allTodayItems.length > 0 && (
+            <div className="update-highlights-list" style={{ maxHeight: '340px', overflowY: 'auto' }}>
+              {allTodayItems.map((item, idx) => (
                 <div key={idx} className="update-highlight-item" style={{ alignItems: 'center' }}>
                   <div className="update-highlight-icon-box">
                     <i className={`bi ${item.icon || 'bi-check-circle-fill'}`}></i>
@@ -1086,7 +1157,9 @@ function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
                   <div className="update-highlight-content">
                     <div className="update-highlight-header-row" style={{ marginBottom: 0 }}>
                       <span className="update-highlight-title">{item.title}</span>
-                      {item.tag && <span className="update-highlight-tag">{item.tag}</span>}
+                      <div className="d-flex align-items-center gap-1">
+                        {item.tag && <span className="update-highlight-tag">{item.tag}</span>}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1768,11 +1841,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.12">
+          <div className="logo" title="PH Portal v2.10.13">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.12</span>
+              <span className="logo-version">v2.10.13</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3695,7 +3768,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.12';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.13';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3711,7 +3784,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.12';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.13';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
