@@ -389,47 +389,46 @@ export default function ToolsPage({ onBackToDashboard }) {
                 {/* PAGE 1 */}
                 <div id="doc-sheet-page-1" className="pdf-sheet-paper">
                   <div className="sheet-content">
-                    {/* Title */}
-                    <div className="sheet-header">
-                      <h3 className="sheet-title">CLOSE ACCOUNT CHECKLIST AND PROCESS</h3>
-                    </div>
-
                     {/* Section 1 */}
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">1.  Closure Request Verification</div>
                       <div className="sheet-item">
                         <span className="sheet-check checked">&#x2612;</span>
-                        <span>Verify closure request directly with merchant owner / authorized signer</span>
+                        <span>Confirm closure request from client (email/case/ticket)</span>
                       </div>
                       <div className="sheet-item">
                         <span className="sheet-check checked">&#x2612;</span>
+                        <span>Confirm closure reason</span>
+                      </div>
+                      <div className="sheet-reason-line">
                         <span>
-                          Reason for Closing:{' '}
-                          <strong className="sheet-reason-text">
-                            {reason.trim() || '______________________________________'}
-                          </strong>
+                          Reason for Closing: <span className="sheet-reason-text">{reason.trim() || ''}</span>
                         </span>
                       </div>
                       <div className="sheet-item">
                         <span className="sheet-check checked">&#x2612;</span>
-                        <span>Check for outstanding support tickets, disputes, or chargebacks</span>
+                        <span>Check contract terms / early termination fees</span>
                       </div>
                     </div>
 
                     {/* Section 2 */}
                     <div className="sheet-section">
-                      <div className="sheet-sec-heading">2.  Financial Obligations & Batch Settlement</div>
+                      <div className="sheet-sec-heading">2.  Account Review</div>
                       <div className="sheet-item">
                         <span className="sheet-check checked">&#x2612;</span>
-                        <span>Ensure all open batches are settled and confirmed</span>
+                        <span>Ensure no pending transactions</span>
                       </div>
                       <div className="sheet-item">
                         <span className="sheet-check checked">&#x2612;</span>
-                        <span>Check for negative balance or pending processing fees</span>
+                        <span>Confirm all batches are settled</span>
                       </div>
                       <div className="sheet-item">
                         <span className="sheet-check checked">&#x2612;</span>
-                        <span>Notify merchant of any final billing cycle or fee deductions</span>
+                        <span>Check for disputes/chargebacks</span>
+                      </div>
+                      <div className="sheet-item">
+                        <span className="sheet-check checked">&#x2612;</span>
+                        <span>Verify no pending deposits</span>
                       </div>
                     </div>
 
@@ -437,16 +436,16 @@ export default function ToolsPage({ onBackToDashboard }) {
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">3.  First Data (FD) Workflow</div>
                       {[
-                        'Log in to First Data processing platform / portal',
-                        'Search merchant using Merchant ID (MID) and verify account details',
-                        'Submit closure request / update account status to closed/inactive',
-                        'Verify terminal de-allocation in FD system'
+                        'Log in to First Data platform',
+                        'Search merchant account',
+                        'Verify account details and status',
+                        'Close merchant account in FD system'
                       ].map((t) => (
                         <div key={t} className="sheet-item">
                           <span className={`sheet-check ${processor === 'NASHVILLE' ? 'checked' : 'unchecked'}`}>
                             {processor === 'NASHVILLE' ? '\u2612' : '\u2610'}
                           </span>
-                          <span className={processor === 'NASHVILLE' ? 'text-active' : 'text-muted-opt'}>{t}</span>
+                          <span>{t}</span>
                         </div>
                       ))}
                     </div>
@@ -455,31 +454,35 @@ export default function ToolsPage({ onBackToDashboard }) {
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">4.  TSYS Workflow</div>
                       {[
-                        'Access TSYS merchant management platform',
-                        'Locate merchant account and review current processing parameters',
-                        'Process account closure / termination code in TSYS',
-                        'Confirm closure effective date and zero out recurring billing',
-                        'Archive TSYS terminal and processing profile'
+                        'Access TSYS system',
+                        'Locate merchant account using MID',
+                        'Verify account status and activity',
+                        'Close account in TSYS',
+                        'Remove terminal configurations'
                       ].map((t) => (
                         <div key={t} className="sheet-item">
                           <span className={`sheet-check ${processor === 'TSYS' ? 'checked' : 'unchecked'}`}>
                             {processor === 'TSYS' ? '\u2612' : '\u2610'}
                           </span>
-                          <span className={processor === 'TSYS' ? 'text-active' : 'text-muted-opt'}>{t}</span>
+                          <span>{t}</span>
                         </div>
                       ))}
                     </div>
 
                     {/* Section 5 (Start on Page 1) */}
                     <div className="sheet-section">
-                      <div className="sheet-sec-heading">5.  Equipment Handling & Returns</div>
+                      <div className="sheet-sec-heading">5.  Equipment Handling</div>
                       <div className="sheet-item">
                         <span className="sheet-check checked">&#x2612;</span>
-                        <span>Identify leased or owned physical POS terminal equipment</span>
+                        <span>Identify all active terminals/devices</span>
                       </div>
                       <div className="sheet-item">
                         <span className="sheet-check checked">&#x2612;</span>
-                        <span>If leased: issue return shipping labels and track delivery</span>
+                        <span>Confirm return requirements (with Krupali)</span>
+                      </div>
+                      <div className="sheet-item">
+                        <span className="sheet-check checked">&#x2612;</span>
+                        <span>Send return instructions to client with return label</span>
                       </div>
                     </div>
 
@@ -492,21 +495,21 @@ export default function ToolsPage({ onBackToDashboard }) {
                   <div className="sheet-content">
                     {/* Continuation of Section 5 */}
                     <div className="sheet-section">
-                      <div className="sheet-sec-heading">5.  Equipment Handling & Returns (Continued)</div>
                       <div className="sheet-item">
                         <span className="sheet-check checked">&#x2612;</span>
-                        <span>If merchant-owned: ensure encryption keys and remote access are wiped</span>
+                        <span>
+                          Deactivate devices in system / Disable any gateway/API integrations (Dejavoo, Valor, Clover, P98 Terminals, Auth.net, NMI, P98 Gateway, Clover Software)
+                        </span>
                       </div>
                     </div>
 
                     {/* Section 6 */}
                     <div className="sheet-section">
-                      <div className="sheet-sec-heading">6.  Account Deactivation in Internal Systems</div>
+                      <div className="sheet-sec-heading">6.  Financial Closure (Verify with Billing Department)</div>
                       {[
-                        'Update CRM / ticketing system account status to "Closed"',
-                        'Disable gateway access (Authorize.Net, NMI, etc.) if applicable',
-                        'Remove or cancel active recurring subscription / software licenses',
-                        'Record closure reason and final agent notes in CRM'
+                        'Apply final fees',
+                        'Check outstanding balances',
+                        'Process final billing adjustments'
                       ].map((t) => (
                         <div key={t} className="sheet-item">
                           <span className="sheet-check checked">&#x2612;</span>
@@ -517,11 +520,11 @@ export default function ToolsPage({ onBackToDashboard }) {
 
                     {/* Section 7 */}
                     <div className="sheet-section">
-                      <div className="sheet-sec-heading">7.  Merchant Confirmation & Communication</div>
+                      <div className="sheet-sec-heading">7.  Communication</div>
                       {[
-                        'Send official Close Account confirmation email to merchant of record',
-                        'Provide summary of final billing, equipment status, and effective date',
-                        'Advise merchant on PCI DSS record retention requirements (minimum 18 months)'
+                        'Send closure confirmation email/message',
+                        'Include closure effective date',
+                        'Provide final statement if needed'
                       ].map((t) => (
                         <div key={t} className="sheet-item">
                           <span className="sheet-check checked">&#x2612;</span>
@@ -532,11 +535,10 @@ export default function ToolsPage({ onBackToDashboard }) {
 
                     {/* Section 8 */}
                     <div className="sheet-section">
-                      <div className="sheet-sec-heading">8.  Final Documentation & Ticket Resolution</div>
+                      <div className="sheet-sec-heading">8.  Final Verification</div>
                       {[
-                        'Attach completed Close Account checklist to support ticket',
-                        'Confirm no pending chargeback liabilities with risk department',
-                        'Close ticket and mark resolved in support portal'
+                        'Confirm account closed in all systems',
+                        'Ensure no active services remain'
                       ].map((t) => (
                         <div key={t} className="sheet-item">
                           <span className="sheet-check checked">&#x2612;</span>

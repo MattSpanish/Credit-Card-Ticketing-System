@@ -90,11 +90,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-02-v2109",
-    version: "v2.10.9",
+    id: "rel-2026-10-02-v21010",
+    version: "v2.10.10",
     date: "October 2, 2026",
     isLatest: true,
     badge: "TODAY'S TWEAK",
+    title: "PDF Generator Fidelity: Matched Original Template",
+    summary: "Refined Close Account PDF typography and checkboxes to faithfully match the original template using Calibri font, removed artificial blue headers, and perfected alignment.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-file-earmark-check-fill",
+        title: "Original Template Match",
+        desc: "Updated PDF generator and live preview to match the original document: removed blue header, embedded genuine Calibri font, corner-to-corner checkbox markers, and refined section indents.",
+        tag: "PDF Fidelity"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-02-v2109",
+    version: "v2.10.9",
+    date: "October 2, 2026",
+    isLatest: false,
+    badge: "RELEASED",
     title: "Clean Screen: Removed Notification Banner",
     summary: "Removed the full-width toast notification banner from the Tools page for an uncluttered and completely distraction-free workspace.",
     items: [
@@ -996,7 +1014,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.10.9';
+  const version = latestAnnouncement.version || 'v2.10.10';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1714,11 +1732,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.9">
+          <div className="logo" title="PH Portal v2.10.10">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.9</span>
+              <span className="logo-version">v2.10.10</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3641,7 +3659,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.9';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.10';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3657,7 +3675,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.9';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.10';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

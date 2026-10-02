@@ -1,5 +1,79 @@
 import { jsPDF } from 'jspdf';
 
+// In-memory base64 cache for Calibri fonts
+let cachedCalibriReg = null;
+let cachedCalibriBold = null;
+let fontLoadPromise = null;
+
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  const chunkSize = 8192;
+  for (let i = 0; i < len; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  return btoa(binary);
+}
+
+/**
+ * Preloads and caches the Calibri TTF fonts for jsPDF
+ */
+export async function loadCalibriFonts() {
+  if (cachedCalibriReg && cachedCalibriBold) {
+    return { reg: cachedCalibriReg, bold: cachedCalibriBold };
+  }
+
+  if (fontLoadPromise) return fontLoadPromise;
+
+  fontLoadPromise = (async () => {
+    try {
+      if (typeof window !== 'undefined' && window.fetch) {
+        const [regRes, boldRes] = await Promise.all([
+          fetch('/fonts/calibri.ttf'),
+          fetch('/fonts/calibrib.ttf')
+        ]);
+        if (regRes.ok && boldRes.ok) {
+          const [regBuf, boldBuf] = await Promise.all([
+            regRes.arrayBuffer(),
+            boldRes.arrayBuffer()
+          ]);
+          cachedCalibriReg = arrayBufferToBase64(regBuf);
+          cachedCalibriBold = arrayBufferToBase64(boldBuf);
+          return { reg: cachedCalibriReg, bold: cachedCalibriBold };
+        }
+      } else if (typeof window === 'undefined' && typeof process !== 'undefined' && process.versions?.node) {
+        // Node environment fallback (for unit tests / build scripts)
+        try {
+          const req = typeof require !== 'undefined' ? require : null;
+          if (req) {
+            const fs = req('fs');
+            const path = req('path');
+            const regPath = path.resolve(process.cwd(), 'public/fonts/calibri.ttf');
+            const boldPath = path.resolve(process.cwd(), 'public/fonts/calibrib.ttf');
+            if (fs.existsSync(regPath) && fs.existsSync(boldPath)) {
+              cachedCalibriReg = fs.readFileSync(regPath).toString('base64');
+              cachedCalibriBold = fs.readFileSync(boldPath).toString('base64');
+              return { reg: cachedCalibriReg, bold: cachedCalibriBold };
+            }
+          }
+        } catch (_) {}
+      }
+    } catch (err) {
+      console.warn('Could not load Calibri font, falling back to Helvetica:', err);
+    }
+    return null;
+  })();
+
+  return fontLoadPromise;
+}
+
+// Automatically start preloading in browser environment
+if (typeof window !== 'undefined') {
+  loadCalibriFonts().catch(() => {});
+}
+
 /**
  * Generates the Close Account PDF document matching the exact 2-page template
  * for NASHVILLE (First Data) or TSYS workflows.
@@ -7,100 +81,92 @@ import { jsPDF } from 'jspdf';
  * @param {Object} options
  * @param {'NASHVILLE'|'TSYS'} options.processor - Selected processor workflow
  * @param {string} options.reason - Reason for closing the account
+ * @param {Object} [options.fonts] - Preloaded font base64 objects { reg, bold }
  * @returns {jsPDF} The jsPDF document instance
  */
-export function buildCloseAccountPdf({ processor = 'NASHVILLE', reason = '' }) {
+export function buildCloseAccountPdf({ processor = 'NASHVILLE', reason = '', fonts = null }) {
   const doc = new jsPDF({
     unit: 'pt',
     format: 'letter', // 612 x 792 pt
   });
 
+  let fontFamily = 'helvetica';
+  const activeFonts = fonts || (cachedCalibriReg && cachedCalibriBold ? { reg: cachedCalibriReg, bold: cachedCalibriBold } : null);
+
+  if (activeFonts?.reg && activeFonts?.bold) {
+    try {
+      doc.addFileToVFS('Calibri-Regular.ttf', activeFonts.reg);
+      doc.addFont('Calibri-Regular.ttf', 'Calibri', 'normal');
+      doc.addFileToVFS('Calibri-Bold.ttf', activeFonts.bold);
+      doc.addFont('Calibri-Bold.ttf', 'Calibri', 'bold');
+      fontFamily = 'Calibri';
+    } catch (e) {
+      fontFamily = 'helvetica';
+    }
+  }
+
   const isNashville = (processor || 'NASHVILLE').toUpperCase() === 'NASHVILLE';
   const leftMargin = 72; // 1 inch standard margin
   const contentWidth = 612 - leftMargin * 2; // 468 pt
-  let y = 68;
+  let y = 52;
 
-  // Draw clean vector checkbox (square with X if checked)
+  // Draw clean vector checkbox (square box with corner-to-corner X if checked)
+  // Perfectly aligned with font baseline and cap-height
   function drawCheckbox(x, curY, checked) {
-    const size = 9.5;
-    doc.setDrawColor(45, 45, 45);
-    doc.setLineWidth(0.8);
-    doc.rect(x, curY - 8, size, size); // square box
+    const size = 7.8;
+    const boxY = curY - size;
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.65);
+    doc.rect(x, boxY, size, size); // square box
 
     if (checked) {
-      doc.setDrawColor(30, 30, 30);
-      doc.setLineWidth(0.9);
-      // Clean cross 'X' inside box
-      doc.line(x + 1.6, curY - 6.4, x + size - 1.6, curY + size - 9.6);
-      doc.line(x + size - 1.6, curY - 6.4, x + 1.6, curY + size - 9.6);
+      // Clean corner-to-corner diagonal 'X' exactly matching original template
+      doc.line(x, boxY, x + size, boxY + size);
+      doc.line(x + size, boxY, x, boxY + size);
     }
   }
 
   // Draw section heading (e.g. "1.  Closure Request Verification")
+  // Section numbers are indented by 18pt so checkboxes sit to the left
   function drawSectionHeading(num, title) {
-    y += 17;
-    doc.setFont('helvetica', 'bold');
+    y += 10;
+    doc.setFont(fontFamily, 'bold');
     doc.setFontSize(11);
-    doc.setTextColor(20, 20, 20);
-    doc.text(`${num}.  ${title}`, leftMargin, y);
-    y += 15;
+    doc.setTextColor(0, 0, 0);
+    doc.text(`${num}.  ${title}`, leftMargin + 18, y);
+    y += 20;
   }
 
   // Draw a workflow item with checkbox and text
   function drawItem(text, checked) {
     drawCheckbox(leftMargin, y, checked);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10.5);
-    doc.setTextColor(30, 30, 30);
+    doc.setFont(fontFamily, 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
 
-    const splitText = doc.splitTextToSize(text, contentWidth - 18);
-    doc.text(splitText, leftMargin + 16, y);
-    y += splitText.length * 13.8 + 4.5;
+    const splitText = doc.splitTextToSize(text, contentWidth - 14);
+    doc.text(splitText, leftMargin + 12, y);
+    y += (splitText.length - 1) * 14 + 20;
   }
 
   // ==========================================
   // PAGE 1
   // ==========================================
 
-  // Document Title: Close Processing Accounts Workflow (First Data & TSYS)
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(44, 90, 160); // Blue #2c5aa0
-  const title = 'Close Processing Accounts Workflow (First Data & TSYS)';
-  const titleWidth = doc.getTextWidth(title);
-  const titleX = (612 - titleWidth) / 2;
-  doc.text(title, titleX, y);
-  doc.setDrawColor(44, 90, 160);
-  doc.setLineWidth(1);
-  doc.line(titleX, y + 2.5, titleX + titleWidth, y + 2.5); // Underline
-
-  y += 24;
-
   // 1. Closure Request Verification
   drawSectionHeading(1, 'Closure Request Verification');
   drawItem('Confirm closure request from client (email/case/ticket)', true);
   drawItem('Confirm closure reason', true);
 
-  // Dynamic Reason for Closing line
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10.5);
-  doc.setTextColor(30, 30, 30);
-  const labelPrefix = 'Reason for Closing: ';
-  doc.text(labelPrefix, leftMargin + 16, y);
-  const labelWidth = doc.getTextWidth(labelPrefix);
-
+  // Dynamic Reason for Closing line indented under Confirm closure reason
+  doc.setFont(fontFamily, 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(0, 0, 0);
   const cleanReason = (reason || '').trim();
-  const availableWidth = contentWidth - 16 - labelWidth;
-  const reasonLines = cleanReason
-    ? doc.splitTextToSize(cleanReason, availableWidth)
-    : [''];
-
-  if (cleanReason) {
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(40, 40, 40);
-    doc.text(reasonLines, leftMargin + 16 + labelWidth, y);
-  }
-  y += Math.max(1, reasonLines.length) * 13.8 + 4.5;
+  const reasonText = cleanReason ? `Reason for Closing: ${cleanReason}` : 'Reason for Closing: ';
+  const splitReason = doc.splitTextToSize(reasonText, contentWidth - 14);
+  doc.text(splitReason, leftMargin + 12, y);
+  y += (splitReason.length - 1) * 14 + 20;
 
   drawItem('Check contract terms / early termination fees', true);
 
@@ -136,7 +202,7 @@ export function buildCloseAccountPdf({ processor = 'NASHVILLE', reason = '' }) {
   // PAGE 2
   // ==========================================
   doc.addPage('letter', 'portrait');
-  y = 70;
+  y = 52;
 
   // Equipment Handling continued item
   drawItem(
@@ -167,8 +233,9 @@ export function buildCloseAccountPdf({ processor = 'NASHVILLE', reason = '' }) {
 /**
  * Returns a Blob of the generated Close Account PDF
  */
-export function generateCloseAccountPdfBlob({ processor = 'NASHVILLE', reason = '' }) {
-  const doc = buildCloseAccountPdf({ processor, reason });
+export async function generateCloseAccountPdfBlob({ processor = 'NASHVILLE', reason = '' }) {
+  const fonts = await loadCalibriFonts();
+  const doc = buildCloseAccountPdf({ processor, reason, fonts });
   return doc.output('blob');
 }
 
@@ -185,7 +252,7 @@ export async function saveOrDownloadCloseAccountPdf({
     ? fileName.trim()
     : `${fileName.trim()}.pdf`;
 
-  const blob = generateCloseAccountPdfBlob({ processor, reason });
+  const blob = await generateCloseAccountPdfBlob({ processor, reason });
 
   // If a directory handle is configured (File System Access API)
   if (dirHandle && typeof dirHandle.getFileHandle === 'function') {
