@@ -593,7 +593,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
                 ) : (
                   <>
                     <i className="bi bi-send-fill me-2" aria-hidden="true"></i>
-                    Post Shift Report
+                    Post
                   </>
                 )}
               </button>
@@ -674,7 +674,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
                 <p>
                   {filterDate
                     ? `No shift reports found for ${filterDate}. Select another date or click below to view all reports.`
-                    : 'No shift reports have been posted yet. Paste a shift report on the left and click "Post Shift Report"!'}
+                    : 'No shift reports have been posted yet. Paste a shift report on the left and click "Post"!'}
                 </p>
                 {filterDate ? (
                   <button
