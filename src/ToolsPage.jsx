@@ -212,25 +212,6 @@ export default function ToolsPage({ onBackToDashboard }) {
         </div>
       </div>
 
-      {/* Status Toast */}
-      {statusMessage && (
-        <div className={`tools-toast ${statusMessage.type}`}>
-          <i
-            className={`bi ${
-              statusMessage.type === 'success'
-                ? 'bi-check-circle-fill'
-                : statusMessage.type === 'error'
-                ? 'bi-exclamation-triangle-fill'
-                : 'bi-info-circle-fill'
-            } me-2`}
-          ></i>
-          <span>{statusMessage.text}</span>
-          <button type="button" className="tools-toast-close" onClick={() => setStatusMessage(null)}>
-            <i className="bi bi-x"></i>
-          </button>
-        </div>
-      )}
-
       {/* Active Tool View: Close Account PDF Generator */}
       {activeTool === 'close-account-pdf' && (
         <div className="tool-detail-section">

@@ -7350,48 +7350,6 @@ body:not(.dark-mode) .tool-input:focus {
     border-top: 1px solid #f1f5f9;
 }
 
-/* Toast */
-.tools-toast {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 10px 16px;
-    border-radius: var(--r-md, 10px);
-    font-size: 0.84rem;
-    font-weight: 600;
-    margin-bottom: 18px;
-    animation: slideDown var(--t-fast) var(--ease) forwards;
-}
-
-.tools-toast.success {
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #10b981;
-}
-
-.tools-toast.error {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #ef4444;
-}
-
-.tools-toast.info {
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    color: #3b82f6;
-}
-
-.tools-toast-close {
-    background: transparent;
-    border: none;
-    color: inherit;
-    font-size: 1.1rem;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-}
-
 /* Folder Settings Modal */
 .folder-settings-modal-overlay {
     position: fixed;
