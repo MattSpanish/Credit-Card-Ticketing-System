@@ -89,11 +89,43 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-02-v2912",
-    version: "v2.9.12",
+    id: "rel-2026-10-02-v2913",
+    version: "v2.9.13",
     date: "October 2, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
+    title: "Interactive Hierarchy Viewer & Zoom Controls",
+    summary: "Significantly enlarged the CC Team hierarchy modal with zoom controls, fullscreen mode, panning, and high-resolution reading support.",
+    items: [
+      {
+        type: "improvement",
+        icon: "bi-zoom-in",
+        title: "Zoom & Pan Hierarchy Viewer",
+        desc: "Added interactive zoom controls (Fit, 150%, 200%, +/-) and drag-to-pan so names, extensions, and emails are crystal clear.",
+        tag: "Team Modal"
+      },
+      {
+        type: "feature",
+        icon: "bi-arrows-fullscreen",
+        title: "Fullscreen & Wide-view Layout",
+        desc: "Expanded modal width up to 1500px with a one-click fullscreen mode for maximized reading comfort.",
+        tag: "Team Modal"
+      },
+      {
+        type: "improvement",
+        icon: "bi-box-arrow-up-right",
+        title: "Open Original High-Res",
+        desc: "Added direct link to open the full 2560x1440 image in a new tab for native high-definition viewing.",
+        tag: "Team Modal"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-02-v2912",
+    version: "v2.9.12",
+    date: "October 2, 2026",
+    isLatest: false,
+    badge: "RELEASED",
     title: "Support Team Hierarchy Chart",
     summary: "Updated CC Team modal to display the Credit Card Support organizational hierarchy chart and removed legacy shift subtitle.",
     items: [
@@ -600,7 +632,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.12';
+  const version = latestAnnouncement.version || 'v2.9.13';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1317,11 +1349,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.9.12">
+          <div className="logo" title="PH Portal v2.9.13">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.9.12</span>
+              <span className="logo-version">v2.9.13</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -2146,31 +2178,297 @@ function EntryTable() {
 }
 
 function TeamPhotoModal({ onClose }) {
+  const [zoom, setZoom] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+  const viewportRef = useRef(null);
+
+  const handleZoomIn = () => setZoom((prev) => Math.min(Number((prev + 0.25).toFixed(2)), 3));
+  const handleZoomOut = () => setZoom((prev) => Math.max(Number((prev - 0.25).toFixed(2)), 0.75));
+  const handleResetZoom = () => setZoom(1);
+
+  const handleDoubleClick = () => {
+    setZoom((prev) => (prev > 1.1 ? 1 : 1.75));
+  };
+
+  const handleMouseDown = (e) => {
+    if (!viewportRef.current) return;
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX,
+      y: e.clientY,
+      scrollLeft: viewportRef.current.scrollLeft,
+      scrollTop: viewportRef.current.scrollTop,
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !viewportRef.current) return;
+    e.preventDefault();
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    viewportRef.current.scrollLeft = dragStart.scrollLeft - dx;
+    viewportRef.current.scrollTop = dragStart.scrollTop - dy;
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
   return (
-    <div className="break-modal-overlay" onClick={onClose}>
-      <div className="break-modal-content" style={{ maxWidth: 1160 }} onClick={(e) => e.stopPropagation()}>
-        <div className="break-modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h2 className="modal-title modal-title-row" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className="break-modal-overlay" onClick={onClose} style={{ zIndex: 100000 }}>
+      <div
+        className="break-modal-content"
+        style={{
+          width: isFullscreen ? '98vw' : 'min(96vw, 1500px)',
+          maxWidth: isFullscreen ? '98vw' : '1500px',
+          height: isFullscreen ? '96vh' : 'auto',
+          maxHeight: '96vh',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'all 0.2s ease',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.45)',
+          overflow: 'hidden'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="break-modal-header"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+            padding: '14px 20px',
+            borderBottom: '1px solid var(--line)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h2 className="modal-title modal-title-row" style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0, fontSize: '1.15rem' }}>
               <i className="bi bi-diagram-3-fill" style={{ color: 'var(--accent)' }} aria-hidden="true"></i> Support Team Hierarchy
             </h2>
+            <span
+              style={{
+                fontSize: '0.75rem',
+                padding: '2px 8px',
+                borderRadius: '999px',
+                background: 'var(--accent-soft)',
+                color: 'var(--accent)',
+                fontWeight: 600
+              }}
+            >
+              Credit Card PH Team
+            </span>
           </div>
-          <button onClick={onClose} className="icon-close" aria-label="Close team hierarchy" title="Close">
-            <i className="bi bi-x-lg" aria-hidden="true"></i>
-          </button>
+
+          {/* Action Toolbar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {/* Zoom Controls */}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--line)',
+                borderRadius: '8px',
+                overflow: 'hidden'
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                disabled={zoom <= 0.75}
+                title="Zoom Out (-25%)"
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  padding: '6px 10px',
+                  color: 'var(--text-main)',
+                  cursor: zoom <= 0.75 ? 'not-allowed' : 'pointer',
+                  opacity: zoom <= 0.75 ? 0.4 : 1
+                }}
+              >
+                <i className="bi bi-dash-lg" aria-hidden="true"></i>
+              </button>
+              <button
+                type="button"
+                onClick={handleResetZoom}
+                title="Reset Zoom to Fit"
+                style={{
+                  border: 'none',
+                  borderLeft: '1px solid var(--line)',
+                  borderRight: '1px solid var(--line)',
+                  background: 'transparent',
+                  padding: '6px 12px',
+                  color: 'var(--text-main)',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                {Math.round(zoom * 100)}%
+              </button>
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                disabled={zoom >= 3}
+                title="Zoom In (+25%)"
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  padding: '6px 10px',
+                  color: 'var(--text-main)',
+                  cursor: zoom >= 3 ? 'not-allowed' : 'pointer',
+                  opacity: zoom >= 3 ? 0.4 : 1
+                }}
+              >
+                <i className="bi bi-plus-lg" aria-hidden="true"></i>
+              </button>
+            </div>
+
+            {/* Quick preset buttons */}
+            <div style={{ display: 'inline-flex', gap: 4 }}>
+              {[
+                { label: 'Fit', val: 1 },
+                { label: '150%', val: 1.5 },
+                { label: '200%', val: 2 }
+              ].map((p) => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => setZoom(p.val)}
+                  style={{
+                    border: '1px solid var(--line)',
+                    background: zoom === p.val ? 'var(--accent)' : 'transparent',
+                    color: zoom === p.val ? '#fff' : 'var(--text-secondary)',
+                    borderRadius: '6px',
+                    padding: '4px 9px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Fullscreen Modal Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsFullscreen((prev) => !prev)}
+              title={isFullscreen ? 'Exit Fullscreen' : 'Maximize Window'}
+              style={{
+                border: '1px solid var(--line)',
+                background: 'transparent',
+                borderRadius: '8px',
+                padding: '6px 10px',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: '0.82rem'
+              }}
+            >
+              <i className={`bi ${isFullscreen ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'}`} aria-hidden="true"></i>
+            </button>
+
+            {/* Open Full Image in New Tab */}
+            <a
+              href={hierarchyImg}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open full 2560x1440 image in new tab"
+              style={{
+                border: '1px solid var(--line)',
+                background: 'transparent',
+                borderRadius: '8px',
+                padding: '6px 10px',
+                color: 'var(--text-main)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: '0.82rem',
+                textDecoration: 'none'
+              }}
+            >
+              <i className="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+              <span>Open Original</span>
+            </a>
+
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="icon-close"
+              aria-label="Close team hierarchy"
+              title="Close"
+              style={{ marginLeft: 4 }}
+            >
+              <i className="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
-        <div style={{ padding: '16px 20px 24px', display: 'flex', justifyContent: 'center' }}>
+
+        {/* Sub-bar guidance hint */}
+        <div
+          style={{
+            padding: '6px 20px',
+            fontSize: '0.78rem',
+            color: 'var(--text-muted)',
+            borderBottom: '1px solid var(--line)',
+            background: 'rgba(0,0,0,0.03)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 8
+          }}
+        >
+          <span>
+            <i className="bi bi-info-circle" style={{ marginRight: 5 }}></i>
+            Double-click image to zoom • Click & drag to pan when enlarged • Use presets or +/- to adjust
+          </span>
+          <span>Original resolution: 2560 × 1440</span>
+        </div>
+
+        {/* Viewport container */}
+        <div
+          ref={viewportRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            maxHeight: isFullscreen ? 'calc(96vh - 110px)' : 'calc(90vh - 120px)',
+            display: 'flex',
+            justifyContent: zoom > 1 ? 'flex-start' : 'center',
+            alignItems: zoom > 1 ? 'flex-start' : 'center',
+            padding: 16,
+            background: 'var(--bg-primary, #0c121e)',
+            cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in',
+            userSelect: 'none'
+          }}
+        >
           <img
             src={hierarchyImg}
-            alt="Credit Card Support Hierarchy"
+            alt="Credit Card PH Team Hierarchy"
+            onDoubleClick={handleDoubleClick}
+            draggable={false}
             style={{
-              width: '100%',
+              width: zoom === 1 ? '100%' : `${zoom * 100}%`,
+              minWidth: zoom > 1 ? `${Math.round(zoom * 1200)}px` : 'auto',
+              maxWidth: zoom === 1 ? '100%' : 'none',
               height: 'auto',
-              maxHeight: '80vh',
               objectFit: 'contain',
               borderRadius: 'var(--r-md)',
               border: '1px solid var(--line)',
-              boxShadow: 'var(--shadow-sm)'
+              boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+              transition: isDragging ? 'none' : 'width 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              pointerEvents: isDragging ? 'none' : 'auto'
             }}
             loading="lazy"
             decoding="async"
@@ -3201,7 +3499,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.12';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.13';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3217,7 +3515,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.12';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.13';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
