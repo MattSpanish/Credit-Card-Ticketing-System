@@ -242,16 +242,10 @@ export default function ToolsPage({ onBackToDashboard }) {
                 type="button"
                 className="btn-tools-settings"
                 onClick={() => setShowFolderSettings(true)}
-                title="Configure Save Folder"
+                title={savedFolderName ? `Saving to: ${savedFolderName}` : "Configure Save Folder"}
               >
                 <i className="bi bi-gear-fill me-1"></i>
                 <span className="settings-btn-label">Folder Settings</span>
-                {savedFolderName && (
-                  <span className="settings-folder-chip" title={`Saving to ${savedFolderName}`}>
-                    <i className="bi bi-folder-check me-1"></i>
-                    {savedFolderName}
-                  </span>
-                )}
               </button>
             </div>
           </div>
@@ -627,7 +621,7 @@ export default function ToolsPage({ onBackToDashboard }) {
             </div>
             <div className="folder-settings-modal-body">
               <p className="folder-settings-info">
-                Configure where generated PDFs are saved. When a folder is selected via the directory picker (supported in Chrome/Edge), PDFs are saved directly without standard download prompts.
+                Choose a local folder to save generated PDFs directly without download prompts.
               </p>
               <div className="folder-config-card">
                 <div className="folder-icon-wrap">
@@ -656,7 +650,7 @@ export default function ToolsPage({ onBackToDashboard }) {
               {savedFolderName && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-danger me-auto"
+                  className="btn-folder-modal-reset me-auto"
                   onClick={handleResetFolder}
                 >
                   <i className="bi bi-arrow-counterclockwise me-1"></i> Reset to Default
@@ -664,14 +658,14 @@ export default function ToolsPage({ onBackToDashboard }) {
               )}
               <button
                 type="button"
-                className="btn btn-sm btn-primary"
+                className="btn-folder-modal-choose"
                 onClick={handleChooseFolder}
               >
-                <i className="bi bi-folder-symlink me-1"></i> {savedFolderName ? 'Change Folder' : 'Select Folder'}
+                <i className="bi bi-folder2-open me-1"></i> {savedFolderName ? 'Change Folder' : 'Select Folder'}
               </button>
               <button
                 type="button"
-                className="btn btn-sm btn-secondary"
+                className="btn-folder-modal-done"
                 onClick={() => setShowFolderSettings(false)}
               >
                 Done
