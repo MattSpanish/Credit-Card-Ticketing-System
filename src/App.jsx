@@ -89,11 +89,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-02-v2916",
-    version: "v2.9.16",
+    id: "rel-2026-10-02-v2917",
+    version: "v2.9.17",
     date: "October 2, 2026",
     isLatest: true,
     badge: "TODAY'S RELEASE",
+    title: "Clean Announcements Header",
+    summary: "Removed the 'CC Support' secondary tag from the System Announcements kicker header.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-tag",
+        title: "Clean Kicker Header",
+        desc: "Removed the 'CC Support' tag next to the System News & Updates pill for a clean, minimal header.",
+        tag: "Announcements"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-02-v2916",
+    version: "v2.9.16",
+    date: "October 2, 2026",
+    isLatest: false,
+    badge: "RELEASED",
     title: "Team Header Chip Label",
     summary: "Updated the top header button to display 'Team' with the team logo.",
     items: [
@@ -693,7 +711,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const version = latestAnnouncement.version || 'v2.9.16';
+  const version = latestAnnouncement.version || 'v2.9.17';
   const title = latestAnnouncement.title || 'System Update';
   const date = latestAnnouncement.date || 'September 30, 2026';
   const items = latestAnnouncement.items || [];
@@ -1135,13 +1153,14 @@ function AnnouncementPanel({ onOpenModal, hideHeader = false }) {
 }
 
 function AnnouncementPage({ onBackToDashboard }) {
+  const currentVersion = ANNOUNCEMENTS_DATA[0]?.version || 'v2.9.17';
+
   return (
     <div className="announcement-page">
       <div className="announcement-page-header">
         <div>
           <div className="announcement-kicker">
             <span className="kicker-pill"><i className="bi bi-broadcast me-1" aria-hidden="true"></i> System News & Updates</span>
-            <span className="kicker-release">CC Support</span>
           </div>
           <h1>System Announcements</h1>
           <p className="panel-subtitle">Official release updates, new tools, and upcoming platform improvements.</p>
@@ -1160,7 +1179,7 @@ function AnnouncementPage({ onBackToDashboard }) {
       <div className="announcement-stats-strip">
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Current Version</span>
-          <span className="announcement-stat-val">v2.8.3</span>
+          <span className="announcement-stat-val">{currentVersion}</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
@@ -1410,11 +1429,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.9.16">
+          <div className="logo" title="PH Portal v2.9.17">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.9.16</span>
+              <span className="logo-version">v2.9.17</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3311,7 +3330,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.16';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.17';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3327,7 +3346,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.9.16';
+      const currentVersion = latestAnnouncement?.version || 'v2.9.17';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

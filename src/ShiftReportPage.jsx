@@ -375,7 +375,6 @@ export default function ShiftReportPage({ onBackToDashboard }) {
             <span className="kicker-pill">
               <i className="bi bi-clock-history me-1" aria-hidden="true"></i> Handover & Logs
             </span>
-            <span className="kicker-release">CC Support</span>
           </div>
           <h1>SHIFT REPORT</h1>
           <p className="panel-subtitle">
