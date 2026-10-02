@@ -331,35 +331,17 @@ export default function ToolsPage({ onBackToDashboard }) {
                   <span className="form-step-badge">3</span>
                   <span>PDF File Name</span>
                 </label>
-                <div className="input-group input-group-sm">
-                  <span className="input-group-text tool-input-addon">
-                    <i className="bi bi-file-earmark-pdf"></i>
-                  </span>
-                  <input
-                    type="text"
-                    id="close-account-filename"
-                    className="tool-input"
-                    value={fileName}
-                    onChange={(e) => {
-                      setIsCustomFileName(true);
-                      setFileName(e.target.value);
-                    }}
-                    placeholder={`Close_Account_${processor}.pdf`}
-                  />
-                  {isCustomFileName && (
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary btn-sm"
-                      onClick={() => {
-                        setIsCustomFileName(false);
-                        setFileName(`Close_Account_${processor}.pdf`);
-                      }}
-                      title="Reset to default file name"
-                    >
-                      Reset
-                    </button>
-                  )}
-                </div>
+                <input
+                  type="text"
+                  id="close-account-filename"
+                  className="tool-input"
+                  value={fileName}
+                  onChange={(e) => {
+                    setIsCustomFileName(true);
+                    setFileName(e.target.value);
+                  }}
+                  placeholder={`Close_Account_${processor}.pdf`}
+                />
               </div>
 
               {/* Generator Actions */}
