@@ -317,7 +317,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                 </div>
                 <textarea
                   id="close-account-reason"
-                  className="form-control tool-textarea"
+                  className="tool-textarea"
                   rows="2"
                   value={reason}
                   placeholder="Enter reason for closing the account..."
@@ -338,7 +338,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                   <input
                     type="text"
                     id="close-account-filename"
-                    className="form-control tool-input"
+                    className="tool-input"
                     value={fileName}
                     onChange={(e) => {
                       setIsCustomFileName(true);
