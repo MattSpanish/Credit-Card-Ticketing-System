@@ -90,11 +90,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-04-v21018",
+    version: "v2.10.18",
+    date: "October 4, 2026",
+    isLatest: true,
+    badge: "LOCAL CLEANUP",
+    title: "Reminder Description Label Clean-up",
+    summary: "Removed the 'Rich Text Formatting Enabled' helper text from the Description field label in the Team Reminders modal for a cleaner layout.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-card-heading",
+        title: "Clean Description Header",
+        desc: "Removed the secondary rich text indicator above the reminder description editor.",
+        tag: "Team Reminders"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-04-v21017",
     version: "v2.10.17",
     date: "October 4, 2026",
-    isLatest: true,
-    badge: "LOCAL TWEAK",
+    isLatest: false,
+    badge: "RECENT TWEAK",
     title: "Reminder Description Formatting Toolbar",
     summary: "Configured the exact rich text toolbar layout (Normal heading picker, Bold, Italic, Underline, Strikethrough, Color, Highlight, Lists, and Link) for the Team Reminders description.",
     items: [
@@ -1927,11 +1945,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.17">
+          <div className="logo" title="PH Portal v2.10.18">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.17</span>
+              <span className="logo-version">v2.10.18</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3717,14 +3735,9 @@ function ReminderModal({
               />
             </div>
             <div className="reminder-form-group">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <label className="reminder-form-label" htmlFor="reminder-description-input" style={{ marginBottom: 0 }}>
-                  Description *
-                </label>
-                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <i className="bi bi-type-bold" aria-hidden="true"></i> Rich Text Formatting Enabled
-                </span>
-              </div>
+              <label className="reminder-form-label" htmlFor="reminder-description-input">
+                Description *
+              </label>
               <ReminderRichEditor
                 value={description}
                 onChange={setDescription}
@@ -3953,7 +3966,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.17';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.18';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3969,7 +3982,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.17';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.18';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
