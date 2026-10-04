@@ -96,10 +96,28 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-04-v21024",
+    version: "v2.10.24",
+    date: "October 4 2026",
+    isLatest: true,
+    badge: "LOCAL CLEANUP",
+    title: "Dashboard Tabs Streamlined",
+    summary: "Removed the Shift Report and Tools tab buttons from the dashboard top tabs bar, keeping the layout focused on New Ticket.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layout-text-window-reverse",
+        title: "Streamlined Dashboard Tabs",
+        desc: "Removed the 'SHIFT REPORT' and 'TOOLS' buttons from the dashboard header tabs, keeping navigation clean while keeping sidebar access intact.",
+        tag: "Dashboard UI"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-04-v21023",
     version: "v2.10.23",
     date: "October 4 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "LOCAL CLEANUP",
     title: "Clean Date Formatting (No Comma Next to Month/Day)",
     summary: "Removed the comma after the day number across the website (e.g., 'Oct 3 2026, 5:54 AM') for a clean, consistent format.",
@@ -2050,11 +2068,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.23">
+          <div className="logo" title="PH Portal v2.10.24">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.23</span>
+              <span className="logo-version">v2.10.24</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -2564,31 +2582,6 @@ function Tabs({ currentView = 'dashboard', onSelectView }) {
         title="Create a new ticket"
       >
         + New Ticket
-      </button>
-
-      <button 
-        id="tabBtn-shiftreport" 
-        className={`tab-btn ${currentView === 'shift-report' ? 'active' : ''}`} 
-        onClick={() => {
-          onSelectView && onSelectView('shift-report');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        title="Open Shift Reports"
-      >
-        <i className="bi bi-file-earmark-bar-graph me-1" aria-hidden="true"></i> SHIFT REPORT
-      </button>
-
-      <button 
-        id="tabBtn-tools" 
-        className={`tab-btn ${currentView === 'tools' ? 'active' : ''}`} 
-        onClick={() => {
-          onSelectView && onSelectView('tools');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        title="Open Tools & Utilities"
-      >
-        <i className="bi bi-tools me-1" aria-hidden="true"></i> TOOLS
-        <span className="nav-item-badge ms-1" style={{ fontSize: '0.60rem', padding: '1px 5px' }}>BETA</span>
       </button>
     </div>
   );
@@ -4146,7 +4139,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.23';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.24';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -4162,7 +4155,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.23';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.24';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
