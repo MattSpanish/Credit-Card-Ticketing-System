@@ -123,7 +123,7 @@ export function updateReportTextDate(content, targetDateStr) {
     const parts = targetDateStr.split('-');
     if (parts.length === 3) {
       const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-      formatted = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      formatted = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }).replace(/([A-Za-z]+ \d+),/g, '$1');
     }
   } catch {}
   if (!formatted) return content;
@@ -205,7 +205,7 @@ export function getDefaultReportTemplate(shiftName = '09:00PM TO 06:00AM', custo
   }
 
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
-  const formattedDate = dateObj.toLocaleDateString('en-US', options);
+  const formattedDate = dateObj.toLocaleDateString('en-US', options).replace(/([A-Za-z]+ \d+),/g, '$1');
 
   const baseTemplate = `SHIFT REPORT ${shiftName}
 

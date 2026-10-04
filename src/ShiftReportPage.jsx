@@ -352,7 +352,7 @@ export default function ShiftReportPage({ onBackToDashboard }) {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
-      });
+      }).replace(/([A-Za-z]+ \d+),/g, '$1');
     } catch {
       return isoString;
     }

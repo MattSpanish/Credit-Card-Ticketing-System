@@ -88,12 +88,36 @@ const TID_TEMPLATES = {
 // ✅ ANNOUNCEMENTS & SYSTEM CHANGELOG DATA
 // ==========================================
 
+// Helper to remove comma immediately following Month Day (e.g. "Oct 3, 2026, 5:54 AM" -> "Oct 3 2026, 5:54 AM")
+export function stripMonthDayComma(str) {
+  if (!str || typeof str !== 'string') return str;
+  return str.replace(/([A-Za-z]+ \d+),/g, '$1');
+}
+
 const ANNOUNCEMENTS_DATA = [
+  {
+    id: "rel-2026-10-04-v21023",
+    version: "v2.10.23",
+    date: "October 4 2026",
+    isLatest: true,
+    badge: "LOCAL CLEANUP",
+    title: "Clean Date Formatting (No Comma Next to Month/Day)",
+    summary: "Removed the comma after the day number across the website (e.g., 'Oct 3 2026, 5:54 AM') for a clean, consistent format.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-calendar-event",
+        title: "Clean Date Formatting",
+        desc: "Removed the comma immediately following the day number across reminder timestamps, headers, shift reports, and announcements.",
+        tag: "UI & Typography"
+      }
+    ]
+  },
   {
     id: "rel-2026-10-04-v21022",
     version: "v2.10.22",
-    date: "October 4, 2026",
-    isLatest: true,
+    date: "October 4 2026",
+    isLatest: false,
     badge: "LOCAL CLEANUP",
     title: "Clean Reminders List Header (No Pin Icon)",
     summary: "Removed the pushpin icons from the reminders list cards for a cleaner, modern typography layout.",
@@ -110,7 +134,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-04-v21021",
     version: "v2.10.21",
-    date: "October 4, 2026",
+    date: "October 4 2026",
     isLatest: false,
     badge: "RECENT TWEAK",
     title: "Reminder Navigation (Next & Backward)",
@@ -128,7 +152,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-04-v21020",
     version: "v2.10.20",
-    date: "October 4, 2026",
+    date: "October 4 2026",
     isLatest: false,
     badge: "RECENT TWEAK",
     title: "Expanded Team Reminders Modal Width",
@@ -146,7 +170,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-04-v21019",
     version: "v2.10.19",
-    date: "October 4, 2026",
+    date: "October 4 2026",
     isLatest: false,
     badge: "RECENT TWEAK",
     title: "Wider Reminders Modal & Star Icon Tag",
@@ -171,7 +195,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-04-v21018",
     version: "v2.10.18",
-    date: "October 4, 2026",
+    date: "October 4 2026",
     isLatest: false,
     badge: "RECENT CLEANUP",
     title: "Reminder Description Label Clean-up",
@@ -189,7 +213,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-04-v21017",
     version: "v2.10.17",
-    date: "October 4, 2026",
+    date: "October 4 2026",
     isLatest: false,
     badge: "RECENT TWEAK",
     title: "Reminder Description Formatting Toolbar",
@@ -207,7 +231,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-04-v21016",
     version: "v2.10.16",
-    date: "October 4, 2026",
+    date: "October 4 2026",
     isLatest: false,
     badge: "RECENT UPDATE",
     title: "Rich Text Editing Toolbar for Team Reminders",
@@ -232,7 +256,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v21015",
     version: "v2.10.15",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RECENT TWEAK",
     title: "Tools BETA Tag & Clean PDF Download Stream",
@@ -257,7 +281,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v21014",
     version: "v2.10.14",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "NEW Badge on Tools Navigation Tab",
@@ -275,7 +299,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v21013",
     version: "v2.10.13",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "TODAY'S SUMMARY",
     title: "Close Account PDF Generator & Daily Improvements",
@@ -328,7 +352,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v21012",
     version: "v2.10.12",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Document Title Restored: Exact Original Template Fidelity",
@@ -346,7 +370,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v21011",
     version: "v2.10.11",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "PDF Proportions: Refined Font & Checkbox Sizing",
@@ -364,7 +388,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v21010",
     version: "v2.10.10",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "PDF Generator Fidelity: Matched Original Template",
@@ -382,7 +406,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2109",
     version: "v2.10.9",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Clean Screen: Removed Notification Banner",
@@ -400,7 +424,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2108",
     version: "v2.10.8",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Tool Header Polish & Default Downloads Clarification",
@@ -418,7 +442,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2107",
     version: "v2.10.7",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Clean Minimalist PDF File Name Input",
@@ -436,7 +460,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2106",
     version: "v2.10.6",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "High-Contrast Input Text in Close Account Generator",
@@ -454,7 +478,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2105",
     version: "v2.10.5",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Sleek Folder Settings Modal & Cleaned Headers",
@@ -472,7 +496,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2104",
     version: "v2.10.4",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Compact Tools & Minimalist Generator UI",
@@ -490,7 +514,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2103",
     version: "v2.10.3",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Clean Document PDF Preview",
@@ -508,7 +532,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2102",
     version: "v2.10.2",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Live PDF Preview in Close Account Generator",
@@ -526,7 +550,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2101",
     version: "v2.10.1",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Streamlined Tools & PDF Generator",
@@ -551,7 +575,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2100",
     version: "v2.10.0",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Tools Tab & Close Account PDF Generator",
@@ -576,7 +600,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2922",
     version: "v2.9.22",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Clean Shift Report Gallery Header",
@@ -594,7 +618,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2921",
     version: "v2.9.21",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Compact Post Button Sizing",
@@ -612,7 +636,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2920",
     version: "v2.9.20",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Simplified Shift Report Action Button",
@@ -630,7 +654,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2919",
     version: "v2.9.19",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Updated Team Hierarchy Chart",
@@ -648,7 +672,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2918",
     version: "v2.9.18",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Official Shift Report Release",
@@ -666,7 +690,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2917",
     version: "v2.9.17",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Clean Announcements Header",
@@ -684,7 +708,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2916",
     version: "v2.9.16",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Team Header Chip Label",
@@ -702,7 +726,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2915",
     version: "v2.9.15",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Minimal CC Team Chip Icon",
@@ -720,7 +744,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2914",
     version: "v2.9.14",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Fixed-Size Team Hierarchy Modal",
@@ -745,7 +769,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2913",
     version: "v2.9.13",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Interactive Hierarchy Viewer & Zoom Controls",
@@ -777,7 +801,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-10-02-v2912",
     version: "v2.9.12",
-    date: "October 2, 2026",
+    date: "October 2 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "Support Team Hierarchy Chart",
@@ -802,7 +826,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-09-30-v2911",
     version: "v2.9.11",
-    date: "September 30, 2026",
+    date: "September 30 2026",
     isLatest: false,
     badge: "RELEASED",
     title: "PH Portal System & UX Updates",
@@ -890,7 +914,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-09-28-v283",
     version: "v2.8.3",
-    date: "September 28, 2026",
+    date: "September 28 2026",
     isLatest: false,
     badge: "PREVIOUS RELEASE",
     title: "What's New?",
@@ -915,7 +939,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-09-28-v282",
     version: "v2.8.2",
-    date: "September 28, 2026",
+    date: "September 28 2026",
     isLatest: false,
     badge: "PREVIOUS RELEASE",
     title: "Dedicated Cloud Database for Reminders",
@@ -940,7 +964,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-09-28-v280",
     version: "v2.8.0",
-    date: "September 28, 2026",
+    date: "September 28 2026",
     isLatest: false,
     badge: "PREVIOUS RELEASE",
     title: "Frosted Blur Update Modal & Appreciation Header",
@@ -972,7 +996,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-09-28-v276",
     version: "v2.7.6",
-    date: "September 28, 2026",
+    date: "September 28 2026",
     isLatest: false,
     badge: "PREVIOUS RELEASE",
     title: "Transparent Glass & Button Contrast",
@@ -1004,7 +1028,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-09-26-v275",
     version: "v2.7.5",
-    date: "September 26, 2026",
+    date: "September 26 2026",
     isLatest: false,
     badge: "PREVIOUS RELEASE",
     title: "What's New?",
@@ -1036,7 +1060,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-09-26",
     version: "v2.7.1",
-    date: "September 26, 2026",
+    date: "September 26 2026",
     isLatest: false,
     badge: "PREVIOUS RELEASE",
     title: "Shift Report Quick-Copy Button & Enhanced Responsiveness",
@@ -1061,7 +1085,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-09-21",
     version: "v2.7.0",
-    date: "September 21, 2026",
+    date: "September 21 2026",
     isLatest: false,
     badge: "PREVIOUS RELEASE",
     title: "Dedicated Shift Report Tab (Beta) with Cloud Sync & Smart Calculation",
@@ -1114,7 +1138,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-09-20",
     version: "v2.6.0",
-    date: "September 20, 2026",
+    date: "September 20 2026",
     isLatest: false,
     badge: "PREVIOUS RELEASE",
     title: "Global Search Engine, Pending Hover Popover & Navigation Upgrades",
@@ -1160,7 +1184,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-09-18",
     version: "v2.5.0",
-    date: "September 18, 2026",
+    date: "September 18 2026",
     isLatest: false,
     badge: "PREVIOUS RELEASE",
     title: "One-Click 'Copy All', Direct Ticket # Intake, Midnight Tab Reset & Revamped Dashboard",
@@ -1241,7 +1265,7 @@ const ANNOUNCEMENTS_DATA = [
   {
     id: "rel-2026-09-15",
     version: "v2.4.0",
-    date: "September 15, 2026",
+    date: "September 15 2026",
     isLatest: false,
     badge: "WORKFLOW PACK",
     title: "AI Troubleshooting Modes, TID Quick Templates & Shift Schedule",
@@ -1286,7 +1310,7 @@ const ANNOUNCEMENTS_DATA = [
 function UpdateNotificationModal({ onConfirm, onViewAnnouncements }) {
   const [doNotShowAgain, setDoNotShowAgain] = useState(false);
   const latestAnnouncement = ANNOUNCEMENTS_DATA[0] || {};
-  const todayDate = latestAnnouncement.date || 'October 2, 2026';
+  const todayDate = stripMonthDayComma(latestAnnouncement.date || 'October 2 2026');
   const version = latestAnnouncement.version || 'v2.10.15';
 
   // Gather all updates released today
@@ -1387,13 +1411,15 @@ function formatReminderDate(isoString) {
   try {
     const d = new Date(isoString);
     if (isNaN(d.getTime())) return '';
-    return d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    });
+    return stripMonthDayComma(
+      d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      })
+    );
   } catch {
     return '';
   }
@@ -1711,7 +1737,7 @@ function AnnouncementPanel({ onOpenModal, hideHeader = false }) {
             <div className="release-card-top">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="release-version-tag">{rel.version}</span>
-                <span className="release-date-text">{rel.date}</span>
+                <span className="release-date-text">{stripMonthDayComma(rel.date)}</span>
               </div>
               {rel.isLatest && (
                 <span className="release-badge-latest">
@@ -1778,7 +1804,7 @@ function AnnouncementPage({ onBackToDashboard }) {
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">Latest Release</span>
-          <span className="announcement-stat-val">Sep 28, 2026</span>
+          <span className="announcement-stat-val">Sep 28 2026</span>
         </div>
         <div className="announcement-stat-box">
           <span className="announcement-stat-label">New Features</span>
@@ -1894,7 +1920,7 @@ function SidebarBreakCard() {
   }
 
   const currentDayName = dayNames[activeDate.getDay()];
-  const currentDateString = activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const currentDateString = stripMonthDayComma(activeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
 
   useEffect(() => {
     if (selectedPerson && BREAK_SCHEDULE[currentDayName]) {
@@ -2024,11 +2050,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.22">
+          <div className="logo" title="PH Portal v2.10.23">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.22</span>
+              <span className="logo-version">v2.10.23</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3426,13 +3452,15 @@ function ReminderModal({
   const formatDate = (isoString) => {
     try {
       const d = new Date(isoString);
-      return d.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit'
-      });
+      return stripMonthDayComma(
+        d.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit'
+        })
+      );
     } catch {
       return '';
     }
@@ -4118,7 +4146,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.22';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.23';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -4134,7 +4162,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.22';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.23';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

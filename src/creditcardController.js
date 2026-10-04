@@ -1404,7 +1404,7 @@ export function initCreditcardApp() {
       const now = new Date();
       const currentMonthKey = `${now.toLocaleString('default', { month: 'long' })} ${now.getFullYear()}`;
       const todayEST = getESTDateString();
-      const todayFormatted = new Date(todayEST).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const todayFormatted = new Date(todayEST).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).replace(/([A-Za-z]+ \d+),/g, '$1');
 
       let historyEntries = allEntries.filter(entry => !entry.deleted && !entry.imported && entry.source === 'creditcard');
 
@@ -1422,7 +1422,7 @@ export function initCreditcardApp() {
         const year = parseInt(parts[2], 10);
         const dateObj = new Date(year, month - 1, day);
         const monthKey = `${dateObj.toLocaleString('default', { month: 'long' })} ${year}`;
-        const dateKey = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const dateKey = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).replace(/([A-Za-z]+ \d+),/g, '$1');
         if (!grouped[monthKey]) grouped[monthKey] = {};
         if (!grouped[monthKey][dateKey]) grouped[monthKey][dateKey] = [];
         grouped[monthKey][dateKey].push(entry);
