@@ -90,11 +90,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-04-v21017",
+    version: "v2.10.17",
+    date: "October 4, 2026",
+    isLatest: true,
+    badge: "LOCAL TWEAK",
+    title: "Reminder Description Formatting Toolbar",
+    summary: "Configured the exact rich text toolbar layout (Normal heading picker, Bold, Italic, Underline, Strikethrough, Color, Highlight, Lists, and Link) for the Team Reminders description.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layout-text-window-reverse",
+        title: "Exact Toolbar Layout",
+        desc: "Updated the rich text editing toolbar to include the Normal heading picker, B, I, U, S, text color, background highlight, ordered & bullet lists, and link.",
+        tag: "Team Reminders"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-04-v21016",
     version: "v2.10.16",
     date: "October 4, 2026",
-    isLatest: true,
-    badge: "TODAY'S UPDATE",
+    isLatest: false,
+    badge: "RECENT UPDATE",
     title: "Rich Text Editing Toolbar for Team Reminders",
     summary: "Integrated a rich text formatting toolbar (bold, italic, underline, strikethrough, bulleted and numbered lists, font colors, and links) into the Team Reminders description field.",
     items: [
@@ -1909,11 +1927,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.16">
+          <div className="logo" title="PH Portal v2.10.17">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.16</span>
+              <span className="logo-version">v2.10.17</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3090,10 +3108,11 @@ function ReminderRichEditor({ value, onChange, placeholder = "Enter details, ins
       placeholder,
       modules: {
         toolbar: [
+          [{ header: [1, 2, 3, false] }],
           ['bold', 'italic', 'underline', 'strike'],
-          [{ list: 'ordered' }, { list: 'bullet' }],
           [{ color: [] }, { background: [] }],
-          ['link', 'clean']
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['link']
         ]
       }
     });
@@ -3934,7 +3953,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.16';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.17';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3950,7 +3969,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.16';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.17';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

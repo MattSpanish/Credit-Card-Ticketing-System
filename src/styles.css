@@ -3817,9 +3817,23 @@ body.dark-mode .ql-snow.ql-toolbar button.ql-active .ql-fill {
 .reminder-quill-wrapper .ql-toolbar.ql-snow {
     border-top-left-radius: var(--r-sm);
     border-top-right-radius: var(--r-sm);
-    padding: 6px 10px;
+    padding: 6px 8px;
     border-color: var(--line, #334155);
     background: var(--bg-soft, #1e293b);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.reminder-quill-wrapper .ql-toolbar.ql-snow .ql-formats {
+    margin-right: 12px;
+    display: inline-flex;
+    align-items: center;
+}
+.reminder-quill-wrapper .ql-toolbar.ql-snow .ql-formats:last-child {
+    margin-right: 0;
+}
+.reminder-quill-wrapper .ql-snow .ql-picker.ql-header {
+    width: 96px;
 }
 .reminder-quill-wrapper .ql-container.ql-snow {
     border-bottom-left-radius: var(--r-sm);
