@@ -1612,6 +1612,56 @@ body.dark-mode .reminder-tag-important {
     white-space: nowrap;
 }
 
+/* Detail View Header Navigation Controls (Next / Backward) */
+.reminder-modal-nav-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 3px 6px;
+    user-select: none;
+}
+
+body.dark-mode .reminder-modal-nav-group {
+    background: rgba(15, 23, 42, 0.7);
+    border-color: var(--border-color, #334155);
+}
+
+.btn-reminder-nav-arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 9px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+}
+
+.btn-reminder-nav-arrow:hover:not(:disabled) {
+    background: var(--bg-elevated);
+    color: var(--accent-color, #a78bfa);
+}
+
+.btn-reminder-nav-arrow:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.reminder-modal-nav-counter {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 0 6px;
+    font-variant-numeric: tabular-nums;
+}
+
 /* Detail view footer actions */
 .reminder-detail-footer {
     margin-top: 18px;

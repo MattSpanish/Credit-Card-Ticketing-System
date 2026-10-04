@@ -90,11 +90,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-04-v21020",
-    version: "v2.10.20",
+    id: "rel-2026-10-04-v21021",
+    version: "v2.10.21",
     date: "October 4, 2026",
     isLatest: true,
     badge: "LOCAL TWEAK",
+    title: "Reminder Navigation (Next & Backward)",
+    summary: "Added Previous and Next navigation buttons in the reminder detail view so team members can effortlessly browse through reminders.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-arrow-left-right",
+        title: "Next & Backward Reminder Navigation",
+        desc: "Added Prev and Next buttons with position counter and arrow key support to cycle through reminders while viewing details.",
+        tag: "Team Reminders"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-04-v21020",
+    version: "v2.10.20",
+    date: "October 4, 2026",
+    isLatest: false,
+    badge: "RECENT TWEAK",
     title: "Expanded Team Reminders Modal Width",
     summary: "Further expanded the Team Reminders modal width to 920px to comfortably accommodate long subject titles on all screens.",
     items: [
@@ -1988,11 +2006,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.20">
+          <div className="logo" title="PH Portal v2.10.21">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.20</span>
+              <span className="logo-version">v2.10.21</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3260,6 +3278,49 @@ function ReminderModal({
     return reminders.filter((r) => (r.subject || '').toLowerCase().includes(q));
   }, [reminders, searchQuery]);
 
+  // List of reminders available for Next/Backward navigation
+  const listToNavigate = useMemo(() => {
+    if (currentModalSource === 'slide') {
+      const active = reminders.filter(isReminderInSlideshow);
+      if (viewingReminder && active.some((r) => r.id === viewingReminder.id)) {
+        return active;
+      }
+    }
+    return filteredReminders && filteredReminders.length > 0 ? filteredReminders : reminders;
+  }, [currentModalSource, reminders, filteredReminders, viewingReminder]);
+
+  const currentNavIndex = viewingReminder
+    ? listToNavigate.findIndex((r) => r.id === viewingReminder.id)
+    : -1;
+
+  const handlePrevReminder = () => {
+    if (listToNavigate.length <= 1 || currentNavIndex === -1) return;
+    const prevIndex = (currentNavIndex - 1 + listToNavigate.length) % listToNavigate.length;
+    setViewingReminder(listToNavigate[prevIndex]);
+  };
+
+  const handleNextReminder = () => {
+    if (listToNavigate.length <= 1 || currentNavIndex === -1) return;
+    const nextIndex = (currentNavIndex + 1) % listToNavigate.length;
+    setViewingReminder(listToNavigate[nextIndex]);
+  };
+
+  useEffect(() => {
+    if (!viewingReminder || activeTab !== 'all' || currentEditItem) return;
+
+    const handleKeyDown = (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(e.target?.tagName)) return;
+      if (e.key === 'ArrowLeft') {
+        handlePrevReminder();
+      } else if (e.key === 'ArrowRight') {
+        handleNextReminder();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [viewingReminder, activeTab, currentEditItem, currentNavIndex, listToNavigate]);
+
   useEffect(() => {
     setCurrentModalSource(modalSource);
   }, [modalSource]);
@@ -3504,31 +3565,62 @@ function ReminderModal({
               <div className="reminder-full-detail-view">
                 <div
                   className="reminder-detail-header-bar"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 12, flexWrap: 'wrap' }}
                 >
-                  {currentModalSource === 'slide' ? (
-                    <button
-                      type="button"
-                      className="btn-add-reminder"
-                      onClick={() => {
-                        setActiveTab('add');
-                      }}
-                      title="Add a new reminder"
-                    >
-                      <i className="bi bi-plus-lg" aria-hidden="true"></i>
-                      <span>Reminder</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn-reminder-back"
-                      onClick={() => setViewingReminder(null)}
-                      title="Back to reminders list"
-                    >
-                      <i className="bi bi-arrow-left" aria-hidden="true"></i>
-                      <span>Back</span>
-                    </button>
-                  )}
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                    {currentModalSource === 'slide' ? (
+                      <button
+                        type="button"
+                        className="btn-add-reminder"
+                        onClick={() => {
+                          setActiveTab('add');
+                        }}
+                        title="Add a new reminder"
+                      >
+                        <i className="bi bi-plus-lg" aria-hidden="true"></i>
+                        <span>Reminder</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-reminder-back"
+                        onClick={() => setViewingReminder(null)}
+                        title="Back to reminders list"
+                      >
+                        <i className="bi bi-arrow-left" aria-hidden="true"></i>
+                        <span>Back</span>
+                      </button>
+                    )}
+
+                    {/* Next / Backward navigation controls */}
+                    {listToNavigate.length > 1 && (
+                      <div className="reminder-modal-nav-group">
+                        <button
+                          type="button"
+                          className="btn-reminder-nav-arrow"
+                          onClick={handlePrevReminder}
+                          title="Previous reminder (Left arrow key)"
+                          aria-label="Previous reminder"
+                        >
+                          <i className="bi bi-chevron-left" aria-hidden="true"></i>
+                          <span>Prev</span>
+                        </button>
+                        <span className="reminder-modal-nav-counter">
+                          {currentNavIndex >= 0 ? currentNavIndex + 1 : 1} of {listToNavigate.length}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn-reminder-nav-arrow"
+                          onClick={handleNextReminder}
+                          title="Next reminder (Right arrow key)"
+                          aria-label="Next reminder"
+                        >
+                          <span>Next</span>
+                          <i className="bi bi-chevron-right" aria-hidden="true"></i>
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="reminder-detail-quick-actions" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                     <button
@@ -4009,7 +4101,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.20';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.21';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -4025,7 +4117,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.20';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.21';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
