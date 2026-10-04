@@ -3764,6 +3764,109 @@ body.dark-mode .ai-mode-panel .text-grammar { color: var(--accent); }
 }
 .remarks-editor { height: 200px; }
 
+/* Dark mode Quill styling */
+body.dark-mode .ql-toolbar.ql-snow {
+    background: var(--bg-soft, #1e293b);
+    border-color: var(--border-color, #334155);
+}
+body.dark-mode .ql-container.ql-snow {
+    background: var(--panel-bg, #0f172a);
+    border-color: var(--border-color, #334155);
+}
+body.dark-mode .ql-snow .ql-stroke {
+    stroke: #94a3b8;
+}
+body.dark-mode .ql-snow .ql-fill {
+    fill: #94a3b8;
+}
+body.dark-mode .ql-snow .ql-picker {
+    color: #94a3b8;
+}
+body.dark-mode .ql-snow .ql-picker-options {
+    background-color: var(--panel-bg, #1e293b) !important;
+    border: 1px solid var(--border-color, #334155) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+body.dark-mode .ql-snow .ql-picker-item:hover,
+body.dark-mode .ql-snow .ql-picker-label:hover {
+    color: var(--accent-color, #a78bfa) !important;
+}
+body.dark-mode .ql-snow.ql-toolbar button:hover,
+body.dark-mode .ql-snow.ql-toolbar button:focus,
+body.dark-mode .ql-snow.ql-toolbar button.ql-active {
+    color: var(--accent-color, #a78bfa) !important;
+}
+body.dark-mode .ql-snow.ql-toolbar button:hover .ql-stroke,
+body.dark-mode .ql-snow.ql-toolbar button:focus .ql-stroke,
+body.dark-mode .ql-snow.ql-toolbar button.ql-active .ql-stroke {
+    stroke: var(--accent-color, #a78bfa) !important;
+}
+body.dark-mode .ql-snow.ql-toolbar button:hover .ql-fill,
+body.dark-mode .ql-snow.ql-toolbar button:focus .ql-fill,
+body.dark-mode .ql-snow.ql-toolbar button.ql-active .ql-fill {
+    fill: var(--accent-color, #a78bfa) !important;
+}
+
+/* Reminder Modal Rich Editor */
+.reminder-quill-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 4px;
+}
+.reminder-quill-wrapper .ql-toolbar.ql-snow {
+    border-top-left-radius: var(--r-sm);
+    border-top-right-radius: var(--r-sm);
+    padding: 6px 10px;
+    border-color: var(--line, #334155);
+    background: var(--bg-soft, #1e293b);
+}
+.reminder-quill-wrapper .ql-container.ql-snow {
+    border-bottom-left-radius: var(--r-sm);
+    border-bottom-right-radius: var(--r-sm);
+    border-color: var(--line, #334155);
+    min-height: 120px;
+    font-size: 0.88rem;
+}
+.reminder-quill-wrapper .ql-editor {
+    min-height: 120px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 10px 12px;
+    font-family: var(--font-sans);
+    line-height: 1.55;
+}
+.reminder-quill-wrapper .ql-editor.ql-blank::before {
+    color: var(--text-faint, #64748b);
+    left: 12px;
+    right: 12px;
+}
+.reminder-detail-body.is-html {
+    white-space: normal !important;
+}
+.reminder-detail-body.is-html p {
+    margin: 0 0 8px 0;
+}
+.reminder-detail-body.is-html p:last-child {
+    margin-bottom: 0;
+}
+.reminder-detail-body.is-html ul,
+.reminder-detail-body.is-html ol {
+    margin: 4px 0 8px 22px;
+    padding: 0;
+}
+.reminder-detail-body.is-html li {
+    margin-bottom: 3px;
+}
+.reminder-detail-body.is-html a {
+    color: var(--accent-color, #a78bfa);
+    text-decoration: underline;
+}
+.reminder-detail-body.is-html strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
 /* ============================================================
    Notification
    ============================================================ */

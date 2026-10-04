@@ -90,11 +90,36 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-04-v21016",
+    version: "v2.10.16",
+    date: "October 4, 2026",
+    isLatest: true,
+    badge: "TODAY'S UPDATE",
+    title: "Rich Text Editing Toolbar for Team Reminders",
+    summary: "Integrated a rich text formatting toolbar (bold, italic, underline, strikethrough, bulleted and numbered lists, font colors, and links) into the Team Reminders description field.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-textarea-t",
+        title: "Reminder Rich Text Editing Toolbar",
+        desc: "Replaced the plain description textarea with an interactive rich text editor equipped with bold, italic, underline, strikethrough, lists, font colors, and links.",
+        tag: "Team Reminders"
+      },
+      {
+        type: "ui",
+        icon: "bi-palette2",
+        title: "Dark Mode Quill Styling",
+        desc: "Optimized Quill toolbar icons, palettes, drop-downs, and rich reminder detail previews for dark mode.",
+        tag: "UI & Styling"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-02-v21015",
     version: "v2.10.15",
     date: "October 2, 2026",
-    isLatest: true,
-    badge: "TODAY'S TWEAK",
+    isLatest: false,
+    badge: "RECENT TWEAK",
     title: "Tools BETA Tag & Clean PDF Download Stream",
     summary: "Updated the Tools tab badge to 'BETA' and upgraded the PDF download handler to prevent Chrome Adobe extension redirect conflicts.",
     items: [
@@ -1884,11 +1909,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.15">
+          <div className="logo" title="PH Portal v2.10.16">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.15</span>
+              <span className="logo-version">v2.10.16</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -2949,8 +2974,9 @@ function ReminderBar({ reminders = [], onOpenModal }) {
         ) : (
           (() => {
             const rawDesc = currentReminder.description || '';
-            const cleanPreviewText = rawDesc.replace(/\s+/g, ' ').trim();
-            const isLongText = rawDesc.length > 120 || rawDesc.includes('\n');
+            const textContent = rawDesc.replace(/<[^>]+>/g, ' ');
+            const cleanPreviewText = textContent.replace(/\s+/g, ' ').trim();
+            const isLongText = cleanPreviewText.length > 120 || rawDesc.includes('\n') || rawDesc.includes('</p>');
 
             return (
               <div
@@ -3032,6 +3058,96 @@ function ReminderBar({ reminders = [], onOpenModal }) {
       </div>
     </div>
   );
+}
+
+function renderReminderBodyHtml(desc) {
+  if (!desc) return '';
+  const hasHtml = /<[a-z][\s\S]*>/i.test(desc);
+  if (!hasHtml) {
+    return desc
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br/>');
+  }
+  return desc;
+}
+
+function ReminderRichEditor({ value, onChange, placeholder = "Enter details, instructions, or notes for the team..." }) {
+  const containerRef = useRef(null);
+  const quillRef = useRef(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    if (typeof window.Quill === 'undefined') return;
+
+    containerRef.current.innerHTML = '';
+    const editorDiv = document.createElement('div');
+    containerRef.current.appendChild(editorDiv);
+
+    const quill = new window.Quill(editorDiv, {
+      theme: 'snow',
+      placeholder,
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          [{ color: [] }, { background: [] }],
+          ['link', 'clean']
+        ]
+      }
+    });
+
+    if (value) {
+      quill.root.innerHTML = value;
+    }
+
+    quill.on('text-change', () => {
+      const text = quill.getText().trim();
+      const html = quill.root.innerHTML;
+      if (!text && (html === '<p><br></p>' || html === '<p></p>' || !html)) {
+        onChange('');
+      } else {
+        onChange(html);
+      }
+    });
+
+    quillRef.current = quill;
+
+    return () => {
+      quillRef.current = null;
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const quill = quillRef.current;
+    if (quill) {
+      const currentHtml = quill.root.innerHTML;
+      const text = quill.getText().trim();
+      const effectiveCurrent = (!text && (currentHtml === '<p><br></p>' || currentHtml === '<p></p>')) ? '' : currentHtml;
+      if (value !== effectiveCurrent) {
+        quill.root.innerHTML = value || '';
+      }
+    }
+  }, [value]);
+
+  if (typeof window.Quill === 'undefined') {
+    return (
+      <textarea
+        className="reminder-form-textarea"
+        rows={5}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+      />
+    );
+  }
+
+  return <div className="reminder-quill-wrapper" ref={containerRef} />;
 }
 
 function ReminderModal({
@@ -3122,7 +3238,8 @@ function ReminderModal({
       setErrorMessage('Please enter a subject.');
       return;
     }
-    if (!description.trim()) {
+    const cleanText = (description || '').replace(/<[^>]+>/g, ' ').trim();
+    if (!cleanText) {
       setErrorMessage('Please enter a description.');
       return;
     }
@@ -3396,9 +3513,12 @@ function ReminderModal({
 
                   <div className="reminder-detail-divider"></div>
 
-                  <div className="reminder-detail-body">
-                    {viewingReminder.description}
-                  </div>
+                  <div
+                    className="reminder-detail-body is-html ql-snow"
+                    dangerouslySetInnerHTML={{
+                      __html: renderReminderBodyHtml(viewingReminder.description)
+                    }}
+                  />
                 </div>
 
                 {/* Bottom Footer Section: Remove / Restore Slideshow */}
@@ -3578,18 +3698,19 @@ function ReminderModal({
               />
             </div>
             <div className="reminder-form-group">
-              <label className="reminder-form-label" htmlFor="reminder-description-input">
-                Description *
-              </label>
-              <textarea
-                id="reminder-description-input"
-                className="reminder-form-textarea"
-                rows={5}
-                placeholder="Enter details, instructions, or notes for the team..."
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <label className="reminder-form-label" htmlFor="reminder-description-input" style={{ marginBottom: 0 }}>
+                  Description *
+                </label>
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <i className="bi bi-type-bold" aria-hidden="true"></i> Rich Text Formatting Enabled
+                </span>
+              </div>
+              <ReminderRichEditor
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-              ></textarea>
+                onChange={setDescription}
+                placeholder="Enter details, instructions, or notes for the team..."
+              />
             </div>
             <div className="reminder-form-group">
               <label className="reminder-form-label">Duration</label>
@@ -3813,7 +3934,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.15';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.16';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3829,7 +3950,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.15';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.16';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
