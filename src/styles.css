@@ -3806,6 +3806,12 @@ body.dark-mode .ql-snow.ql-toolbar button.ql-active .ql-fill {
     fill: var(--accent-color, #a78bfa) !important;
 }
 
+/* Reminder Modal Specific Width */
+.reminder-modal-content {
+    width: min(95vw, 920px) !important;
+    max-width: 920px !important;
+}
+
 /* Reminder Modal Rich Editor */
 .reminder-quill-wrapper {
     display: flex;

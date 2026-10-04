@@ -90,11 +90,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-04-v21019",
-    version: "v2.10.19",
+    id: "rel-2026-10-04-v21020",
+    version: "v2.10.20",
     date: "October 4, 2026",
     isLatest: true,
     badge: "LOCAL TWEAK",
+    title: "Expanded Team Reminders Modal Width",
+    summary: "Further expanded the Team Reminders modal width to 920px to comfortably accommodate long subject titles on all screens.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-expand",
+        title: "Extended Modal Width",
+        desc: "Increased the modal max-width to 920px to prevent long reminder subjects from wrapping.",
+        tag: "UI & Layout"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-04-v21019",
+    version: "v2.10.19",
+    date: "October 4, 2026",
+    isLatest: false,
+    badge: "RECENT TWEAK",
     title: "Wider Reminders Modal & Star Icon Tag",
     summary: "Expanded the Team Reminders modal width to 780px for better reading comfort and simplified the Important badge to a clean star icon.",
     items: [
@@ -1970,11 +1988,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.19">
+          <div className="logo" title="PH Portal v2.10.20">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.19</span>
+              <span className="logo-version">v2.10.20</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3364,9 +3382,9 @@ function ReminderModal({
       style={{ cursor: activeTab === 'add' || currentEditItem ? 'default' : 'pointer' }}
     >
       <div
-        className="break-modal-content"
+        className="break-modal-content reminder-modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ width: 'min(100%, 780px)', maxWidth: 780, padding: 24, cursor: 'default' }}
+        style={{ width: 'min(95vw, 920px)', maxWidth: 920, padding: 24, cursor: 'default' }}
       >
         {/* Top Header Section */}
         {showTopHeader && (
@@ -3991,7 +4009,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.19';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.20';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -4007,7 +4025,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.19';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.20';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
