@@ -90,11 +90,36 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-04-v21019",
+    version: "v2.10.19",
+    date: "October 4, 2026",
+    isLatest: true,
+    badge: "LOCAL TWEAK",
+    title: "Wider Reminders Modal & Star Icon Tag",
+    summary: "Expanded the Team Reminders modal width to 780px for better reading comfort and simplified the Important badge to a clean star icon.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-expand",
+        title: "Expanded Modal Width",
+        desc: "Increased the width of the Team Reminders modal to 780px so long subjects and actions have more breathing room.",
+        tag: "UI & Layout"
+      },
+      {
+        type: "ui",
+        icon: "bi-star-fill",
+        title: "Icon-Only Important Star",
+        desc: "Updated the Important indicator tag to display a clean star icon without the text label.",
+        tag: "Team Reminders"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-04-v21018",
     version: "v2.10.18",
     date: "October 4, 2026",
-    isLatest: true,
-    badge: "LOCAL CLEANUP",
+    isLatest: false,
+    badge: "RECENT CLEANUP",
     title: "Reminder Description Label Clean-up",
     summary: "Removed the 'Rich Text Formatting Enabled' helper text from the Description field label in the Team Reminders modal for a cleaner layout.",
     items: [
@@ -1945,11 +1970,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.18">
+          <div className="logo" title="PH Portal v2.10.19">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.18</span>
+              <span className="logo-version">v2.10.19</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3025,8 +3050,8 @@ function ReminderBar({ reminders = [], onOpenModal }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
                     <h4 className="reminder-title">{currentReminder.subject}</h4>
                     {currentReminder.isImportant && (
-                      <span className="reminder-tag-important">
-                        <i className="bi bi-star-fill me-1" aria-hidden="true"></i> Important
+                      <span className="reminder-tag-important" title="Important Reminder">
+                        <i className="bi bi-star-fill" aria-hidden="true"></i>
                       </span>
                     )}
                   </div>
@@ -3341,7 +3366,7 @@ function ReminderModal({
       <div
         className="break-modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 680, padding: 24, cursor: 'default' }}
+        style={{ width: 'min(100%, 780px)', maxWidth: 780, padding: 24, cursor: 'default' }}
       >
         {/* Top Header Section */}
         {showTopHeader && (
@@ -3531,8 +3556,8 @@ function ReminderModal({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                       <h3 className="reminder-detail-subject">{viewingReminder.subject}</h3>
                       {viewingReminder.isImportant ? (
-                        <span className="reminder-tag-important">
-                          <i className="bi bi-star-fill me-1" aria-hidden="true"></i> Important
+                        <span className="reminder-tag-important" title="Important Reminder">
+                          <i className="bi bi-star-fill" aria-hidden="true"></i>
                         </span>
                       ) : (
                         <span className="reminder-tag-standard">
@@ -3646,8 +3671,8 @@ function ReminderModal({
                               {reminder.subject}
                             </h4>
                             {reminder.isImportant ? (
-                              <span className="reminder-tag-important">
-                                <i className="bi bi-star-fill me-1" aria-hidden="true"></i> Important
+                              <span className="reminder-tag-important" title="Important Reminder">
+                                <i className="bi bi-star-fill" aria-hidden="true"></i>
                               </span>
                             ) : (
                               <span className="reminder-tag-standard">
@@ -3966,7 +3991,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.18';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.19';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -3982,7 +4007,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.18';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.19';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
