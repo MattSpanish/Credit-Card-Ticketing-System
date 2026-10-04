@@ -90,11 +90,29 @@ const TID_TEMPLATES = {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-04-v21022",
+    version: "v2.10.22",
+    date: "October 4, 2026",
+    isLatest: true,
+    badge: "LOCAL CLEANUP",
+    title: "Clean Reminders List Header (No Pin Icon)",
+    summary: "Removed the pushpin icons from the reminders list cards for a cleaner, modern typography layout.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-card-text",
+        title: "Clean Reminder Cards",
+        desc: "Removed the redundant pushpin icons beside reminder titles in the All Reminders list.",
+        tag: "Team Reminders"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-04-v21021",
     version: "v2.10.21",
     date: "October 4, 2026",
-    isLatest: true,
-    badge: "LOCAL TWEAK",
+    isLatest: false,
+    badge: "RECENT TWEAK",
     title: "Reminder Navigation (Next & Backward)",
     summary: "Added Previous and Next navigation buttons in the reminder detail view so team members can effortlessly browse through reminders.",
     items: [
@@ -2006,11 +2024,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.21">
+          <div className="logo" title="PH Portal v2.10.22">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.21</span>
+              <span className="logo-version">v2.10.22</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3771,7 +3789,6 @@ function ReminderModal({
                       <div key={reminder.id} className="reminder-card-item">
                         <div className="reminder-card-main-info">
                           <div className="reminder-card-title-group" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            <i className="bi bi-pin-angle-fill reminder-pin-icon" aria-hidden="true"></i>
                             <h4
                               className="reminder-card-subject"
                               onClick={() => setViewingReminder(reminder)}
@@ -4101,7 +4118,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.21';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.22';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -4117,7 +4134,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.21';
+      const currentVersion = latestAnnouncement?.version || 'v2.10.22';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
