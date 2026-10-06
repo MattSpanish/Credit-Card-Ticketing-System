@@ -12,6 +12,10 @@ export const OFFICIAL_KB_CATEGORIES = [
   'Buypass',
   'TSYS',
   'Nashville',
+  'P98',
+  'Valor',
+  'Account Maintenance',
+  'General',
 ];
 
 export const DEFAULT_KB_ITEMS = [
@@ -232,6 +236,81 @@ export const DEFAULT_KB_ITEMS = [
    • Document batch number, date, and adjusted total in ticketing system notes.`,
     createdAt: '2026-10-06T10:00:00.000Z',
     updatedAt: '2026-10-06T10:00:00.000Z'
+  },
+  {
+    id: 'kb-p98-setup-troubleshooting',
+    title: 'P98 Wireless Terminal Communication & Setup',
+    category: 'P98',
+    tags: ['P98'],
+    description: `1. Check Network Connectivity:
+   • Verify 4G SIM cellular signal or Wi-Fi connectivity indicator in the top status bar.
+   • If signal is low, perform network reset from Wireless Settings.
+
+2. Verify Host Gateway:
+   • Press Menu > System Config > Communication Settings.
+   • Verify APN and host IP / port settings.
+
+3. Test Transaction:
+   • Perform balance inquiry or test sale to confirm communication.`,
+    createdAt: '2026-10-06T10:00:00.000Z',
+    updatedAt: '2026-10-06T10:00:00.000Z'
+  },
+  {
+    id: 'kb-valor-batch-settle',
+    title: 'Valor VL100 / VL110 Batch Settlement & Key Injection',
+    category: 'Valor',
+    tags: ['Valor'],
+    description: `1. Check Batch Status:
+   • Tap Menu > Settlement > Batch Summary.
+   • Review open totals against POS / register reports.
+
+2. Settle Batch:
+   • Select "Close Batch" and enter Manager password.
+   • Wait for "BATCH ACCEPTED" receipt confirmation.
+
+3. Remote Key Injection / Parameter Update:
+   • Navigate to Settings > Maintenance > Host Sync.
+   • Run Remote Key Injection (RKI) if debit or PIN pad encryption error occurs.`,
+    createdAt: '2026-10-06T10:00:00.000Z',
+    updatedAt: '2026-10-06T10:00:00.000Z'
+  },
+  {
+    id: 'kb-account-maintenance-procedures',
+    title: 'Account Maintenance & Terminal Re-Boarding SOP',
+    category: 'Account Maintenance',
+    tags: ['Account Maintenance'],
+    description: `1. Verify Merchant Records:
+   • Confirm MID, TID, DBA name, and bank routing numbers match CRM and processor boarding profile.
+
+2. Profile Updates:
+   • When updating batch auto-close time, terminal fee configuration, or tip settings:
+   • Update host parameters in processor portal.
+   • Perform parameter download on terminal to synchronize.
+
+3. Account Closure / Swaps:
+   • Verify batch is settled before de-activating terminal profile.
+   • Log TID status and reason in ticketing system notes.`,
+    createdAt: '2026-10-06T10:00:00.000Z',
+    updatedAt: '2026-10-06T10:00:00.000Z'
+  },
+  {
+    id: 'kb-general-power-connectivity',
+    title: 'General Terminal Power Cycle & Connectivity Troubleshooting',
+    category: 'General',
+    tags: ['General'],
+    description: `1. Power Cycle Sequence:
+   • Unplug power adapter and remove battery (if portable).
+   • Wait 15 seconds to discharge internal capacitors.
+   • Reconnect power and power on.
+
+2. Inspect Physical Connections:
+   • Ensure power supply meets terminal voltage requirements (e.g. 9V / 12V).
+   • Reseat Ethernet and power cables securely.
+
+3. Gateway Ping:
+   • Test network connection and DNS resolution.`,
+    createdAt: '2026-10-06T10:00:00.000Z',
+    updatedAt: '2026-10-06T10:00:00.000Z'
   }
 ];
 
@@ -277,6 +356,15 @@ export function getStoredKnowledgeBaseItems() {
         updated.title = 'Nashville Batch Out of Balance & Reconciliation';
       }
       return updated;
+    });
+
+    // Ensure newly introduced default guide templates exist if not present
+    const existingIds = new Set(parsed.map(i => i.id));
+    DEFAULT_KB_ITEMS.forEach(defaultItem => {
+      if (!existingIds.has(defaultItem.id)) {
+        parsed.push(defaultItem);
+        needsUpdate = true;
+      }
     });
 
     if (needsUpdate) {
