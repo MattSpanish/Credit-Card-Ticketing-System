@@ -39,8 +39,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   // Form states for Add/Edit
   const [formTitle, setFormTitle] = useState('');
   const [formCategory, setFormCategory] = useState('General');
-  const [formKeywords, setFormKeywords] = useState('');
-  const [formDescription, setFormDescription] = useState('');
+    const [formDescription, setFormDescription] = useState('');
   const [formError, setFormError] = useState('');
 
   // Toast / feedback message
@@ -74,20 +73,17 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
       );
     }
 
-    // Filter by search query (token-based keyword search)
+    // Filter by search query based on title and troubleshooting steps content
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       const tokens = q.split(/\s+/).filter(Boolean);
       result = result.filter((it) => {
         const titleStr = (it.title || '').toLowerCase();
         const catStr = (it.category || '').toLowerCase();
-        const kwStr = Array.isArray(it.keywords)
-          ? it.keywords.join(' ').toLowerCase()
-          : (it.keywords || '').toLowerCase();
-        const descStr = (it.description || '').toLowerCase();
-        const combined = `${titleStr} ${catStr} ${kwStr} ${descStr}`;
+        const contentStr = (it.description || '').toLowerCase();
+        const combined = `${titleStr} ${catStr} ${contentStr}`;
 
-        // Every typed keyword token must be present in the item
+        // Every search word must appear in the title, category, or troubleshooting content
         return tokens.every((token) => combined.includes(token));
       });
     }
@@ -136,8 +132,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     setEditingItem(null);
     setFormTitle('');
     setFormCategory('General');
-    setFormKeywords('');
-    setFormDescription('');
+        setFormDescription('');
     setFormError('');
     setIsEditorOpen(true);
   };
@@ -147,10 +142,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     setEditingItem(item);
     setFormTitle(item.title || '');
     setFormCategory(item.category || 'General');
-    setFormKeywords(
-      Array.isArray(item.keywords) ? item.keywords.join(', ') : item.keywords || ''
-    );
-    setFormDescription(item.description || '');
+        setFormDescription(item.description || '');
     setFormError('');
     setIsEditorOpen(true);
   };
@@ -170,11 +162,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
       return;
     }
 
-    const parsedKeywords = formKeywords
-      .split(',')
-      .map((k) => k.trim())
-      .filter(Boolean);
-
+    
     let updatedList;
     if (editingItem) {
       // Update existing item
@@ -182,8 +170,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
         ...editingItem,
         title: cleanTitle,
         category: formCategory.trim() || 'General',
-        keywords: parsedKeywords,
-        description: cleanDesc,
+                description: cleanDesc,
         updatedAt: new Date().toISOString(),
       };
       updatedList = items.map((it) => (it.id === editingItem.id ? updatedItem : it));
@@ -197,8 +184,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
         id: `kb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         title: cleanTitle,
         category: formCategory.trim() || 'General',
-        keywords: parsedKeywords,
-        description: cleanDesc,
+                description: cleanDesc,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -324,7 +310,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
             <input
               type="text"
               className="kb-search-input"
-              placeholder="Search by keywords (e.g. EBT, Settlement, FD150, Dejavoo, Comm Error)..."
+              placeholder="Search troubleshooting steps by word (e.g. EBT, Settlement, Error 99, IP)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -508,20 +494,6 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
               {viewingItem.title}
             </h2>
 
-            {/* Keywords Tag Bar */}
-            {Array.isArray(viewingItem.keywords) && viewingItem.keywords.length > 0 && (
-              <div className="kb-detail-keywords-row">
-                <span className="kb-detail-keywords-label">
-                  <i className="bi bi-tags-fill me-1"></i> Keywords:
-                </span>
-                {viewingItem.keywords.map((kw, i) => (
-                  <span key={i} className="kb-keyword-pill-lg">
-                    #{kw.trim()}
-                  </span>
-                ))}
-              </div>
-            )}
-
             {/* Action Bar */}
             <div className="kb-detail-actions-bar">
               <button
@@ -642,7 +614,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                 </h2>
                 <p className="modal-subtitle">
                   {editingItem
-                    ? 'Update the troubleshooting steps or keywords for this guide.'
+                    ? 'Update the troubleshooting steps or title for this guide.'
                     : 'Create a new troubleshooting guide. It will be automatically sorted alphabetically (A–Z).'}
                 </p>
               </div>
@@ -685,45 +657,27 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                 </small>
               </div>
 
-              {/* Category & Keywords Row */}
-              <div className="row g-2 mb-3">
-                <div className="col-md-5">
-                  <label className="form-label fw-bold">Category</label>
-                  <input
-                    type="text"
-                    list="kb-categories-list"
-                    className="form-control"
-                    placeholder="e.g. FD150, Dejavoo, PAX, TSYS"
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                  />
-                  <datalist id="kb-categories-list">
-                    <option value="FD150" />
-                    <option value="Dejavoo" />
-                    <option value="PAX" />
-                    <option value="TSYS" />
-                    <option value="Clover" />
-                    <option value="Ingenico" />
-                    <option value="Verifone" />
-                    <option value="General" />
-                  </datalist>
-                </div>
-
-                <div className="col-md-7">
-                  <label className="form-label fw-bold">
-                    Keywords (comma-separated for search)
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="e.g. EBT, Settlement, Table Error, Host Error"
-                    value={formKeywords}
-                    onChange={(e) => setFormKeywords(e.target.value)}
-                  />
-                  <small className="text-muted" style={{ fontSize: 11 }}>
-                    Users can search by these keywords in addition to the title.
-                  </small>
-                </div>
+              {/* Category Row */}
+              <div className="form-group mb-3">
+                <label className="form-label fw-bold">Category</label>
+                <input
+                  type="text"
+                  list="kb-categories-list"
+                  className="form-control"
+                  placeholder="e.g. FD150, Dejavoo, PAX, TSYS, Clover, General"
+                  value={formCategory}
+                  onChange={(e) => setFormCategory(e.target.value)}
+                />
+                <datalist id="kb-categories-list">
+                  <option value="FD150" />
+                  <option value="Dejavoo" />
+                  <option value="PAX" />
+                  <option value="TSYS" />
+                  <option value="Clover" />
+                  <option value="Ingenico" />
+                  <option value="Verifone" />
+                  <option value="General" />
+                </datalist>
               </div>
 
               {/* Troubleshooting Steps */}

@@ -97,10 +97,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-06-v21105",
+    version: "v2.11.5",
+    date: "October 6 2026",
+    isLatest: true,
+    badge: "LOCAL CLEANUP",
+    title: "Content-Driven Search & Removed Keyword Fields",
+    summary: "Removed the separate keywords input field. The Knowledge Base search now automatically searches the full content of troubleshooting steps and titles for any matched word (e.g. searching 'EBT' returns all steps mentioning EBT).",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-search",
+        title: "Full-Content Step Search",
+        desc: "Search directly scans the title and complete text of all troubleshooting steps without requiring separate keyword fields.",
+        tag: "Knowledge Base Search"
+      },
+      {
+        type: "ui",
+        icon: "bi-trash",
+        title: "Removed Keywords Field",
+        desc: "Simplified the Add/Edit guide form and reading modal by removing redundant keyword tag inputs.",
+        tag: "Knowledge Base UI"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-06-v21104",
     version: "v2.11.4",
     date: "October 6 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "LOCAL CLEANUP",
     title: "Knowledge Base Full Page Height (Removed 480px Scroll Constraint)",
     summary: "Removed the modal 480px max-height constraint from the Knowledge Base guides list so all items expand naturally and seamlessly across the page without premature scrollbars or bottom dead space.",
@@ -2173,11 +2198,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.11.4">
+          <div className="logo" title="PH Portal v2.11.5">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.11.4</span>
+              <span className="logo-version">v2.11.5</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4259,7 +4284,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.11.4';
+      const currentVersion = latestAnnouncement?.version || 'v2.11.5';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -4275,7 +4300,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.11.4';
+      const currentVersion = latestAnnouncement?.version || 'v2.11.5';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

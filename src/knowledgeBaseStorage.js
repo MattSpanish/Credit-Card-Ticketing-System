@@ -8,7 +8,6 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-clover-offline-reset',
     title: 'Clover Mini / Flex Offline Mode & Network Reset',
     category: 'Clover',
-    keywords: ['Clover', 'Offline', 'Network', 'Wi-Fi', 'Reboot', 'Trans Armor'],
     description: `1. Check network connection:
    • Swipe down from the top right corner of the screen and tap Settings > Wi-Fi.
    • Verify that the terminal is connected to a stable 2.4GHz or 5GHz business Wi-Fi network (avoid public captive portals).
@@ -31,7 +30,6 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-dejavoo-error-99',
     title: 'Dejavoo Z8 / Z11 Batch Settlement Failed (Error 99)',
     category: 'Dejavoo',
-    keywords: ['Dejavoo', 'Z8', 'Z11', 'Error 99', 'Settlement', 'Batch', 'Host'],
     description: `1. Check Host Communication:
    • Error 99 indicates host communication failure or open batch mismatch with the host processor.
    • Verify internet connectivity: Look for the blue IP icon or active Ethernet/Wi-Fi symbol on the top status bar.
@@ -56,7 +54,6 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-fd150-ebt-table-error',
     title: 'FD150 EBT Settlement Table Error',
     category: 'FD150',
-    keywords: ['FD150', 'EBT', 'Settlement', 'Table Error', 'Batch', 'Food Stamps', 'Cash Benefit'],
     description: `1. Identify the Cause:
    • "EBT Settlement Table Error" occurs when the terminal's internal EBT batch table has desynchronized records or corrupted totals compared to the host processor gateway.
 
@@ -88,7 +85,6 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-fd150-param-download',
     title: 'FD150 Parameter Download & Dial Pay Setup',
     category: 'FD150',
-    keywords: ['FD150', 'Parameter Download', 'Dial Pay', 'First Data', 'Nashville', 'Config'],
     description: `1. Prepare Terminal:
    • Connect terminal to high-speed Ethernet (port with network icon) or verify Wi-Fi is connected.
    • Ensure printer paper roll is loaded.
@@ -117,7 +113,6 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-ingenico-tamper-reset',
     title: 'Ingenico Move 5000 / Desk 3500 Key Injection & Tamper Reset',
     category: 'Ingenico',
-    keywords: ['Ingenico', 'Move 5000', 'Desk 3500', 'Tamper', 'Key Injection', 'Hardware Error', 'Security'],
     description: `1. Recognizing "Alert / Unauthorized / Tamper Detected":
    • For PCI-PTS compliance, Ingenico terminals lock permanently if internal physical sensor is triggered (dropped, opened, or extreme temperature shock).
 
@@ -136,7 +131,6 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-pax-comm-error',
     title: 'PAX S80 / S300 Communication & Socket Error',
     category: 'PAX',
-    keywords: ['PAX', 'S80', 'S300', 'Comm Error', 'Socket Error', 'IP', 'POS Bridge', 'Ethernet'],
     description: `1. Check Physical Cable Connection:
    • Ensure Ethernet cable is connected to the LAN port (NOT the RS232 or PIN pad port).
    • Look for active green and flashing amber LEDs on the RJ45 port.
@@ -161,7 +155,6 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-tsys-batch-out-of-balance',
     title: 'TSYS / Nashville Batch Out of Balance & Reconciliation',
     category: 'TSYS',
-    keywords: ['TSYS', 'Nashville', 'Batch Out of Balance', 'Reconciliation', 'Settlement', 'Totals Mismatch'],
     description: `1. Identify Discrepancy:
    • "Out of Balance" occurs when the terminal batch count or dollar total differs from host records (often caused by an offline void, duplicate auth, or dropped transaction).
 
@@ -184,7 +177,6 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-tsys-tid-mid-mismatch',
     title: 'TSYS Terminal ID (TID) / Merchant ID (MID) Mismatch',
     category: 'TSYS',
-    keywords: ['TSYS', 'TID Mismatch', 'MID Mismatch', 'Invalid Merchant', 'Boarding', 'V-Number'],
     description: `1. Confirm Boarding Information:
    • Check VAR sheet or TSYS boarding portal for exact 16-digit Merchant Number and 8-digit V-Number / TID.
 
@@ -205,7 +197,6 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-verifone-vx520-comm-error',
     title: 'Verifone VX520 Comm Error / Line Detection',
     category: 'Verifone',
-    keywords: ['Verifone', 'VX520', 'Comm Error', 'Line Detection', 'Dial-up', 'Ethernet', 'DNS'],
     description: `1. Identify Comm Mode:
    • Check whether merchant uses Ethernet (LAN) or Dial-up phone line.
    • If Ethernet: Ensure cable is in port with 10BaseT / network symbol (ETH port), not RS232 port.
