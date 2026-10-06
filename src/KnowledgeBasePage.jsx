@@ -277,39 +277,42 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
       )}
 
       {/* Top Header Section */}
-      <div className="shift-header-banner kb-header-banner">
-        <div className="shift-header-info">
+      <div className="kb-header-banner">
+        <div className="kb-header-left">
           <div className="header-badge-row">
             <span className="kicker-pill" style={{ background: 'rgba(139, 92, 246, 0.2)', color: '#c084fc', border: '1px solid rgba(139, 92, 246, 0.4)' }}>
-              <i className="bi bi-journal-bookmark-fill me-1" aria-hidden="true"></i> Troubleshooting & SOPs
+              <i className="bi bi-journal-bookmark-fill me-1" aria-hidden="true"></i> Troubleshooting Steps
             </span>
             <span className="badge-local-pill">LOCAL ONLY</span>
           </div>
-          <h1>KNOWLEDGE BASE</h1>
-          <p className="panel-subtitle">
-            Searchable library of terminal troubleshooting steps, host error resolutions, and standard operating procedures.
-          </p>
+          <h1 className="kb-main-title">KNOWLEDGE BASE</h1>
+
+          <div className="kb-header-actions" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="announcement-back-btn kb-btn-compact"
+              onClick={onBackToDashboard}
+              title="Return to Ticketing Dashboard"
+            >
+              <i className="bi bi-arrow-left" aria-hidden="true"></i> Back to Dashboard
+            </button>
+
+            <button
+              type="button"
+              className="btn-add-kb-guide kb-btn-compact"
+              onClick={handleOpenAdd}
+              title="Create a new Knowledge Base entry"
+            >
+              <i className="bi bi-plus-lg me-1" aria-hidden="true"></i>
+              <span>New Guide</span>
+            </button>
+          </div>
         </div>
 
-        <div className="shift-header-actions kb-header-actions" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="announcement-back-btn kb-btn-compact"
-            onClick={onBackToDashboard}
-            title="Return to Ticketing Dashboard"
-          >
-            <i className="bi bi-arrow-left" aria-hidden="true"></i> Back to Dashboard
-          </button>
-
-          <button
-            type="button"
-            className="btn-add-kb-guide kb-btn-compact"
-            onClick={handleOpenAdd}
-            title="Create a new Knowledge Base entry"
-          >
-            <i className="bi bi-plus-lg me-1" aria-hidden="true"></i>
-            <span>New Guide</span>
-          </button>
+        <div className="kb-header-right">
+          <p className="kb-header-desc">
+            Searchable library of terminal troubleshooting steps, host error resolutions, and standard operating procedures.
+          </p>
         </div>
       </div>
 
