@@ -6,6 +6,7 @@ import tatiBanner from './tati2.png';
 import appLogo from './logo2.png';
 import ShiftReportPage from './ShiftReportPage';
 import ToolsPage from './ToolsPage';
+import KnowledgeBasePage from './KnowledgeBasePage';
 import {
   fetchReminders,
   addReminder,
@@ -96,10 +97,42 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-06-v21100",
+    version: "v2.11.0",
+    date: "October 6 2026",
+    isLatest: true,
+    badge: "MAJOR FEATURE",
+    title: "Knowledge Base Tab & Troubleshooting Guides",
+    summary: "Added a dedicated Knowledge Base tab in the left panel to store, organize, and search troubleshooting guides and terminal procedures with alphabetical (A–Z) sorting, keyword search, guide creation, and complete step-by-step reading view.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-journal-bookmark",
+        title: "Knowledge Base Tab",
+        desc: "New primary navigation tab in the left panel to store SOPs, error code resolutions, and troubleshooting procedures.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "feature",
+        icon: "bi-search",
+        title: "Smart Keyword Search & A–Z Sorting",
+        desc: "Search guides across titles, error codes, and keywords (e.g. searching 'EBT', 'Settlement', or 'FD150'). All guides stay organized alphabetically from A to Z.",
+        tag: "Search & Navigation"
+      },
+      {
+        type: "feature",
+        icon: "bi-plus-circle",
+        title: "Add & Edit Troubleshooting Guides",
+        desc: "Create and update guides with custom titles, categories, keyword tags, and formatted troubleshooting steps with auto-placement in alphabetical order.",
+        tag: "Guide Management"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-04-v21024",
     version: "v2.10.24",
     date: "October 4 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "LOCAL CLEANUP",
     title: "Dashboard Tabs Streamlined",
     summary: "Removed the Shift Report and Tools tab buttons from the dashboard top tabs bar, keeping the layout focused on New Ticket.",
@@ -2068,11 +2101,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.24">
+          <div className="logo" title="PH Portal v2.11.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.24</span>
+              <span className="logo-version">v2.11.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -2153,6 +2186,21 @@ function Sidebar({
             </button>
 
             {/* Tools Tab */}
+                        {/* Dedicated Knowledge Base Tab */}
+            <button 
+              id="nav-knowledge-base"
+              className={`nav-item ${currentView === 'knowledge-base' ? 'active' : ''}`}
+              onClick={() => handleNavAction(() => {
+                onSelectView && onSelectView('knowledge-base');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              })}
+              aria-current={currentView === 'knowledge-base' ? 'page' : undefined}
+              title="Knowledge Base"
+            >
+              <i className="bi bi-journal-bookmark me-2" aria-hidden="true"></i>
+              <span className="nav-text">Knowledge Base</span>
+            </button>
+
             <button 
               id="nav-tools"
               className={`nav-item ${currentView === 'tools' ? 'active' : ''}`}
@@ -4139,7 +4187,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.24';
+      const currentVersion = latestAnnouncement?.version || 'v2.11.0';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -4155,7 +4203,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.24';
+      const currentVersion = latestAnnouncement?.version || 'v2.11.0';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -4428,6 +4476,11 @@ export default function App() {
           {/* ✅ INDEPENDENT TOOLS PAGE (Utilities & PDF Generators) */}
           <div style={{ display: currentView === 'tools' ? 'block' : 'none' }}>
             <ToolsPage onBackToDashboard={() => setCurrentView('dashboard')} />
+          </div>
+
+          {/* ✅ INDEPENDENT KNOWLEDGE BASE PAGE (Troubleshooting Guides & Procedures) */}
+          <div style={{ display: currentView === 'knowledge-base' ? 'block' : 'none' }}>
+            <KnowledgeBasePage onBackToDashboard={() => setCurrentView('dashboard')} />
           </div>
 
           <div id="notification"></div>
