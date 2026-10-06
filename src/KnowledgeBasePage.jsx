@@ -265,7 +265,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     }
 
     return sortKnowledgeBaseItemsAZ(result);
-  }, [items, selectedCategory, searchQuery]);
+  }, [items, selectedTags, searchQuery]);
 
   // Navigation within full guide view (Prev / Next)
   const currentNavIndex = viewingItem
