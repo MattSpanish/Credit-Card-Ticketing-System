@@ -449,6 +449,30 @@
   border-radius: 10px;
 }
 
+.kb-filter-menu-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 2px;
+}
+
+.kb-filter-menu-done-btn {
+  background: #8b5cf6;
+  border: none;
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kb-filter-menu-done-btn:hover {
+  background: #7c3aed;
+}
+
 /* Active Filters Row */
 .kb-active-filters-row {
   display: flex;
@@ -1092,6 +1116,10 @@ body:not(.dark-mode) .kb-filter-menu-item:hover {
 body:not(.dark-mode) .kb-filter-menu-item.selected {
   background: #ede9fe;
   color: #6d28d9;
+}
+
+body:not(.dark-mode) .kb-filter-menu-footer {
+  border-top-color: #e2e8f0;
 }
 
 body:not(.dark-mode) .kb-active-filters-row {

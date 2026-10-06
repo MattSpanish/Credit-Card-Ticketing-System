@@ -145,7 +145,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedTags, setSelectedTags] = useState([]);
   const [viewingItem, setViewingItem] = useState(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -204,7 +204,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     return ['General'];
   };
 
-  // Derive categories: EXACT specified order: Clover, Dejavoo, FD150, PAX, Nexgo, Buypass, TSYS, Nashville
+  // Derive categories: EXACT specified order: Clover, Dejavoo, FD150, PAX, Nexgo, Buypass, TSYS, Nashville, etc.
   const categories = useMemo(() => {
     const officialSet = new Set(OFFICIAL_KB_CATEGORIES.map(c => c.toLowerCase()));
     const customCats = [];
@@ -217,25 +217,34 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
         }
       });
     });
-    return ['ALL', ...OFFICIAL_KB_CATEGORIES, ...customCats];
+    return [...OFFICIAL_KB_CATEGORIES, ...customCats];
   }, [items]);
 
   const getTagCount = (cat) => {
-    if (cat === 'ALL') return items.length;
     return items.filter((it) =>
       getItemTags(it).some((t) => t.toLowerCase() === cat.toLowerCase())
     ).length;
   };
 
-  // Keyword search & category/tag filter (Always sorted A–Z)
+  const getSelectedTagsMatchedCount = () => {
+    if (selectedTags.length === 0) return items.length;
+    const selectedLower = selectedTags.map((t) => t.toLowerCase());
+    return items.filter((it) => {
+      const itemTags = getItemTags(it).map((t) => t.toLowerCase());
+      return selectedLower.some((sel) => itemTags.includes(sel));
+    }).length;
+  };
+
+  // Keyword search & tag filter (Always sorted A–Z)
   const filteredItems = useMemo(() => {
     let result = items;
 
-    // Filter by category / tag
-    if (selectedCategory !== 'ALL') {
+    // Filter by multiple selected tags (OR condition: guide contains ANY of selected tags)
+    if (selectedTags.length > 0) {
+      const selectedLower = selectedTags.map((t) => t.toLowerCase());
       result = result.filter((it) => {
-        const itemTags = getItemTags(it);
-        return itemTags.some((t) => t.toLowerCase() === selectedCategory.toLowerCase());
+        const itemTags = getItemTags(it).map((t) => t.toLowerCase());
+        return selectedLower.some((sel) => itemTags.includes(sel));
       });
     }
 
@@ -298,7 +307,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   const handleOpenAdd = () => {
     setEditingItem(null);
     setFormTitle('');
-    setFormTags(selectedCategory !== 'ALL' ? [selectedCategory] : []);
+    setFormTags(selectedTags.length > 0 ? [...selectedTags] : []);
     setFormDescription('');
     setFormError('');
     setIsEditorOpen(true);
@@ -415,19 +424,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
       });
   };
 
-  // Reset to default guides
-  const handleResetDefaults = () => {
-    if (
-      window.confirm(
-        'Reset Knowledge Base to standard default troubleshooting guides? This will restore initial templates.'
-      )
-    ) {
-      const sorted = sortKnowledgeBaseItemsAZ(DEFAULT_KB_ITEMS);
-      setItems(sorted);
-      saveKnowledgeBaseItemsList(sorted);
-      showToast('Knowledge Base reset to default guides.', 'info');
-    }
-  };
+
 
   return (
     <div className="kb-page-container">
@@ -519,26 +516,34 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
           <div className="kb-filter-dropdown-wrapper" ref={filterDropdownRef}>
             <button
               type="button"
-              className={`kb-filter-dropdown-btn ${selectedCategory !== 'ALL' ? 'active' : ''}`}
+              className={`kb-filter-dropdown-btn ${selectedTags.length > 0 ? 'active' : ''}`}
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               aria-expanded={isFilterOpen}
               aria-haspopup="true"
-              title="Filter guides by tag"
+              title="Filter guides by tags"
             >
-              <i className={`bi ${selectedCategory !== 'ALL' ? 'bi-funnel-fill' : 'bi-funnel'} me-1`}></i>
+              <i className={`bi ${selectedTags.length > 0 ? 'bi-funnel-fill' : 'bi-funnel'} me-1`}></i>
               <span className="kb-filter-btn-label">
-                {selectedCategory === 'ALL' ? 'All Tags' : selectedCategory}
+                {selectedTags.length === 0
+                  ? 'Filter by Tag'
+                  : selectedTags.length === 1
+                  ? selectedTags[0]
+                  : `${selectedTags.length} Tags`}
               </span>
               <span className="kb-filter-btn-count">
-                {getTagCount(selectedCategory)}
+                {selectedTags.length <= 1
+                  ? selectedTags.length === 1
+                    ? getTagCount(selectedTags[0])
+                    : items.length
+                  : getSelectedTagsMatchedCount()}
               </span>
-              {selectedCategory !== 'ALL' ? (
+              {selectedTags.length > 0 ? (
                 <span
                   className="kb-filter-clear-icon ms-1"
-                  title="Clear tag filter"
+                  title="Clear tag selection"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedCategory('ALL');
+                    setSelectedTags([]);
                   }}
                 >
                   <i className="bi bi-x"></i>
@@ -552,18 +557,16 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
             {isFilterOpen && (
               <div className="kb-filter-menu-popover" role="menu">
                 <div className="kb-filter-menu-header">
-                  <span className="kb-filter-menu-title">Filter by Tag</span>
-                  {selectedCategory !== 'ALL' && (
+                  <span className="kb-filter-menu-title">
+                    Filter by Tags {selectedTags.length > 0 && `(${selectedTags.length})`}
+                  </span>
+                  {selectedTags.length > 0 && (
                     <button
                       type="button"
                       className="kb-filter-reset-link"
-                      onClick={() => {
-                        setSelectedCategory('ALL');
-                        setIsFilterOpen(false);
-                        setTagSearchQuery('');
-                      }}
+                      onClick={() => setSelectedTags([])}
                     >
-                      Reset to All
+                      Clear All
                     </button>
                   )}
                 </div>
@@ -592,69 +595,83 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                 )}
 
                 <div className="kb-filter-menu-list">
+                  <button
+                    type="button"
+                    className={`kb-filter-menu-item ${selectedTags.length === 0 ? 'selected' : ''}`}
+                    onClick={() => setSelectedTags([])}
+                    role="menuitem"
+                  >
+                    <div className="kb-filter-item-left">
+                      <i className={`bi ${selectedTags.length === 0 ? 'bi-check-circle-fill' : 'bi-circle'} kb-item-icon`}></i>
+                      <span className="kb-item-name">All Tags</span>
+                    </div>
+                    <span className="kb-item-count">{items.length}</span>
+                  </button>
+
                   {categories
                     .filter((cat) => {
                       if (!tagSearchQuery.trim()) return true;
                       return cat.toLowerCase().includes(tagSearchQuery.trim().toLowerCase());
                     })
                     .map((cat) => {
-                      const isSelected = selectedCategory === cat;
+                      const isSelected = selectedTags.includes(cat);
                       const count = getTagCount(cat);
                       return (
                         <button
                           key={cat}
                           type="button"
                           className={`kb-filter-menu-item ${isSelected ? 'selected' : ''}`}
-                          onClick={() => {
-                            setSelectedCategory(cat);
-                            setIsFilterOpen(false);
-                            setTagSearchQuery('');
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTags((prev) =>
+                              prev.includes(cat) ? prev.filter((t) => t !== cat) : [...prev, cat]
+                            );
                           }}
-                          role="menuitem"
+                          role="menuitemcheckbox"
+                          aria-checked={isSelected}
                         >
                           <div className="kb-filter-item-left">
-                            <i className={`bi ${isSelected ? 'bi-check2' : 'bi-tag'} kb-item-icon`}></i>
-                            <span className="kb-item-name">{cat === 'ALL' ? 'All Tags' : cat}</span>
+                            <i className={`bi ${isSelected ? 'bi-check-square-fill' : 'bi-square'} kb-item-icon`}></i>
+                            <span className="kb-item-name">{cat}</span>
                           </div>
                           <span className="kb-item-count">{count}</span>
                         </button>
                       );
                     })}
                 </div>
+
+                <div className="kb-filter-menu-footer">
+                  <button
+                    type="button"
+                    className="kb-filter-menu-done-btn"
+                    onClick={() => setIsFilterOpen(false)}
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             )}
           </div>
-
-          {/* Reset Defaults */}
-          <button
-            type="button"
-            className="kb-btn-reset-defaults"
-            onClick={handleResetDefaults}
-            title="Reset to default guide templates"
-          >
-            <i className="bi bi-arrow-counterclockwise me-1"></i>
-            <span className="kb-reset-label">Reset Defaults</span>
-          </button>
         </div>
 
         {/* Active Filter Bar (shown if tag or search active) */}
-        {(selectedCategory !== 'ALL' || searchQuery.trim()) && (
+        {(selectedTags.length > 0 || searchQuery.trim()) && (
           <div className="kb-active-filters-row">
-            <span className="kb-active-filters-label">Active:</span>
-            {selectedCategory !== 'ALL' && (
-              <span className="kb-active-tag-chip">
+            <span className="kb-active-filters-label">FILTER:</span>
+            {selectedTags.map((tag) => (
+              <span key={tag} className="kb-active-tag-chip">
                 <i className="bi bi-tag-fill me-1"></i>
-                {selectedCategory} ({getTagCount(selectedCategory)})
+                {tag} ({getTagCount(tag)})
                 <button
                   type="button"
-                  onClick={() => setSelectedCategory('ALL')}
-                  title="Remove tag filter"
-                  aria-label="Remove tag filter"
+                  onClick={() => setSelectedTags((prev) => prev.filter((t) => t !== tag))}
+                  title={`Remove ${tag} filter`}
+                  aria-label={`Remove ${tag} filter`}
                 >
                   <i className="bi bi-x"></i>
                 </button>
               </span>
-            )}
+            ))}
             {searchQuery.trim() && (
               <span className="kb-active-tag-chip kb-active-search-chip">
                 <i className="bi bi-search me-1"></i>
@@ -673,7 +690,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
               type="button"
               className="kb-clear-all-filters-btn"
               onClick={() => {
-                setSelectedCategory('ALL');
+                setSelectedTags([]);
                 setSearchQuery('');
               }}
             >
