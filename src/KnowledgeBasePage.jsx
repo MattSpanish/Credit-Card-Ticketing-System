@@ -8,6 +8,23 @@ import {
   DEFAULT_KB_ITEMS,
 } from './knowledgeBaseStorage';
 
+function formatKbDate(isoString) {
+  if (!isoString) return '';
+  try {
+    const d = new Date(isoString);
+    const formatted = d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+    return formatted.replace(/^([A-Za-z]+ \d+),\s*/, '$1 ');
+  } catch {
+    return '';
+  }
+}
+
 export default function KnowledgeBasePage({ onBackToDashboard }) {
   const [items, setItems] = useState(() => {
     return sortKnowledgeBaseItemsAZ(getStoredKnowledgeBaseItems());
@@ -402,97 +419,36 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
             </div>
           </div>
         ) : (
-          <div className="kb-cards-grid">
-            {filteredItems.map((item, index) => {
-              const letter = (item.title || 'A').trim().charAt(0).toUpperCase();
-              return (
-                <article
-                  key={item.id}
-                  className="kb-guide-card"
-                  onClick={() => setViewingItem(item)}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setViewingItem(item);
-                    }
-                  }}
-                  role="button"
-                  aria-label={`View guide: ${item.title}`}
-                >
-                  <div className="kb-card-header">
-                    <div className="kb-card-letter-badge" title={`Sorted A-Z (#${index + 1})`}>
-                      {letter}
-                    </div>
-                    <div className="kb-card-meta">
-                      <span className="kb-category-tag">{item.category || 'General'}</span>
-                      <span className="kb-sort-index">#{index + 1}</span>
-                    </div>
+          <div className="reminder-cards-list kb-cards-list">
+            {filteredItems.map((item) => (
+              <div
+                key={item.id}
+                className="reminder-card-item kb-card-item"
+                onClick={() => setViewingItem(item)}
+                tabIndex={0}
+                role="button"
+                aria-label={`View guide: ${item.title}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setViewingItem(item);
+                  }
+                }}
+              >
+                <div className="reminder-card-main-info kb-card-main-info">
+                  <div className="reminder-card-title-group kb-card-title-group">
+                    <h4 className="reminder-card-subject kb-card-subject">
+                      {item.title}
+                    </h4>
                   </div>
-
-                  <h3 className="kb-card-title">{item.title}</h3>
-
-                  {/* Keywords chips */}
-                  {Array.isArray(item.keywords) && item.keywords.length > 0 && (
-                    <div className="kb-keywords-row">
-                      {item.keywords.slice(0, 4).map((kw, i) => (
-                        <span key={i} className="kb-keyword-pill">
-                          #{kw.trim()}
-                        </span>
-                      ))}
-                      {item.keywords.length > 4 && (
-                        <span className="kb-keyword-pill kb-keyword-more">
-                          +{item.keywords.length - 4}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Snippet preview */}
-                  <p className="kb-card-snippet">
-                    {item.description
-                      ? item.description.replace(/^[0-9]+[.)]\s*/, '').slice(0, 140) + '...'
-                      : 'Click to view complete troubleshooting steps.'}
-                  </p>
-
-                  {/* Card bottom actions */}
-                  <div className="kb-card-footer" onClick={(e) => e.stopPropagation()}>
-                    <span className="kb-open-link" onClick={() => setViewingItem(item)}>
-                      Read Steps <i className="bi bi-arrow-right ms-1"></i>
+                  {(item.updatedAt || item.createdAt) && (
+                    <span className="reminder-card-date kb-card-date">
+                      {formatKbDate(item.updatedAt || item.createdAt)}
                     </span>
-                    <div className="kb-card-action-btns">
-                      <button
-                        type="button"
-                        className="kb-icon-btn"
-                        onClick={() => handleCopySteps(item)}
-                        title="Copy steps to clipboard"
-                        aria-label="Copy steps"
-                      >
-                        <i className={`bi ${copiedId === item.id ? 'bi-check-lg text-success' : 'bi-clipboard'}`}></i>
-                      </button>
-                      <button
-                        type="button"
-                        className="kb-icon-btn"
-                        onClick={() => handleOpenEdit(item)}
-                        title="Edit guide"
-                        aria-label="Edit guide"
-                      >
-                        <i className="bi bi-pencil"></i>
-                      </button>
-                      <button
-                        type="button"
-                        className="kb-icon-btn kb-icon-btn-danger"
-                        onClick={() => handleDeleteGuide(item.id, item.title)}
-                        title="Delete guide"
-                        aria-label="Delete guide"
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
