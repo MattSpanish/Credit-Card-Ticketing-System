@@ -19,6 +19,7 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-clover-offline-reset',
     title: 'Clover Mini / Flex Offline Mode & Network Reset',
     category: 'Clover',
+    tags: ['Clover'],
     description: `1. Check network connection:
    • Swipe down from the top right corner of the screen and tap Settings > Wi-Fi.
    • Verify that the terminal is connected to a stable 2.4GHz or 5GHz business Wi-Fi network (avoid public captive portals).
@@ -41,6 +42,7 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-dejavoo-error-99',
     title: 'Dejavoo Z8 / Z11 Batch Settlement Failed (Error 99)',
     category: 'Dejavoo',
+    tags: ['Dejavoo'],
     description: `1. Check Host Communication:
    • Error 99 indicates host communication failure or open batch mismatch with the host processor.
    • Verify internet connectivity: Look for the blue IP icon or active Ethernet/Wi-Fi symbol on the top status bar.
@@ -65,6 +67,7 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-fd150-ebt-table-error',
     title: 'FD150 EBT Settlement Table Error',
     category: 'FD150',
+    tags: ['FD150', 'Nashville'],
     description: `1. Identify the Cause:
    • "EBT Settlement Table Error" occurs when the terminal's internal EBT batch table has desynchronized records or corrupted totals compared to the host processor gateway.
 
@@ -96,6 +99,7 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-fd150-param-download',
     title: 'FD150 Parameter Download & Dial Pay Setup',
     category: 'FD150',
+    tags: ['FD150', 'Nashville'],
     description: `1. Prepare Terminal:
    • Connect terminal to high-speed Ethernet (port with network icon) or verify Wi-Fi is connected.
    • Ensure printer paper roll is loaded.
@@ -124,6 +128,7 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-pax-comm-error',
     title: 'PAX S80 / S300 Communication & Socket Error',
     category: 'PAX',
+    tags: ['PAX'],
     description: `1. Check Physical Cable Connection:
    • Ensure Ethernet cable is connected to the LAN port (NOT the RS232 or PIN pad port).
    • Look for active green and flashing amber LEDs on the RJ45 port.
@@ -148,6 +153,7 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-nexgo-partial-approval',
     title: 'Nexgo N5 / N8 Partial Approval & Host Communication Reset',
     category: 'Nexgo',
+    tags: ['Nexgo'],
     description: `1. Identify Partial Approval / Comm Issue:
    • When transactions return partial balance approval or socket disconnect on Nexgo Android terminals.
    • Verify network connectivity in Android status bar (Wi-Fi or cellular 4G icon).
@@ -169,6 +175,7 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-buypass-comm-error',
     title: 'Buypass Host Comm Error & Parameter Download',
     category: 'Buypass',
+    tags: ['Buypass'],
     description: `1. Verify Network Configuration:
    • Check communication mode (IP/Ethernet or Dial-up backup).
    • Confirm Port 10002 / 50000 outbound firewall access on router.
@@ -187,6 +194,7 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-tsys-tid-mid-mismatch',
     title: 'TSYS Terminal ID (TID) / Merchant ID (MID) Mismatch',
     category: 'TSYS',
+    tags: ['TSYS'],
     description: `1. Confirm Boarding Information:
    • Check VAR sheet or TSYS boarding portal for exact 16-digit Merchant Number and 8-digit V-Number / TID.
 
@@ -207,6 +215,7 @@ export const DEFAULT_KB_ITEMS = [
     id: 'kb-nashville-batch-reconciliation',
     title: 'Nashville Batch Out of Balance & Reconciliation',
     category: 'Nashville',
+    tags: ['Nashville'],
     description: `1. Identify Discrepancy:
    • "Out of Balance" occurs when the terminal batch count or dollar total differs from Nashville records (often caused by an offline void, duplicate auth, or dropped transaction).
 
@@ -241,22 +250,33 @@ export function getStoredKnowledgeBaseItems() {
       return DEFAULT_KB_ITEMS;
     }
     
-    // Automatically migrate old categories (e.g., Ingenico -> Nexgo, Verifone -> Buypass)
+    // Automatically migrate old categories and ensure tags array exists
     let needsUpdate = false;
     parsed = parsed.map(item => {
-      if (item.category === 'Ingenico') {
+      let updated = { ...item };
+      if (!Array.isArray(updated.tags) || updated.tags.length === 0) {
+        updated.tags = updated.category ? [updated.category] : ['General'];
         needsUpdate = true;
-        return { ...item, category: 'Nexgo', title: item.title.includes('Nexgo') ? item.title : 'Nexgo N5 / N8 Key Injection & Tamper Reset' };
       }
-      if (item.category === 'Verifone') {
+      if (updated.category === 'Ingenico') {
         needsUpdate = true;
-        return { ...item, category: 'Buypass', title: item.title.includes('Buypass') ? item.title : 'Buypass Host Comm Error & Parameter Download' };
+        updated.category = 'Nexgo';
+        updated.tags = updated.tags.map(t => t === 'Ingenico' ? 'Nexgo' : t);
+        updated.title = updated.title && updated.title.includes('Nexgo') ? updated.title : 'Nexgo N5 / N8 Key Injection & Tamper Reset';
       }
-      if (item.title && item.title.includes('TSYS / Nashville Batch Out of Balance')) {
+      if (updated.category === 'Verifone') {
         needsUpdate = true;
-        return { ...item, category: 'Nashville', title: 'Nashville Batch Out of Balance & Reconciliation' };
+        updated.category = 'Buypass';
+        updated.tags = updated.tags.map(t => t === 'Verifone' ? 'Buypass' : t);
+        updated.title = updated.title && updated.title.includes('Buypass') ? updated.title : 'Buypass Host Comm Error & Parameter Download';
       }
-      return item;
+      if (updated.title && updated.title.includes('TSYS / Nashville Batch Out of Balance')) {
+        needsUpdate = true;
+        updated.category = 'Nashville';
+        updated.tags = updated.tags.map(t => t === 'TSYS' ? 'Nashville' : t);
+        updated.title = 'Nashville Batch Out of Balance & Reconciliation';
+      }
+      return updated;
     });
 
     if (needsUpdate) {

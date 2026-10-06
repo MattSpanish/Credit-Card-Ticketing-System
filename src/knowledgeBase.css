@@ -590,6 +590,56 @@ body:not(.dark-mode) .kb-card-item:hover {
   resize: vertical;
 }
 
+/* Modal Tag Selector */
+.kb-tag-selector-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kb-tag-select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--bg-card, #1e293b);
+  color: var(--text-muted, #94a3b8);
+  border: 1px solid var(--border-color, #334155);
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+}
+
+.kb-tag-select-btn:hover {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #c084fc;
+}
+
+.kb-tag-select-btn.selected {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: #8b5cf6;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.35);
+}
+
+.kb-tag-select-btn.selected .bi {
+  color: #c084fc;
+}
+
+/* Modal Footer Action Buttons (Compact) */
+.kb-btn-modal-action {
+  padding: 5px 14px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  min-width: unset !important;
+}
+
 /* Light Mode Overrides */
 body:not(.dark-mode) .kb-search-panel,
 body:not(.dark-mode) .kb-guide-card,
@@ -607,7 +657,16 @@ body:not(.dark-mode) .kb-search-input {
   border-color: #cbd5e1;
   color: #0f172a;
 }
-body:not(.dark-mode) 
+body:not(.dark-mode) .kb-tag-select-btn {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+body:not(.dark-mode) .kb-tag-select-btn.selected {
+  background: #ede9fe;
+  border-color: #8b5cf6;
+  color: #6d28d9;
+}
 body:not(.dark-mode) .kb-keyword-pill {
   background: #f1f5f9;
   color: #475569;

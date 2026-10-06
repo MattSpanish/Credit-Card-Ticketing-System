@@ -39,8 +39,8 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
 
   // Form states for Add/Edit
   const [formTitle, setFormTitle] = useState('');
-  const [formCategory, setFormCategory] = useState('General');
-    const [formDescription, setFormDescription] = useState('');
+  const [formTags, setFormTags] = useState([]);
+  const [formDescription, setFormDescription] = useState('');
   const [formError, setFormError] = useState('');
 
   // Toast / feedback message
@@ -54,41 +54,55 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     }, 3200);
   };
 
+  // Helper to extract tags array from an item
+  const getItemTags = (it) => {
+    if (Array.isArray(it.tags) && it.tags.length > 0) return it.tags;
+    if (it.category) {
+      return it.category.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+    return ['General'];
+  };
+
   // Derive categories: EXACT specified order: Clover, Dejavoo, FD150, PAX, Nexgo, Buypass, TSYS, Nashville
   const categories = useMemo(() => {
     const officialSet = new Set(OFFICIAL_KB_CATEGORIES.map(c => c.toLowerCase()));
     const customCats = [];
     items.forEach((it) => {
-      const cat = (it.category || '').trim();
-      if (cat && !officialSet.has(cat.toLowerCase()) && !customCats.includes(cat)) {
-        customCats.push(cat);
-      }
+      const itTags = getItemTags(it);
+      itTags.forEach((cat) => {
+        const trimmed = (cat || '').trim();
+        if (trimmed && !officialSet.has(trimmed.toLowerCase()) && !customCats.includes(trimmed)) {
+          customCats.push(trimmed);
+        }
+      });
     });
     return ['ALL', ...OFFICIAL_KB_CATEGORIES, ...customCats];
   }, [items]);
 
-  // Keyword search & category filter (Always sorted A–Z)
+  // Keyword search & category/tag filter (Always sorted A–Z)
   const filteredItems = useMemo(() => {
     let result = items;
 
-    // Filter by category
+    // Filter by category / tag
     if (selectedCategory !== 'ALL') {
-      result = result.filter(
-        (it) => (it.category || '').toLowerCase() === selectedCategory.toLowerCase()
-      );
+      result = result.filter((it) => {
+        const itemTags = getItemTags(it);
+        return itemTags.some((t) => t.toLowerCase() === selectedCategory.toLowerCase());
+      });
     }
 
-    // Filter by search query based on title and troubleshooting steps content
+    // Filter by search query based on title, tags, and description content
     const q = searchQuery.trim().toLowerCase();
     if (q) {
       const tokens = q.split(/\s+/).filter(Boolean);
       result = result.filter((it) => {
         const titleStr = (it.title || '').toLowerCase();
+        const tagsStr = getItemTags(it).join(' ').toLowerCase();
         const catStr = (it.category || '').toLowerCase();
         const contentStr = (it.description || '').toLowerCase();
-        const combined = `${titleStr} ${catStr} ${contentStr}`;
+        const combined = `${titleStr} ${tagsStr} ${catStr} ${contentStr}`;
 
-        // Every search word must appear in the title, category, or troubleshooting content
+        // Every search word must appear in the title, tags, or description content
         return tokens.every((token) => combined.includes(token));
       });
     }
@@ -136,8 +150,8 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   const handleOpenAdd = () => {
     setEditingItem(null);
     setFormTitle('');
-    setFormCategory('General');
-        setFormDescription('');
+    setFormTags(selectedCategory !== 'ALL' ? [selectedCategory] : []);
+    setFormDescription('');
     setFormError('');
     setIsEditorOpen(true);
   };
@@ -146,10 +160,18 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   const handleOpenEdit = (item) => {
     setEditingItem(item);
     setFormTitle(item.title || '');
-    setFormCategory(item.category || 'General');
-        setFormDescription(item.description || '');
+    setFormTags(getItemTags(item));
+    setFormDescription(item.description || '');
     setFormError('');
     setIsEditorOpen(true);
+  };
+
+  // Toggle tag selection in editor
+  const handleToggleTag = (tag) => {
+    setFormTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+    if (formError) setFormError('');
   };
 
   // Save handler (Add or Update)
@@ -162,20 +184,24 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
       setFormError('Please enter a title for the troubleshooting guide.');
       return;
     }
+    if (formTags.length === 0) {
+      setFormError('Please select at least 1 tag.');
+      return;
+    }
     if (!cleanDesc) {
-      setFormError('Please enter the troubleshooting steps or description.');
+      setFormError('Please enter a description for the troubleshooting guide.');
       return;
     }
 
-    
     let updatedList;
     if (editingItem) {
       // Update existing item
       const updatedItem = {
         ...editingItem,
         title: cleanTitle,
-        category: formCategory.trim() || 'General',
-                description: cleanDesc,
+        tags: formTags,
+        category: formTags.join(', ') || 'General',
+        description: cleanDesc,
         updatedAt: new Date().toISOString(),
       };
       updatedList = items.map((it) => (it.id === editingItem.id ? updatedItem : it));
@@ -188,8 +214,9 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
       const newItem = {
         id: `kb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         title: cleanTitle,
-        category: formCategory.trim() || 'General',
-                description: cleanDesc,
+        tags: formTags,
+        category: formTags.join(', ') || 'General',
+        description: cleanDesc,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -221,7 +248,8 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
 
   // Copy troubleshooting steps to clipboard
   const handleCopySteps = (item) => {
-    const textToCopy = `📌 [KNOWLEDGE BASE] ${item.title}\nCategory: ${item.category || 'General'}\n\nTroubleshooting Steps:\n${item.description}`;
+    const itemTags = getItemTags(item).join(', ');
+    const textToCopy = `📌 [KNOWLEDGE BASE] ${item.title}\nTags: ${itemTags}\n\nDescription:\n${item.description}`;
     navigator.clipboard
       .writeText(textToCopy)
       .then(() => {
@@ -353,7 +381,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                 {cat}
                 {cat !== 'ALL' && (
                   <span className="kb-chip-count">
-                    {items.filter((it) => (it.category || '').toLowerCase() === cat.toLowerCase()).length}
+                    {items.filter((it) => getItemTags(it).some((t) => t.toLowerCase() === cat.toLowerCase())).length}
                   </span>
                 )}
               </button>
@@ -454,8 +482,10 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
           >
             {/* Modal Header */}
             <div className="kb-modal-top-bar">
-              <div className="kb-detail-breadcrumbs">
-                <span className="kb-category-pill-lg">{viewingItem.category || 'General'}</span>
+              <div className="kb-detail-breadcrumbs" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                {getItemTags(viewingItem).map((t) => (
+                  <span key={t} className="kb-category-pill-lg">{t}</span>
+                ))}
                 <span className="kb-nav-counter">
                   Guide {currentNavIndex + 1} of {filteredItems.length} (A–Z)
                 </span>
@@ -607,9 +637,9 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
             onClick={(e) => e.stopPropagation()}
             style={{ width: 'min(95vw, 760px)', maxWidth: 760, padding: 24 }}
           >
-            <div className="break-modal-header" style={{ padding: '0 0 16px', marginBottom: 16 }}>
+            <div className="break-modal-header" style={{ padding: '0 0 12px', marginBottom: 14 }}>
               <div>
-                <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
                   <i
                     className={`bi ${editingItem ? 'bi-pencil-square' : 'bi-plus-circle-fill'}`}
                     style={{ color: '#8b5cf6' }}
@@ -617,11 +647,6 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                   ></i>
                   {editingItem ? 'Edit Knowledge Base Guide' : 'Add Knowledge Base Guide'}
                 </h2>
-                <p className="modal-subtitle">
-                  {editingItem
-                    ? 'Update the troubleshooting steps or title for this guide.'
-                    : 'Create a new troubleshooting guide. It will be automatically sorted alphabetically (A–Z).'}
-                </p>
               </div>
               <button
                 type="button"
@@ -643,7 +668,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
               {/* Title input */}
               <div className="form-group mb-3">
                 <label className="form-label fw-bold">
-                  Guide Title / Subject <span className="text-danger">*</span>
+                  Title <span className="text-danger">*</span>
                 </label>
                 <input
                   type="text"
@@ -657,55 +682,42 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                   autoFocus
                   required
                 />
-                <small className="text-muted" style={{ fontSize: 11 }}>
-                  The guide will be automatically sorted alphabetically based on this title.
-                </small>
               </div>
 
-              {/* Category Row */}
+              {/* Tags Selection Row (Multi-select) */}
               <div className="form-group mb-3">
-                <label className="form-label fw-bold">Category</label>
-                <input
-                  type="text"
-                  list="kb-categories-list"
-                  className="form-control"
-                  placeholder="e.g. FD150, Dejavoo, PAX, TSYS, Clover, General"
-                  value={formCategory}
-                  onChange={(e) => setFormCategory(e.target.value)}
-                />
-                <datalist id="kb-categories-list">
-                  <option value="Clover" />
-                  <option value="Dejavoo" />
-                  <option value="FD150" />
-                  <option value="PAX" />
-                  <option value="Nexgo" />
-                  <option value="Buypass" />
-                  <option value="TSYS" />
-                  <option value="Nashville" />
-                </datalist>
-              </div>
-
-              {/* Troubleshooting Steps */}
-              <div className="form-group mb-4">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <label className="form-label fw-bold m-0">
-                    Troubleshooting Steps / Description <span className="text-danger">*</span>
+                    Tags <span className="text-danger">*</span>
                   </label>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    style={{ fontSize: 11, padding: '2px 8px' }}
-                    onClick={() => {
-                      if (!formDescription) {
-                        setFormDescription(
-                          `1. Identify the Issue:\n   • Check terminal display and verify error message.\n\n2. Power Cycle & Connectivity:\n   • Reboot terminal and inspect Ethernet/Wi-Fi connection.\n\n3. Resolution Steps:\n   • Enter Manager Menu (Password: 1234).\n   • Execute maintenance or re-download command.\n\n4. Test Transaction:\n   • Perform balance inquiry or test authorization.`
-                        );
-                      }
-                    }}
-                  >
-                    <i className="bi bi-magic me-1"></i> Insert Numbered Template
-                  </button>
+                  <span className="text-muted" style={{ fontSize: 11 }}>
+                    {formTags.length === 0 ? 'Select 1 or more tags' : `${formTags.length} tag${formTags.length > 1 ? 's' : ''} selected`}
+                  </span>
                 </div>
+                <div className="kb-tag-selector-grid">
+                  {OFFICIAL_KB_CATEGORIES.map((tag) => {
+                    const isSelected = formTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        className={`kb-tag-select-btn ${isSelected ? 'selected' : ''}`}
+                        onClick={() => handleToggleTag(tag)}
+                        aria-pressed={isSelected}
+                      >
+                        <i className={`bi ${isSelected ? 'bi-check-circle-fill' : 'bi-circle'} me-1`}></i>
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="form-group mb-4">
+                <label className="form-label fw-bold mb-2">
+                  Description <span className="text-danger">*</span>
+                </label>
                 <textarea
                   className="form-control kb-textarea-steps"
                   rows={10}
@@ -720,16 +732,16 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
               </div>
 
               {/* Form Action Buttons */}
-              <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color, #334155)', paddingTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color, #334155)', paddingTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="btn btn-sm btn-secondary kb-btn-modal-action"
                   onClick={() => setIsEditorOpen(false)}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" style={{ minWidth: 120 }}>
-                  <i className="bi bi-check-lg me-1"></i> {editingItem ? 'Save Changes' : 'Create Guide'}
+                <button type="submit" className="btn btn-sm btn-primary kb-btn-modal-action">
+                  {editingItem ? 'Save Changes' : 'Create Guide'}
                 </button>
               </div>
             </form>
