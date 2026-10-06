@@ -6,6 +6,7 @@ import {
   saveKnowledgeBaseItemsList,
   sortKnowledgeBaseItemsAZ,
   DEFAULT_KB_ITEMS,
+  OFFICIAL_KB_CATEGORIES,
 } from './knowledgeBaseStorage';
 
 function formatKbDate(isoString) {
@@ -53,13 +54,17 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     }, 3200);
   };
 
-  // Derive all unique categories
+  // Derive categories: EXACT specified order: Clover, Dejavoo, FD150, PAX, Nexgo, Buypass, TSYS, Nashville
   const categories = useMemo(() => {
-    const set = new Set();
+    const officialSet = new Set(OFFICIAL_KB_CATEGORIES.map(c => c.toLowerCase()));
+    const customCats = [];
     items.forEach((it) => {
-      if (it.category) set.add(it.category.trim());
+      const cat = (it.category || '').trim();
+      if (cat && !officialSet.has(cat.toLowerCase()) && !customCats.includes(cat)) {
+        customCats.push(cat);
+      }
     });
-    return ['ALL', ...Array.from(set).sort()];
+    return ['ALL', ...OFFICIAL_KB_CATEGORIES, ...customCats];
   }, [items]);
 
   // Keyword search & category filter (Always sorted A–Z)
@@ -669,14 +674,14 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                   onChange={(e) => setFormCategory(e.target.value)}
                 />
                 <datalist id="kb-categories-list">
-                  <option value="FD150" />
-                  <option value="Dejavoo" />
-                  <option value="PAX" />
-                  <option value="TSYS" />
                   <option value="Clover" />
-                  <option value="Ingenico" />
-                  <option value="Verifone" />
-                  <option value="General" />
+                  <option value="Dejavoo" />
+                  <option value="FD150" />
+                  <option value="PAX" />
+                  <option value="Nexgo" />
+                  <option value="Buypass" />
+                  <option value="TSYS" />
+                  <option value="Nashville" />
                 </datalist>
               </div>
 

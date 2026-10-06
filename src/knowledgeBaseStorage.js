@@ -3,6 +3,17 @@
 
 export const KB_STORAGE_KEY = 'knowledge_base_articles_data';
 
+export const OFFICIAL_KB_CATEGORIES = [
+  'Clover',
+  'Dejavoo',
+  'FD150',
+  'PAX',
+  'Nexgo',
+  'Buypass',
+  'TSYS',
+  'Nashville',
+];
+
 export const DEFAULT_KB_ITEMS = [
   {
     id: 'kb-clover-offline-reset',
@@ -110,24 +121,6 @@ export const DEFAULT_KB_ITEMS = [
     updatedAt: '2026-10-06T10:00:00.000Z'
   },
   {
-    id: 'kb-ingenico-tamper-reset',
-    title: 'Ingenico Move 5000 / Desk 3500 Key Injection & Tamper Reset',
-    category: 'Ingenico',
-    description: `1. Recognizing "Alert / Unauthorized / Tamper Detected":
-   • For PCI-PTS compliance, Ingenico terminals lock permanently if internal physical sensor is triggered (dropped, opened, or extreme temperature shock).
-
-2. Diagnosis:
-   • If screen displays "Alert: Irruption Detected" or "TAMPER DETECTED", keys have zeroed out for merchant security.
-   • This hardware state cannot be bypassed via menu codes or keypad combination.
-
-3. Next Steps & Merchant Action:
-   • Check if terminal is under warranty or hardware replacement lease.
-   • Issue an RMA replacement request for immediate swap.
-   • Ensure replacement unit has the correct DUKPT injection key (Nashville / TSYS PIN debit key).`,
-    createdAt: '2026-10-06T10:00:00.000Z',
-    updatedAt: '2026-10-06T10:00:00.000Z'
-  },
-  {
     id: 'kb-pax-comm-error',
     title: 'PAX S80 / S300 Communication & Socket Error',
     category: 'PAX',
@@ -152,24 +145,41 @@ export const DEFAULT_KB_ITEMS = [
     updatedAt: '2026-10-06T10:00:00.000Z'
   },
   {
-    id: 'kb-tsys-batch-out-of-balance',
-    title: 'TSYS / Nashville Batch Out of Balance & Reconciliation',
-    category: 'TSYS',
-    description: `1. Identify Discrepancy:
-   • "Out of Balance" occurs when the terminal batch count or dollar total differs from host records (often caused by an offline void, duplicate auth, or dropped transaction).
+    id: 'kb-nexgo-partial-approval',
+    title: 'Nexgo N5 / N8 Partial Approval & Host Communication Reset',
+    category: 'Nexgo',
+    description: `1. Identify Partial Approval / Comm Issue:
+   • When transactions return partial balance approval or socket disconnect on Nexgo Android terminals.
+   • Verify network connectivity in Android status bar (Wi-Fi or cellular 4G icon).
 
-2. Print Detailed Audit Report:
-   • From Terminal: Go to Reports > Detail Report (prints every card transaction in the active batch).
-   • From Host Portal (e.g. TSYS Merchant Center / Nashville MMS): Generate current batch details.
+2. Network & Wi-Fi Check:
+   • Swipe down from top and verify IP address is assigned via DHCP.
+   • Disconnect and reconnect to business Wi-Fi (forget network and re-enter WPA2 password).
 
-3. Compare Transactions Line by Line:
-   • Match sequence numbers and approval codes to identify the missing or duplicate item.
-   • Note whether tip adjustments or voids were properly captured on the host.
+3. Restart Terminal App:
+   • Exit to Launcher, tap Settings > Apps > Nexgo POS > Force Stop.
+   • Relaunch application and perform Host Parameter Sync.
 
-4. Force Batch Close:
-   • If all customer cards were charged and documented, perform "Force Settle / Force Close" on terminal.
-   • If duplicate transaction exists, issue refund/credit in terminal before settling.
-   • Document batch number, date, and adjusted total in ticketing system notes.`,
+4. Test Transaction:
+   • Run a $0.01 test sale or balance inquiry to verify full approval response.`,
+    createdAt: '2026-10-06T10:00:00.000Z',
+    updatedAt: '2026-10-06T10:00:00.000Z'
+  },
+  {
+    id: 'kb-buypass-comm-error',
+    title: 'Buypass Host Comm Error & Parameter Download',
+    category: 'Buypass',
+    description: `1. Verify Network Configuration:
+   • Check communication mode (IP/Ethernet or Dial-up backup).
+   • Confirm Port 10002 / 50000 outbound firewall access on router.
+
+2. Check Terminal ID & Merchant ID:
+   • Verify 7-digit Buypass Terminal ID matches processor boarding records.
+   • Check routing ID and network carrier connection parameters.
+
+3. Initiate Host Download:
+   • Access Manager Menu > Download > Buypass IP Download.
+   • Wait for "DOWNLOAD SUCCESSFUL" receipt and reboot terminal.`,
     createdAt: '2026-10-06T10:00:00.000Z',
     updatedAt: '2026-10-06T10:00:00.000Z'
   },
@@ -194,43 +204,65 @@ export const DEFAULT_KB_ITEMS = [
     updatedAt: '2026-10-06T10:00:00.000Z'
   },
   {
-    id: 'kb-verifone-vx520-comm-error',
-    title: 'Verifone VX520 Comm Error / Line Detection',
-    category: 'Verifone',
-    description: `1. Identify Comm Mode:
-   • Check whether merchant uses Ethernet (LAN) or Dial-up phone line.
-   • If Ethernet: Ensure cable is in port with 10BaseT / network symbol (ETH port), not RS232 port.
+    id: 'kb-nashville-batch-reconciliation',
+    title: 'Nashville Batch Out of Balance & Reconciliation',
+    category: 'Nashville',
+    description: `1. Identify Discrepancy:
+   • "Out of Balance" occurs when the terminal batch count or dollar total differs from Nashville records (often caused by an offline void, duplicate auth, or dropped transaction).
 
-2. Comm Mode Settings:
-   • Press F2 + F4 simultaneously, enter password (default: 1, alpha, 22, 333, 4444 or 1234).
-   • Select Comm Config > Select Ethernet.
-   • Verify DHCP is ON and terminal receives valid IP address.
+2. Print Detailed Audit Report:
+   • From Terminal: Go to Reports > Detail Report (prints every card transaction in the active batch).
+   • From Host Portal (e.g. Nashville MMS): Generate current batch details.
 
-3. Check Firewall Ports:
-   • Ensure outbound ports 443, 80, and processor ports (e.g. 10002, 50000) are not blocked by merchant router.
+3. Compare Transactions Line by Line:
+   • Match sequence numbers and approval codes to identify the missing or duplicate item.
+   • Note whether tip adjustments or voids were properly captured on the host.
 
-4. Soft Reboot:
-   • Press and hold the green ENTER key and 7 key together to soft restart the VX520.`,
+4. Force Batch Close:
+   • If all customer cards were charged and documented, perform "Force Settle / Force Close" on terminal.
+   • Document batch number, date, and adjusted total in ticketing system notes.`,
     createdAt: '2026-10-06T10:00:00.000Z',
     updatedAt: '2026-10-06T10:00:00.000Z'
   }
 ];
 
-// Helper: load stored items, or initialize with defaults if empty
+// Helper: load stored items, migrating old default categories if needed
 export function getStoredKnowledgeBaseItems() {
   if (typeof localStorage === 'undefined') return DEFAULT_KB_ITEMS;
   try {
     const raw = localStorage.getItem(KB_STORAGE_KEY);
     if (!raw) {
-      // First time initialization
       localStorage.setItem(KB_STORAGE_KEY, JSON.stringify(DEFAULT_KB_ITEMS));
       return DEFAULT_KB_ITEMS;
     }
-    const parsed = JSON.parse(raw);
+    let parsed = JSON.parse(raw);
     if (!Array.isArray(parsed) || parsed.length === 0) {
       localStorage.setItem(KB_STORAGE_KEY, JSON.stringify(DEFAULT_KB_ITEMS));
       return DEFAULT_KB_ITEMS;
     }
+    
+    // Automatically migrate old categories (e.g., Ingenico -> Nexgo, Verifone -> Buypass)
+    let needsUpdate = false;
+    parsed = parsed.map(item => {
+      if (item.category === 'Ingenico') {
+        needsUpdate = true;
+        return { ...item, category: 'Nexgo', title: item.title.includes('Nexgo') ? item.title : 'Nexgo N5 / N8 Key Injection & Tamper Reset' };
+      }
+      if (item.category === 'Verifone') {
+        needsUpdate = true;
+        return { ...item, category: 'Buypass', title: item.title.includes('Buypass') ? item.title : 'Buypass Host Comm Error & Parameter Download' };
+      }
+      if (item.title && item.title.includes('TSYS / Nashville Batch Out of Balance')) {
+        needsUpdate = true;
+        return { ...item, category: 'Nashville', title: 'Nashville Batch Out of Balance & Reconciliation' };
+      }
+      return item;
+    });
+
+    if (needsUpdate) {
+      localStorage.setItem(KB_STORAGE_KEY, JSON.stringify(parsed));
+    }
+
     return parsed;
   } catch (err) {
     console.error('Error loading knowledge base items:', err);
