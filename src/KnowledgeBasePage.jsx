@@ -183,6 +183,32 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   const [formTags, setFormTags] = useState([]);
   const [formDescription, setFormDescription] = useState('');
   const [formError, setFormError] = useState('');
+  const [isFormTagDropdownOpen, setIsFormTagDropdownOpen] = useState(false);
+  const [formTagSearch, setFormTagSearch] = useState('');
+  const formTagDropdownRef = useRef(null);
+
+  // Close form tag dropdown on outside click or Esc
+  useEffect(() => {
+    if (!isFormTagDropdownOpen) return;
+    const handleClickOutside = (e) => {
+      if (formTagDropdownRef.current && !formTagDropdownRef.current.contains(e.target)) {
+        setIsFormTagDropdownOpen(false);
+        setFormTagSearch('');
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsFormTagDropdownOpen(false);
+        setFormTagSearch('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFormTagDropdownOpen]);
 
   // Toast / feedback message
   const [toastMessage, setToastMessage] = useState(null);
@@ -310,6 +336,8 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     setFormTags(selectedTags.length > 0 ? [...selectedTags] : []);
     setFormDescription('');
     setFormError('');
+    setIsFormTagDropdownOpen(false);
+    setFormTagSearch('');
     setIsEditorOpen(true);
   };
 
@@ -320,6 +348,8 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     setFormTags(getItemTags(item));
     setFormDescription(item.description || '');
     setFormError('');
+    setIsFormTagDropdownOpen(false);
+    setFormTagSearch('');
     setIsEditorOpen(true);
   };
 
@@ -992,8 +1022,8 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                 />
               </div>
 
-              {/* Tags Selection Row (Multi-select) */}
-              <div className="form-group mb-3">
+              {/* Tags Selection (Modern Multi-Select Tag Input) */}
+              <div className="form-group mb-3 kb-form-tag-group" ref={formTagDropdownRef}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <label className="form-label fw-bold m-0">
                     Tags <span className="text-danger">*</span>
@@ -1002,23 +1032,145 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                     {formTags.length === 0 ? 'Select 1 or more tags' : `${formTags.length} tag${formTags.length > 1 ? 's' : ''} selected`}
                   </span>
                 </div>
-                <div className="kb-tag-selector-grid">
-                  {OFFICIAL_KB_CATEGORIES.map((tag) => {
-                    const isSelected = formTags.includes(tag);
-                    return (
+
+                {/* Interactive Tag Input Field Box */}
+                <div
+                  className={`kb-form-tag-input-box ${isFormTagDropdownOpen ? 'focused' : ''} ${formError && formTags.length === 0 ? 'is-invalid' : ''}`}
+                  onClick={() => setIsFormTagDropdownOpen(!isFormTagDropdownOpen)}
+                  tabIndex={0}
+                  role="button"
+                  aria-expanded={isFormTagDropdownOpen}
+                  aria-haspopup="listbox"
+                  title="Click to select tags"
+                >
+                  <div className="kb-form-tag-badges-container">
+                    {formTags.length === 0 ? (
+                      <span className="kb-form-tag-placeholder">
+                        <i className="bi bi-tags me-2"></i>
+                        Click to select tags (e.g., Clover, FD150, PAX...)
+                      </span>
+                    ) : (
+                      formTags.map((tag) => (
+                        <span key={tag} className="kb-form-tag-badge">
+                          <i className="bi bi-tag-fill me-1"></i>
+                          {tag}
+                          <button
+                            type="button"
+                            className="kb-form-tag-remove"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleTag(tag);
+                            }}
+                            title={`Remove ${tag}`}
+                            aria-label={`Remove ${tag}`}
+                          >
+                            <i className="bi bi-x"></i>
+                          </button>
+                        </span>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="kb-form-tag-trigger-actions">
+                    {formTags.length > 0 && (
                       <button
-                        key={tag}
                         type="button"
-                        className={`kb-tag-select-btn ${isSelected ? 'selected' : ''}`}
-                        onClick={() => handleToggleTag(tag)}
-                        aria-pressed={isSelected}
+                        className="kb-form-tag-add-more-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsFormTagDropdownOpen(!isFormTagDropdownOpen);
+                        }}
+                        title="Add more tags"
                       >
-                        <i className={`bi ${isSelected ? 'bi-check-circle-fill' : 'bi-circle'} me-1`}></i>
-                        {tag}
+                        <i className="bi bi-plus-lg me-1"></i> Add Tag
                       </button>
-                    );
-                  })}
+                    )}
+                    <i className={`bi ${isFormTagDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'} kb-form-tag-chevron`}></i>
+                  </div>
                 </div>
+
+                {/* Floating Tag Selector Popover */}
+                {isFormTagDropdownOpen && (
+                  <div className="kb-form-tag-popover" role="dialog" onClick={(e) => e.stopPropagation()}>
+                    <div className="kb-form-tag-popover-header">
+                      <div className="kb-form-tag-search-box">
+                        <i className="bi bi-search"></i>
+                        <input
+                          type="text"
+                          placeholder="Search tags..."
+                          value={formTagSearch}
+                          onChange={(e) => setFormTagSearch(e.target.value)}
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        {formTagSearch && (
+                          <button
+                            type="button"
+                            className="kb-form-tag-search-clear"
+                            onClick={() => setFormTagSearch('')}
+                          >
+                            <i className="bi bi-x"></i>
+                          </button>
+                        )}
+                      </div>
+                      {formTags.length > 0 && (
+                        <button
+                          type="button"
+                          className="kb-form-tag-clear-all"
+                          onClick={() => {
+                            setFormTags([]);
+                            if (formError) setFormError('');
+                          }}
+                        >
+                          Clear Selection
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="kb-form-tag-options-grid">
+                      {OFFICIAL_KB_CATEGORIES
+                        .filter((tag) => {
+                          if (!formTagSearch.trim()) return true;
+                          return tag.toLowerCase().includes(formTagSearch.trim().toLowerCase());
+                        })
+                        .map((tag) => {
+                          const isSelected = formTags.includes(tag);
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              className={`kb-form-tag-option-item ${isSelected ? 'selected' : ''}`}
+                              onClick={() => handleToggleTag(tag)}
+                              role="option"
+                              aria-selected={isSelected}
+                            >
+                              <div className="kb-form-option-left">
+                                <i className={`bi ${isSelected ? 'bi-check-square-fill text-purple' : 'bi-square text-muted'}`}></i>
+                                <span className="kb-form-option-name">{tag}</span>
+                              </div>
+                              {isSelected && <i className="bi bi-check2 text-purple"></i>}
+                            </button>
+                          );
+                        })}
+                    </div>
+
+                    <div className="kb-form-tag-popover-footer">
+                      <span className="text-muted" style={{ fontSize: 11 }}>
+                        {formTags.length} of {OFFICIAL_KB_CATEGORIES.length} selected
+                      </span>
+                      <button
+                        type="button"
+                        className="kb-form-tag-done-btn"
+                        onClick={() => {
+                          setIsFormTagDropdownOpen(false);
+                          setFormTagSearch('');
+                        }}
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Description */}
