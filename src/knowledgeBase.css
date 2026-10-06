@@ -698,6 +698,127 @@ body:not(.dark-mode) .btn-kb-action-secondary {
   border-color: #cbd5e1;
 }
 
+/* Knowledge Base Quill Rich Editor */
+.kb-quill-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.kb-quill-wrapper .ql-toolbar.ql-snow {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  padding: 6px 10px;
+  border-color: var(--border-color, #334155);
+  background: var(--bg-soft, #1e293b);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.kb-quill-wrapper .ql-toolbar.ql-snow .ql-formats {
+  margin-right: 12px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.kb-quill-wrapper .ql-toolbar.ql-snow .ql-formats:last-child {
+  margin-right: 0;
+}
+
+.kb-quill-wrapper .ql-snow .ql-picker.ql-header {
+  width: 96px;
+}
+
+.kb-quill-wrapper .ql-container.ql-snow {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  border-color: var(--border-color, #334155);
+  min-height: 180px;
+  font-size: 0.88rem;
+  background: var(--panel-bg, #0f172a);
+}
+
+.kb-quill-wrapper .ql-editor {
+  min-height: 180px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 12px 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  color: var(--text-primary, #ffffff);
+}
+
+.kb-quill-wrapper .ql-editor.ql-blank::before {
+  color: var(--text-faint, #64748b);
+  font-style: normal;
+  left: 14px;
+  right: 14px;
+}
+
+/* Knowledge Base Rich Steps View in Modal */
+.kb-steps-rich-content {
+  line-height: 1.65;
+  color: var(--text-primary, #e2e8f0);
+  font-size: 0.92rem;
+}
+
+.kb-steps-rich-content p {
+  margin: 0 0 10px 0;
+}
+
+.kb-steps-rich-content p:last-child {
+  margin-bottom: 0;
+}
+
+.kb-steps-rich-content h1,
+.kb-steps-rich-content h2,
+.kb-steps-rich-content h3 {
+  margin: 16px 0 8px 0;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.kb-steps-rich-content ul,
+.kb-steps-rich-content ol {
+  margin: 6px 0 12px 24px;
+  padding: 0;
+}
+
+.kb-steps-rich-content li {
+  margin-bottom: 4px;
+}
+
+.kb-steps-rich-content a {
+  color: #a78bfa;
+  text-decoration: underline;
+}
+
+/* Light mode overrides for rich content */
+body:not(.dark-mode) .kb-quill-wrapper .ql-toolbar.ql-snow {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+body:not(.dark-mode) .kb-quill-wrapper .ql-container.ql-snow {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+body:not(.dark-mode) .kb-quill-wrapper .ql-editor {
+  color: #0f172a;
+}
+
+body:not(.dark-mode) .kb-steps-rich-content {
+  color: #1e293b;
+}
+
+body:not(.dark-mode) .kb-steps-rich-content h1,
+body:not(.dark-mode) .kb-steps-rich-content h2,
+body:not(.dark-mode) .kb-steps-rich-content h3 {
+  color: #0f172a;
+}
+
 @media (max-width: 768px) {
   .kb-page-container {
     padding: 16px 14px 40px;

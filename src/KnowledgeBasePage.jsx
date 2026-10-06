@@ -1,5 +1,5 @@
 // src/KnowledgeBasePage.jsx
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import './knowledgeBase.css';
 import {
   getStoredKnowledgeBaseItems,
@@ -8,6 +8,119 @@ import {
   DEFAULT_KB_ITEMS,
   OFFICIAL_KB_CATEGORIES,
 } from './knowledgeBaseStorage';
+
+function isHtmlContent(str) {
+  if (!str) return false;
+  return /<[a-z][\s\S]*>/i.test(str);
+}
+
+function htmlToPlainText(html) {
+  if (!html) return '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.innerText || tmp.textContent || '';
+}
+
+function KbRichEditor({
+  value,
+  onChange,
+  placeholder = 'Enter details, instructions, or notes for the team...',
+}) {
+  const containerRef = useRef(null);
+  const quillRef = useRef(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    if (typeof window.Quill === 'undefined') return;
+
+    containerRef.current.innerHTML = '';
+    const editorDiv = document.createElement('div');
+    containerRef.current.appendChild(editorDiv);
+
+    const quill = new window.Quill(editorDiv, {
+      theme: 'snow',
+      placeholder,
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ color: [] }, { background: [] }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['link']
+        ]
+      }
+    });
+
+    if (value) {
+      if (isHtmlContent(value)) {
+        quill.root.innerHTML = value;
+      } else {
+        quill.root.innerHTML = value
+          .split('\n')
+          .map((line) => `<p>${line || '<br>'}</p>`)
+          .join('');
+      }
+    }
+
+    quill.on('text-change', () => {
+      const text = quill.getText().trim();
+      const html = quill.root.innerHTML;
+      if (!text && (html === '<p><br></p>' || html === '<p></p>' || !html)) {
+        onChange('');
+      } else {
+        onChange(html);
+      }
+    });
+
+    quillRef.current = quill;
+
+    return () => {
+      quillRef.current = null;
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const quill = quillRef.current;
+    if (quill) {
+      const currentHtml = quill.root.innerHTML;
+      const text = quill.getText().trim();
+      const effectiveCurrent =
+        !text && (currentHtml === '<p><br></p>' || currentHtml === '<p></p>')
+          ? ''
+          : currentHtml;
+      if (value !== effectiveCurrent) {
+        if (!value) {
+          quill.root.innerHTML = '';
+        } else if (isHtmlContent(value)) {
+          quill.root.innerHTML = value;
+        } else {
+          quill.root.innerHTML = value
+            .split('\n')
+            .map((line) => `<p>${line || '<br>'}</p>`)
+            .join('');
+        }
+      }
+    }
+  }, [value]);
+
+  if (typeof window.Quill === 'undefined') {
+    return (
+      <textarea
+        className="form-control kb-textarea-steps"
+        rows={8}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+      />
+    );
+  }
+
+  return <div className="kb-quill-wrapper reminder-quill-wrapper" ref={containerRef} />;
+}
 
 function formatKbDate(isoString) {
   if (!isoString) return '';
@@ -99,7 +212,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
         const titleStr = (it.title || '').toLowerCase();
         const tagsStr = getItemTags(it).join(' ').toLowerCase();
         const catStr = (it.category || '').toLowerCase();
-        const contentStr = (it.description || '').toLowerCase();
+        const contentStr = (it.description || '').replace(/<[^>]*>/g, ' ').toLowerCase();
         const combined = `${titleStr} ${tagsStr} ${catStr} ${contentStr}`;
 
         // Every search word must appear in the title, tags, or description content
@@ -179,6 +292,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     e.preventDefault();
     const cleanTitle = formTitle.trim();
     const cleanDesc = formDescription.trim();
+    const textOnly = cleanDesc.replace(/<[^>]*>/g, '').trim();
 
     if (!cleanTitle) {
       setFormError('Please enter a title for the troubleshooting guide.');
@@ -188,7 +302,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
       setFormError('Please select at least 1 tag.');
       return;
     }
-    if (!cleanDesc) {
+    if (!cleanDesc || (!textOnly && isHtmlContent(cleanDesc))) {
       setFormError('Please enter a description for the troubleshooting guide.');
       return;
     }
@@ -249,7 +363,10 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   // Copy troubleshooting steps to clipboard
   const handleCopySteps = (item) => {
     const itemTags = getItemTags(item).join(', ');
-    const textToCopy = `📌 [KNOWLEDGE BASE] ${item.title}\nTags: ${itemTags}\n\nDescription:\n${item.description}`;
+    const descText = isHtmlContent(item.description)
+      ? htmlToPlainText(item.description)
+      : (item.description || '');
+    const textToCopy = `📌 [KNOWLEDGE BASE] ${item.title}\nTags: ${itemTags}\n\nDescription:\n${descText}`;
     navigator.clipboard
       .writeText(textToCopy)
       .then(() => {
@@ -563,48 +680,55 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                 <i className="bi bi-list-check me-2" style={{ color: '#38bdf8' }}></i>
                 Troubleshooting Steps & Procedures
               </h4>
-              <div className="kb-steps-formatted">
-                {viewingItem.description.split('\n').map((line, idx) => {
-                  const trimmed = line.trim();
-                  if (!trimmed) {
-                    return <div key={idx} style={{ height: 10 }} />;
-                  }
-                  // Check if header step like "1. Check ...", "2. ...", "3. ..."
-                  const isStepHeader = /^[0-9]+[.)]\s+/.test(trimmed);
-                  // Check if bullet point
-                  const isBullet = /^[•\-*]\s+/.test(trimmed);
+              {isHtmlContent(viewingItem.description) ? (
+                <div
+                  className="kb-steps-rich-content"
+                  dangerouslySetInnerHTML={{ __html: viewingItem.description }}
+                />
+              ) : (
+                <div className="kb-steps-formatted">
+                  {(viewingItem.description || '').split('\n').map((line, idx) => {
+                    const trimmed = line.trim();
+                    if (!trimmed) {
+                      return <div key={idx} style={{ height: 10 }} />;
+                    }
+                    // Check if header step like "1. Check ...", "2. ...", "3. ..."
+                    const isStepHeader = /^[0-9]+[.)]\s+/.test(trimmed);
+                    // Check if bullet point
+                    const isBullet = /^[•\-*]\s+/.test(trimmed);
 
-                  if (isStepHeader) {
-                    return (
-                      <div key={idx} className="kb-step-row kb-step-header-row">
-                        <span className="kb-step-badge">
-                          {trimmed.match(/^[0-9]+/)?.[0] || '•'}
-                        </span>
-                        <div className="kb-step-title-text">
-                          {trimmed.replace(/^[0-9]+[.)]\s*/, '')}
+                    if (isStepHeader) {
+                      return (
+                        <div key={idx} className="kb-step-row kb-step-header-row">
+                          <span className="kb-step-badge">
+                            {trimmed.match(/^[0-9]+/)?.[0] || '•'}
+                          </span>
+                          <div className="kb-step-title-text">
+                            {trimmed.replace(/^[0-9]+[.)]\s*/, '')}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  }
+                      );
+                    }
 
-                  if (isBullet) {
-                    return (
-                      <div key={idx} className="kb-step-row kb-step-bullet-row">
-                        <span className="kb-bullet-dot">•</span>
-                        <div className="kb-step-content-text">
-                          {trimmed.replace(/^[•\-*]\s*/, '')}
+                    if (isBullet) {
+                      return (
+                        <div key={idx} className="kb-step-row kb-step-bullet-row">
+                          <span className="kb-bullet-dot">•</span>
+                          <div className="kb-step-content-text">
+                            {trimmed.replace(/^[•\-*]\s*/, '')}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  }
+                      );
+                    }
 
-                  return (
-                    <p key={idx} className="kb-step-normal-text">
-                      {line}
-                    </p>
-                  );
-                })}
-              </div>
+                    return (
+                      <p key={idx} className="kb-step-normal-text">
+                        {line}
+                      </p>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Modal Bottom Footer */}
@@ -718,17 +842,14 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                 <label className="form-label fw-bold mb-2">
                   Description <span className="text-danger">*</span>
                 </label>
-                <textarea
-                  className="form-control kb-textarea-steps"
-                  rows={10}
-                  placeholder="Enter numbered steps, procedures, tips, or configuration commands..."
+                <KbRichEditor
                   value={formDescription}
-                  onChange={(e) => {
-                    setFormDescription(e.target.value);
+                  onChange={(val) => {
+                    setFormDescription(val);
                     if (formError) setFormError('');
                   }}
-                  required
-                ></textarea>
+                  placeholder="Enter details, instructions, or notes for the team..."
+                />
               </div>
 
               {/* Form Action Buttons */}

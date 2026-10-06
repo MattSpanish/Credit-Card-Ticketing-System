@@ -97,10 +97,28 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-06-v21108",
+    version: "v2.11.8",
+    date: "October 6 2026",
+    isLatest: true,
+    badge: "LOCAL CLEANUP",
+    title: "Rich Text Formatting Toolbar for Knowledge Base",
+    summary: "Integrated a rich text editor toolbar into the Knowledge Base guide creator, allowing headers, bold, italics, underline, strikethrough, text/highlight colors, ordered/bullet lists, and links.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-type-bold",
+        title: "Full Rich Text Toolbar",
+        desc: "Added Quill rich text toolbar with Normal heading picker, B, I, U, S, color, highlight, lists, and links for guide descriptions.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-06-v21107",
     version: "v2.11.7",
     date: "October 6 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "LOCAL CLEANUP",
     title: "Multi-Tag Selection & Compact Guide Creator",
     summary: "Refined the Knowledge Base guide creator with multi-select tag pills for filters, renamed Title and Description labels, removed template buttons, and compacted action buttons.",
@@ -2241,11 +2259,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.11.7">
+          <div className="logo" title="PH Portal v2.11.8">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.11.7</span>
+              <span className="logo-version">v2.11.8</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4327,7 +4345,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.11.7';
+      const currentVersion = latestAnnouncement?.version || 'v2.11.8';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -4343,7 +4361,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.11.7';
+      const currentVersion = latestAnnouncement?.version || 'v2.11.8';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
