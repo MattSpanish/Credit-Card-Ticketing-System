@@ -150,6 +150,34 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
+  // Filter dropdown state
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [tagSearchQuery, setTagSearchQuery] = useState('');
+  const filterDropdownRef = useRef(null);
+
+  // Close filter dropdown on outside click or Esc
+  useEffect(() => {
+    if (!isFilterOpen) return;
+    const handleClickOutside = (e) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) {
+        setIsFilterOpen(false);
+        setTagSearchQuery('');
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsFilterOpen(false);
+        setTagSearchQuery('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFilterOpen]);
+
   // Form states for Add/Edit
   const [formTitle, setFormTitle] = useState('');
   const [formTags, setFormTags] = useState([]);
@@ -191,6 +219,13 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     });
     return ['ALL', ...OFFICIAL_KB_CATEGORIES, ...customCats];
   }, [items]);
+
+  const getTagCount = (cat) => {
+    if (cat === 'ALL') return items.length;
+    return items.filter((it) =>
+      getItemTags(it).some((t) => t.toLowerCase() === cat.toLowerCase())
+    ).length;
+  };
 
   // Keyword search & category/tag filter (Always sorted A–Z)
   const filteredItems = useMemo(() => {
@@ -480,40 +515,172 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
               </button>
             )}
           </div>
-        </div>
+          {/* Clean Filter Dropdown */}
+          <div className="kb-filter-dropdown-wrapper" ref={filterDropdownRef}>
+            <button
+              type="button"
+              className={`kb-filter-dropdown-btn ${selectedCategory !== 'ALL' ? 'active' : ''}`}
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              aria-expanded={isFilterOpen}
+              aria-haspopup="true"
+              title="Filter guides by tag"
+            >
+              <i className={`bi ${selectedCategory !== 'ALL' ? 'bi-funnel-fill' : 'bi-funnel'} me-1`}></i>
+              <span className="kb-filter-btn-label">
+                {selectedCategory === 'ALL' ? 'All Tags' : selectedCategory}
+              </span>
+              <span className="kb-filter-btn-count">
+                {getTagCount(selectedCategory)}
+              </span>
+              {selectedCategory !== 'ALL' ? (
+                <span
+                  className="kb-filter-clear-icon ms-1"
+                  title="Clear tag filter"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCategory('ALL');
+                  }}
+                >
+                  <i className="bi bi-x"></i>
+                </span>
+              ) : (
+                <i className={`bi ${isFilterOpen ? 'bi-chevron-up' : 'bi-chevron-down'} ms-1 kb-chevron-icon`}></i>
+              )}
+            </button>
 
-        {/* Category Filter Chips */}
-        <div className="kb-category-chips-row">
-          <span className="kb-chips-label">
-            <i className="bi bi-funnel me-1"></i> Filter:
-          </span>
-          <div className="kb-chips-scroll">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                className={`kb-category-chip ${selectedCategory === cat ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat)}
-              >
-                {cat}
-                {cat !== 'ALL' && (
-                  <span className="kb-chip-count">
-                    {items.filter((it) => getItemTags(it).some((t) => t.toLowerCase() === cat.toLowerCase())).length}
-                  </span>
+            {/* Floating Dropdown Menu */}
+            {isFilterOpen && (
+              <div className="kb-filter-menu-popover" role="menu">
+                <div className="kb-filter-menu-header">
+                  <span className="kb-filter-menu-title">Filter by Tag</span>
+                  {selectedCategory !== 'ALL' && (
+                    <button
+                      type="button"
+                      className="kb-filter-reset-link"
+                      onClick={() => {
+                        setSelectedCategory('ALL');
+                        setIsFilterOpen(false);
+                        setTagSearchQuery('');
+                      }}
+                    >
+                      Reset to All
+                    </button>
+                  )}
+                </div>
+
+                {categories.length > 7 && (
+                  <div className="kb-filter-menu-search">
+                    <i className="bi bi-search"></i>
+                    <input
+                      type="text"
+                      placeholder="Find tag..."
+                      value={tagSearchQuery}
+                      onChange={(e) => setTagSearchQuery(e.target.value)}
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {tagSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setTagSearchQuery('')}
+                        className="kb-filter-menu-search-clear"
+                      >
+                        <i className="bi bi-x"></i>
+                      </button>
+                    )}
+                  </div>
                 )}
-              </button>
-            ))}
+
+                <div className="kb-filter-menu-list">
+                  {categories
+                    .filter((cat) => {
+                      if (!tagSearchQuery.trim()) return true;
+                      return cat.toLowerCase().includes(tagSearchQuery.trim().toLowerCase());
+                    })
+                    .map((cat) => {
+                      const isSelected = selectedCategory === cat;
+                      const count = getTagCount(cat);
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          className={`kb-filter-menu-item ${isSelected ? 'selected' : ''}`}
+                          onClick={() => {
+                            setSelectedCategory(cat);
+                            setIsFilterOpen(false);
+                            setTagSearchQuery('');
+                          }}
+                          role="menuitem"
+                        >
+                          <div className="kb-filter-item-left">
+                            <i className={`bi ${isSelected ? 'bi-check2' : 'bi-tag'} kb-item-icon`}></i>
+                            <span className="kb-item-name">{cat === 'ALL' ? 'All Tags' : cat}</span>
+                          </div>
+                          <span className="kb-item-count">{count}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* Reset Defaults */}
           <button
             type="button"
             className="kb-btn-reset-defaults"
             onClick={handleResetDefaults}
             title="Reset to default guide templates"
           >
-            <i className="bi bi-arrow-counterclockwise me-1"></i> Reset Defaults
+            <i className="bi bi-arrow-counterclockwise me-1"></i>
+            <span className="kb-reset-label">Reset Defaults</span>
           </button>
         </div>
+
+        {/* Active Filter Bar (shown if tag or search active) */}
+        {(selectedCategory !== 'ALL' || searchQuery.trim()) && (
+          <div className="kb-active-filters-row">
+            <span className="kb-active-filters-label">Active:</span>
+            {selectedCategory !== 'ALL' && (
+              <span className="kb-active-tag-chip">
+                <i className="bi bi-tag-fill me-1"></i>
+                {selectedCategory} ({getTagCount(selectedCategory)})
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('ALL')}
+                  title="Remove tag filter"
+                  aria-label="Remove tag filter"
+                >
+                  <i className="bi bi-x"></i>
+                </button>
+              </span>
+            )}
+            {searchQuery.trim() && (
+              <span className="kb-active-tag-chip kb-active-search-chip">
+                <i className="bi bi-search me-1"></i>
+                "{searchQuery.trim()}"
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  title="Clear search query"
+                  aria-label="Clear search query"
+                >
+                  <i className="bi bi-x"></i>
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              className="kb-clear-all-filters-btn"
+              onClick={() => {
+                setSelectedCategory('ALL');
+                setSearchQuery('');
+              }}
+            >
+              Clear All
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Content: Alphabetical List of Guides */}
