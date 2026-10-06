@@ -687,10 +687,9 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
         {/* Active Filter Bar (shown if tag or search active) */}
         {(selectedTags.length > 0 || searchQuery.trim()) && (
           <div className="kb-active-filters-row">
-            <span className="kb-active-filters-label">FILTER:</span>
+            <span className="kb-active-filters-label">TAGS:</span>
             {selectedTags.map((tag) => (
               <span key={tag} className="kb-active-tag-chip">
-                <i className="bi bi-tag-fill me-1"></i>
                 {tag} ({getTagCount(tag)})
                 <button
                   type="button"
