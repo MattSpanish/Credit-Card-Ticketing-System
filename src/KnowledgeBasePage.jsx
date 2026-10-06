@@ -291,24 +291,24 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
           </p>
         </div>
 
-        <div className="shift-header-actions" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="shift-header-actions kb-header-actions" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
-            className="btn-add-kb-guide"
+            className="announcement-back-btn kb-btn-compact"
+            onClick={onBackToDashboard}
+            title="Return to Ticketing Dashboard"
+          >
+            <i className="bi bi-arrow-left" aria-hidden="true"></i> Back to Dashboard
+          </button>
+
+          <button
+            type="button"
+            className="btn-add-kb-guide kb-btn-compact"
             onClick={handleOpenAdd}
             title="Create a new Knowledge Base entry"
           >
             <i className="bi bi-plus-lg me-1" aria-hidden="true"></i>
             <span>New Guide</span>
-          </button>
-
-          <button
-            type="button"
-            className="announcement-back-btn"
-            onClick={onBackToDashboard}
-            title="Return to Ticketing Dashboard"
-          >
-            <i className="bi bi-arrow-left" aria-hidden="true"></i> Back to Dashboard
           </button>
         </div>
       </div>
@@ -340,15 +340,6 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                 <i className="bi bi-x-circle-fill" aria-hidden="true"></i>
               </button>
             )}
-          </div>
-
-          <div className="kb-counts-badge">
-            <i className="bi bi-sort-alpha-down me-1" aria-hidden="true"></i>
-            <span>
-              {searchQuery.trim() || selectedCategory !== 'ALL'
-                ? `Showing ${filteredItems.length} of ${items.length} guides (A–Z)`
-                : `${items.length} Guides (Sorted A–Z)`}
-            </span>
           </div>
         </div>
 
