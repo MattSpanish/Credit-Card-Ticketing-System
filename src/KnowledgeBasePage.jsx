@@ -413,7 +413,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
             </div>
           </div>
         ) : (
-          <div className="reminder-cards-list kb-cards-list">
+          <div className="kb-cards-list">
             {filteredItems.map((item) => (
               <div
                 key={item.id}

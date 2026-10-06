@@ -294,6 +294,8 @@
   flex-direction: column;
   gap: 10px;
   width: 100%;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 .kb-card-item {
