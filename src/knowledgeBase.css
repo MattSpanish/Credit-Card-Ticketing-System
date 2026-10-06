@@ -1066,28 +1066,29 @@ body:not(.dark-mode) .kb-card-item:hover {
 }
 
 .kb-form-tag-options-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 4px;
-  max-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
   overflow-y: auto;
-  padding-right: 2px;
+  padding-right: 4px;
 }
 
 .kb-form-tag-option-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 10px;
+  padding: 7px 12px;
   border-radius: 6px;
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-secondary, #cbd5e1);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.12s ease;
   text-align: left;
+  width: 100%;
 }
 
 .kb-form-tag-option-item:hover {
@@ -1105,7 +1106,7 @@ body:not(.dark-mode) .kb-card-item:hover {
 .kb-form-option-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1115,6 +1116,26 @@ body:not(.dark-mode) .kb-card-item:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.kb-form-checkbox-icon {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.38);
+  transition: color 0.12s ease;
+}
+
+.kb-form-tag-option-item:hover .kb-form-checkbox-icon {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.kb-form-checkbox-icon-active {
+  font-size: 0.88rem;
+  color: #c084fc !important;
+}
+
+.kb-form-check-badge {
+  color: #c084fc;
+  font-size: 0.90rem;
 }
 
 .kb-form-tag-popover-footer {
@@ -1206,6 +1227,18 @@ body:not(.dark-mode) .kb-form-tag-option-item:hover {
 body:not(.dark-mode) .kb-form-tag-option-item.selected {
   background: #ede9fe;
   color: #6d28d9;
+}
+body:not(.dark-mode) .kb-form-checkbox-icon {
+  color: #94a3b8;
+}
+body:not(.dark-mode) .kb-form-tag-option-item:hover .kb-form-checkbox-icon {
+  color: #64748b;
+}
+body:not(.dark-mode) .kb-form-checkbox-icon-active {
+  color: #7c3aed !important;
+}
+body:not(.dark-mode) .kb-form-check-badge {
+  color: #7c3aed;
 }
 body:not(.dark-mode) .kb-form-tag-popover-footer {
   border-top-color: #e2e8f0;

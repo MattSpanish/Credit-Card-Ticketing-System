@@ -1145,10 +1145,10 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                               aria-selected={isSelected}
                             >
                               <div className="kb-form-option-left">
-                                <i className={`bi ${isSelected ? 'bi-check-square-fill text-purple' : 'bi-square text-muted'}`}></i>
+                                <i className={`bi ${isSelected ? 'bi-check-square-fill kb-form-checkbox-icon-active' : 'bi-square kb-form-checkbox-icon'}`}></i>
                                 <span className="kb-form-option-name">{tag}</span>
                               </div>
-                              {isSelected && <i className="bi bi-check2 text-purple"></i>}
+                              {isSelected && <i className="bi bi-check2 kb-form-check-badge"></i>}
                             </button>
                           );
                         })}
