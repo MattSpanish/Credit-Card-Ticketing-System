@@ -3073,6 +3073,25 @@ body.dark-mode select:disabled {
     background: rgba(15, 26, 44, 0.25);
     color: var(--text-muted);
 }
+
+/* Bootstrap form-control dark-mode override */
+body.dark-mode .form-control {
+    background-color: rgba(11, 20, 34, 0.65);
+    border-color: var(--line);
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+}
+body.dark-mode .form-control:focus {
+    background-color: rgba(11, 22, 38, 0.85);
+    border-color: var(--accent);
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    box-shadow: var(--focus-ring);
+}
+body.dark-mode .form-control::placeholder {
+    color: var(--text-muted);
+    opacity: 0.75;
+}
 textarea { resize: none; overflow-y: hidden; min-height: 64px; }
 
 /* Monospace inputs (TID, MID, contact) */

@@ -97,10 +97,550 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-09-v2145",
+    version: "v2.14.5",
+    date: "October 9 2026",
+    isLatest: true,
+    badge: "UI & ACTIONS",
+    title: "Guide Detail Actions Layout Refinement",
+    summary: "Moved Delete Guide button to the top-right header row alongside title navigation, placed Edit Guide directly next to Close Guide in the footer, and removed the copy steps button.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-trash3",
+        title: "Delete Button in Title Row",
+        desc: "Positioned the guide Delete button on the upper right in line with the guide title and navigation controls.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "ui",
+        icon: "bi-pencil-square",
+        title: "Edit Guide in Modal Footer",
+        desc: "Repositioned Edit Guide to the bottom-right footer directly on the left side of Close Guide.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "ui",
+        icon: "bi-layout-text-window",
+        title: "Cleaner Modal Layout",
+        desc: "Removed the intermediate copy steps toolbar for a more streamlined guide viewing experience.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2144",
+    version: "v2.14.4",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI & FIXES",
+    title: "Description Header & Image Visibility Fix",
+    summary: "Added a clean Description header to the guide viewer, fixed image clipping by removing overflow constraints and setting dynamic height, and fixed double bullets.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-file-text",
+        title: "Added Description Header",
+        desc: "Added a dedicated Description section header above the guide content in the viewer modal.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "bugfix",
+        icon: "bi-image",
+        title: "Full Image Height Visibility",
+        desc: "Removed clipping constraints on the guide canvas so images display fully at their complete height without getting cut off.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "bugfix",
+        icon: "bi-list-ul",
+        title: "Single Clean Bullet Points",
+        desc: "Eliminated duplicate bullet point markers on bulleted lists in guide views.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2143",
+    version: "v2.14.3",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI POLISH",
+    title: "Clean Guide Detail Layout & Tag Positioning",
+    summary: "Moved tags directly under the guide title, removed navigation counter and bottom tip, and simplified the procedure body for an expansive, clean reading experience.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-tags",
+        title: "Tags Placed Under Title",
+        desc: "Category tag badges now display directly under the guide title instead of the top navigation bar.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "ui",
+        icon: "bi-layout-text-window",
+        title: "Streamlined Reading Canvas",
+        desc: "Removed the 'Guide 1 of 1' counter, redundant inner headings, and the bottom tip text so you can see the entire guide clearly.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2142",
+    version: "v2.14.2",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI & FORMATTING",
+    title: "Enlarged Guide Viewer Modal & Bullet List Rendering Fix",
+    summary: "Expanded the guide viewer modal to match the spacious 1100px creator modal size, and fixed Quill bullet list rendering so bullet points display properly instead of numbers.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-expand",
+        title: "Matched 1100px Modal Size",
+        desc: "The guide viewer modal is now wide and spacious (1100px max width and 440px+ content body) matching the creator modal.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "bugfix",
+        icon: "bi-list-ul",
+        title: "Correct Bullet Point Display",
+        desc: "Fixed Quill bullet list HTML rendering so bullet points display as true bullet discs rather than numbers.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2141",
+    version: "v2.14.1",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "CLEAN UI",
+    title: "Silent Background Cloud Sync for Knowledge Base",
+    summary: "Removed all setup modals and database UI elements; cloud persistence to Supabase now operates cleanly and silently in the background.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-shield-check",
+        title: "Hardcoded Silent Cloud Sync",
+        desc: "Database integration runs automatically in the background without exposing database modals or setup buttons.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2140",
+    version: "v2.14.0",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "DATABASE INTEGRATION",
+    title: "Knowledge Base Supabase Cloud Integration & Clean Library",
+    summary: "Connected Knowledge Base to a dedicated Supabase PostgreSQL cloud database for multi-user sync across team members, and removed all mock example guides.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-cloud-check-fill",
+        title: "Dedicated Supabase Cloud Sync",
+        desc: "Troubleshooting guides automatically persist to the new Supabase cloud database instance with real-time updates and offline local caching.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "feature",
+        icon: "bi-database",
+        title: "Database Modal & SQL Setup",
+        desc: "One-click connection testing and SQL table generator directly inside the Knowledge Base interface.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "ui",
+        icon: "bi-trash3",
+        title: "Clean Knowledge Base Library",
+        desc: "Removed all mock/example entries so the team can build custom guides from a pristine slate.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2133",
+    version: "v2.13.3",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI CLEANUP",
+    title: "Removed Tag Input Placeholder",
+    summary: "Cleaned up the Guide Creator tag field by removing the placeholder text and examples for a minimal, streamlined interface.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-tags",
+        title: "Clean Tag Input Field",
+        desc: "Removed the 'Click to select tags (e.g., Clover, FD150, PAX...)' placeholder in the guide editor modal.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2132",
+    version: "v2.13.2",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "IMAGE CONTROLS",
+    title: "Always Behind Text & Horizontal Drag Resizing",
+    summary: "Made Behind Text the default mode for all images, added horizontal-only drag resizing on side handles, removed floating toolbars, and enabled keyboard Delete/Backspace removal.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-arrows-expand-vertical",
+        title: "Independent Horizontal Image Resizing",
+        desc: "Drag the left and right edge handles to stretch or compress images horizontally without affecting height.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "ui",
+        icon: "bi-layers-half",
+        title: "Always Behind Text by Default",
+        desc: "Images are automatically placed behind text and can be moved freely across the canvas without any toolbar buttons.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "feature",
+        icon: "bi-backspace",
+        title: "Keyboard Delete & Erase",
+        desc: "Select an image and tap Delete or Backspace on your keyboard to instantly remove it.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2131",
+    version: "v2.13.1",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI POLISH",
+    title: "Streamlined Behind Text Image Controls",
+    summary: "Simplified the image toolbar to focus solely on 8-point mouse drag resizing and Behind Text free positioning without unnecessary button clutter.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layers-half",
+        title: "Clean Behind Text Toggle",
+        desc: "Streamlined the image controls to a single Behind Text toggle and 8-point edge/corner drag handles for pure Word-style simplicity.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2130",
+    version: "v2.13.0",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "MAJOR FEATURE",
+    title: "Word/Docs Style 8-Point Image Resizing & Behind Text Wrapping",
+    summary: "Added 8-directional drag-to-resize handles on images and MS Word-style 'Behind Text' free positioning, allowing images to move freely anywhere behind your text procedures.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-arrows-angle-expand",
+        title: "8-Directional Edge & Corner Drag Handles",
+        desc: "Click any image to drag any of the 8 handles (4 corners + 4 edge midpoints) to resize with your mouse just like Microsoft Word and Google Docs.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "feature",
+        icon: "bi-layers-half",
+        title: "Behind Text Wrapping & Free Move",
+        desc: "Choose 'Behind Text' wrapping to drag and position terminal screenshots freely anywhere on the page behind the text without breaking paragraph layout.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "feature",
+        icon: "bi-text-wrap",
+        title: "Inline & Text Wrap Modes",
+        desc: "Switch between Inline, Text Wrap, and Behind Text wrapping with one-click toolbar presets.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2122",
+    version: "v2.12.2",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI ENHANCEMENT",
+    title: "Expansive Guide Description Canvas",
+    summary: "Significantly expanded the guide description text box height (440px+) and modal canvas width (1100px) for a rich, spacious writing and image layout view.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-textarea-resize",
+        title: "Large Description Field (440px+)",
+        desc: "Expanded the Description editor canvas to 440px+ min-height and 58vh max-height, giving you a huge, unobstructed view for writing detailed procedures and reviewing terminal screenshots.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "ui",
+        icon: "bi-window-fullscreen",
+        title: "1100px Ultra-Wide Guide Creator Modal",
+        desc: "Widen the modal container to 1100px so full-resolution terminal guides and images fit seamlessly without feeling cramped.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2121",
+    version: "v2.12.1",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "FEATURE & POLISH",
+    title: "Interactive Image Resizer & Enlarged Guide Editor",
+    summary: "Fixed duplicate image pasting, introduced an interactive image resizer with size presets, alignment tools, drag handles, and significantly enlarged the guide creation modal.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-aspect-ratio",
+        title: "Interactive Image Resizer & Alignment",
+        desc: "Click any pasted screenshot in the editor to resize with 25%, 50%, 75%, 100% presets, alignment controls, or direct corner drag handles.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "fix",
+        icon: "bi-check2-circle",
+        title: "Single Paste Image De-duplication",
+        desc: "Intercepted paste events in capture phase to guarantee exactly one compressed image is inserted per Ctrl+V action.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-expand",
+        title: "Enlarged Guide Creator Modal",
+        desc: "Expanded the guide editor modal width to 980px and increased the editor height for a comfortable, spacious authoring experience.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v2120",
+    version: "v2.12.0",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "MAJOR FEATURE",
+    title: "Direct Image Pasting & Fresh Knowledge Base Library",
+    summary: "Enabled instant Ctrl+V screenshot pasting directly inside the Knowledge Base rich text box, and removed mock examples for a clean start.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-images",
+        title: "Inline Ctrl+V Image Pasting & Uploads",
+        desc: "Paste screenshots directly from your clipboard (Ctrl + V) or drag & drop images straight into the troubleshooting steps box with auto-compression.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "feature",
+        icon: "bi-zoom-in",
+        title: "Full-Screen Screenshot Lightbox",
+        desc: "Click any terminal image or diagram inside a guide to zoom in full-screen during support calls.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "ui",
+        icon: "bi-stars",
+        title: "Clean Knowledge Base Starting Slate",
+        desc: "Removed default mock example guides so your team can build a custom, real-world troubleshooting library.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v21125",
+    version: "v2.11.25",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI CLEANUP",
+    title: "Simplified Knowledge Base Header",
+    summary: "Removed subtitle description text from the Knowledge Base header banner for a cleaner, distraction-free view.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layout-text-window-reverse",
+        title: "Clean Header Banner",
+        desc: "Removed the subtitle paragraph from the Knowledge Base header to maximize vertical space and deliver a more concise interface.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v21124",
+    version: "v2.11.24",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "FEATURE",
+    title: "Universal Tag Deletion with Confirmation",
+    summary: "Enabled tag deletion across all tags in the Knowledge Base with persistent storage and confirmation dialogs.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-trash3-fill",
+        title: "Delete Any Tag with Safety Modal",
+        desc: "All tags in the filter dropdown can now be deleted with a confirmation prompt, updating guide tags and filter lists in real-time.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v21123",
+    version: "v2.11.23",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI SAFETY",
+    title: "Tag Deletion with Confirmation Dialog",
+    summary: "Reinstated the custom tag delete button accompanied by a dedicated confirmation modal to prevent accidental deletions.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-trash3-fill",
+        title: "Delete Tag Confirmation Modal",
+        desc: "Clicking the trash icon on custom tags now opens a frosted confirmation dialog to safely verify deletion before removing the tag.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v21122",
+    version: "v2.11.22",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI POLISH",
+    title: "Streamlined Custom Tags in Filter Menu",
+    summary: "Removed the delete button next to newly created tags for a unified, clean tag list appearance.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-tag-fill",
+        title: "Clean Custom Tag Rows",
+        desc: "Removed the trash delete icon from custom tag entries in the filter dropdown to maintain a clean and uniform list layout.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v21121",
+    version: "v2.11.21",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI REFINEMENT",
+    title: "Relocated Add Tag Button to Filter Menu Footer",
+    summary: "Moved the custom tag addition button from the header to replace the footer action button for a decluttered, focused dropdown experience.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-plus-circle-fill",
+        title: "Add Tag Button in Footer",
+        desc: "Replaced the redundant footer Done button with the Add Tag action and inline creation box, keeping the dropdown header clean and balanced.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v21120",
+    version: "v2.11.20",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI POLISH",
+    title: "Clean Unified Tag Search Bar",
+    summary: "Removed dummy placeholder text and nested focus outline rings from the tag filter search box for an ultra-clean, seamless search experience.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-search",
+        title: "Clean Tag Search Bar",
+        desc: "Eliminated double-border focus artifacts and removed placeholder text so the tag search input feels unified and minimal.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v21119",
+    version: "v2.11.19",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI POLISH",
+    title: "Minimalist Inline Tag Adder in Filter Menu",
+    summary: "Refined the inline tag addition box by removing placeholder text, icon clutter, and the redundant X button for an ultra-clean, streamlined look.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-check2-circle",
+        title: "Clean Tag Adder Box",
+        desc: "Removed leading icon and dummy placeholder text, and consolidated cancel controls using the header Cancel toggle.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v21118",
+    version: "v2.11.18",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "NEW FEATURE",
+    title: "Compact Tag Filter Button & Add Custom Tags",
+    summary: "Streamlined the Tag filter button to a minimal icon + 'Tag' label, and added an inline '+ Add' function to create and persist custom tags on the fly.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-plus-circle",
+        title: "Create Custom Tags in Filter Dropdown",
+        desc: "Added an inline '+ Add' button and form inside the Filter by Tags menu to create new custom tags that persist in local storage and instantly appear in both the filter and Guide Editor.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "ui",
+        icon: "bi-funnel",
+        title: "Minimalist Tag Filter Button",
+        desc: "Shortened the filter button text to a clean icon and 'Tag' label for a sleek, compact toolbar layout.",
+        tag: "UI Polish"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v21117",
+    version: "v2.11.17",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI ENHANCEMENT",
+    title: "Guide Editor Backdrop Lock & Clean Blank Inputs",
+    summary: "Removed dummy example placeholders in the Guide Editor for a clean typing surface, and locked the modal background overlay so accidental clicks outside will not close the form.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-shield-check",
+        title: "Backdrop Click Lock & Clean Inputs",
+        desc: "Prevented accidental loss of guide work by disabling closing when clicking outside the editor modal, and removed distracting title and description placeholders.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-09-v21116",
+    version: "v2.11.16",
+    date: "October 9 2026",
+    isLatest: false,
+    badge: "UI FIX",
+    title: "High-Contrast Input Text in Guide Editor",
+    summary: "Fixed text contrast when creating or editing Knowledge Base guides: typed letters and descriptions now display crystal-clear, bright text across dark and light modes.",
+    items: [
+      {
+        type: "bugfix",
+        icon: "bi-pencil-square",
+        title: "Crystal-Clear Input & Description Text",
+        desc: "Overrode Bootstrap dark text styling on guide editor inputs and Quill rich text editor so entered titles, tags, and instructions are sharp, high-contrast, and completely readable.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-06-v21115",
     version: "v2.11.15",
     date: "October 6 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "UI POLISH",
     title: "Refined Active Tags Filter Row",
     summary: "Renamed the active filter bar prefix to TAGS and removed the tag icon inside the active filter chips for a cleaner look.",
@@ -2385,11 +2925,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.11.15">
+          <div className="logo" title="PH Portal v2.14.5">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.11.15</span>
+              <span className="logo-version">v2.14.5</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4471,7 +5011,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.11.15';
+      const currentVersion = latestAnnouncement?.version || 'v2.14.5';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -4487,7 +5027,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.11.15';
+      const currentVersion = latestAnnouncement?.version || 'v2.14.5';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

@@ -7,7 +7,18 @@ import {
   sortKnowledgeBaseItemsAZ,
   DEFAULT_KB_ITEMS,
   OFFICIAL_KB_CATEGORIES,
+  getStoredCustomTags,
+  saveStoredCustomTags,
+  getStoredDeletedTags,
+  saveStoredDeletedTags,
 } from './knowledgeBaseStorage';
+import {
+  fetchKnowledgeBase,
+  addKnowledgeBaseGuide,
+  updateKnowledgeBaseGuide,
+  deleteKnowledgeBaseGuide,
+  purgeExampleGuides,
+} from './supabaseKnowledgeBase';
 
 function isHtmlContent(str) {
   if (!str) return false;
@@ -21,13 +32,150 @@ function htmlToPlainText(html) {
   return tmp.innerText || tmp.textContent || '';
 }
 
+function compressAndFormatImage(file, callback) {
+  if (!file || !file.type || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const img = new Image();
+    img.onload = () => {
+      const MAX_WIDTH = 1280;
+      const MAX_HEIGHT = 1280;
+      let width = img.naturalWidth || img.width;
+      let height = img.naturalHeight || img.height;
+
+      if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+        if (width / height > MAX_WIDTH / MAX_HEIGHT) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        } else {
+          width = Math.round((width * MAX_HEIGHT) / height);
+          height = MAX_HEIGHT;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const compressedUrl = canvas.toDataURL('image/jpeg', 0.85);
+      callback(compressedUrl);
+    };
+    img.onerror = () => {
+      callback(dataUrl);
+    };
+    img.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Helper to ensure an image is always Behind Text and freely movable
+function formatImageAsBehindText(img, defaultLeft = 24, defaultTop = 40) {
+  if (!img) return;
+  img.dataset.wrapping = 'behind';
+  img.style.position = 'absolute';
+  img.style.zIndex = '0';
+  img.style.cursor = 'move';
+  img.style.opacity = '0.92';
+  if (!img.style.left) {
+    img.style.left = `${defaultLeft}px`;
+  }
+  if (!img.style.top) {
+    img.style.top = `${defaultTop}px`;
+  }
+  img.style.maxWidth = 'none';
+}
+
 function KbRichEditor({
   value,
   onChange,
-  placeholder = 'Enter details, instructions, or notes for the team...',
+  placeholder = '',
 }) {
   const containerRef = useRef(null);
   const quillRef = useRef(null);
+  const [selectedImg, setSelectedImg] = useState(null);
+  const [imgBox, setImgBox] = useState(null);
+  const isInteractingRef = useRef(false);
+
+  // Update selected image overlay coordinates relative to editor container
+  const updateOverlay = () => {
+    if (!selectedImg || !containerRef.current) {
+      setImgBox(null);
+      return;
+    }
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const imgRect = selectedImg.getBoundingClientRect();
+
+    setImgBox({
+      top: imgRect.top - containerRect.top,
+      left: imgRect.left - containerRect.left,
+      width: imgRect.width,
+      height: imgRect.height,
+    });
+  };
+
+  useEffect(() => {
+    if (!selectedImg) {
+      setImgBox(null);
+      return;
+    }
+    updateOverlay();
+    const scrollContainer = containerRef.current?.querySelector('.ql-editor');
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', updateOverlay);
+    }
+    window.addEventListener('resize', updateOverlay);
+    return () => {
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', updateOverlay);
+      }
+      window.removeEventListener('resize', updateOverlay);
+    };
+  }, [selectedImg]);
+
+  // Keyboard Delete / Backspace listener to delete selected image
+  useEffect(() => {
+    if (!selectedImg) return;
+
+    const handleKeyDown = (e) => {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') &&
+        !activeEl.closest('.kb-quill-wrapper')
+      ) {
+        return;
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleDeleteImage();
+      } else if (e.key === 'Escape') {
+        setSelectedImg(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [selectedImg]);
+
+  // Delete selected image
+  const handleDeleteImage = () => {
+    if (!selectedImg) return;
+    const imgToRemove = selectedImg;
+    setSelectedImg(null);
+    setImgBox(null);
+    imgToRemove.remove();
+    if (quillRef.current) {
+      quillRef.current.update();
+      onChange(quillRef.current.root.innerHTML);
+    }
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -46,10 +194,149 @@ function KbRichEditor({
           ['bold', 'italic', 'underline', 'strike'],
           [{ color: [] }, { background: [] }],
           [{ list: 'ordered' }, { list: 'bullet' }],
-          ['link']
+          ['link', 'image']
         ]
       }
     });
+
+    const initAllImagesBehindText = () => {
+      const imgs = editorDiv.querySelectorAll('img');
+      imgs.forEach((img, idx) => {
+        formatImageAsBehindText(img, 24, 40 + idx * 40);
+      });
+    };
+
+    // Capture phase paste listener with ZERO duplicates & Auto Behind Text
+    const handlePaste = (e) => {
+      const clipboardData = e.clipboardData || window.clipboardData;
+      if (!clipboardData || !clipboardData.items) return;
+
+      const items = clipboardData.items;
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type && item.type.startsWith('image/')) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+          const file = item.getAsFile();
+          if (file) {
+            compressAndFormatImage(file, (compressedUrl) => {
+              const range = quill.getSelection(true) || { index: quill.getLength(), length: 0 };
+              const bounds = quill.getBounds(range.index) || { top: 40, left: 24 };
+              quill.insertEmbed(range.index, 'image', compressedUrl, window.Quill.sources.USER);
+              quill.setSelection(range.index + 1, window.Quill.sources.SILENT);
+
+              setTimeout(() => {
+                const editor = containerRef.current?.querySelector('.ql-editor');
+                if (!editor) return;
+                const imgs = editor.querySelectorAll('img');
+                const newImg = Array.from(imgs).find((im) => im.src === compressedUrl) || imgs[imgs.length - 1];
+                if (newImg) {
+                  formatImageAsBehindText(newImg, bounds.left || 24, bounds.top || 40);
+                  setSelectedImg(newImg);
+                  quill.update();
+                  onChange(quill.root.innerHTML);
+                }
+              }, 50);
+            });
+          }
+          return;
+        }
+      }
+    };
+
+    // Drag & Drop image upload with Auto Behind Text
+    const handleDrop = (e) => {
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (file.type && file.type.startsWith('image/')) {
+          e.preventDefault();
+          e.stopPropagation();
+          compressAndFormatImage(file, (compressedUrl) => {
+            const range = quill.getSelection(true) || { index: quill.getLength(), length: 0 };
+            const bounds = quill.getBounds(range.index) || { top: 40, left: 24 };
+            quill.insertEmbed(range.index, 'image', compressedUrl, window.Quill.sources.USER);
+            quill.setSelection(range.index + 1, window.Quill.sources.SILENT);
+
+            setTimeout(() => {
+              const editor = containerRef.current?.querySelector('.ql-editor');
+              if (!editor) return;
+              const imgs = editor.querySelectorAll('img');
+              const newImg = Array.from(imgs).find((im) => im.src === compressedUrl) || imgs[imgs.length - 1];
+              if (newImg) {
+                formatImageAsBehindText(newImg, bounds.left || 24, bounds.top || 40);
+                setSelectedImg(newImg);
+                quill.update();
+                onChange(quill.root.innerHTML);
+              }
+            }, 50);
+          });
+        }
+      }
+    };
+
+    // Click to select image (direct or underneath text)
+    const handleClick = (e) => {
+      if (isInteractingRef.current) return;
+
+      if (e.target && e.target.tagName === 'IMG') {
+        setSelectedImg(e.target);
+        return;
+      }
+      if (e.target && (e.target.closest('.kb-image-resizer-overlay') || e.target.classList.contains('kb-resize-handle'))) {
+        return;
+      }
+
+      // Check if clicking directly over an image that is behind text
+      const elements = document.elementsFromPoint(e.clientX, e.clientY);
+      const imgUnderneath = elements.find((el) => el.tagName === 'IMG' && containerRef.current?.contains(el));
+
+      if (imgUnderneath) {
+        setSelectedImg(imgUnderneath);
+      } else {
+        setSelectedImg(null);
+      }
+    };
+
+    // Toolbar image button picker
+    const toolbar = quill.getModule('toolbar');
+    if (toolbar) {
+      toolbar.addHandler('image', () => {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.click();
+        input.onchange = () => {
+          if (input.files && input.files[0]) {
+            const file = input.files[0];
+            compressAndFormatImage(file, (compressedUrl) => {
+              const range = quill.getSelection(true) || { index: quill.getLength(), length: 0 };
+              const bounds = quill.getBounds(range.index) || { top: 40, left: 24 };
+              quill.insertEmbed(range.index, 'image', compressedUrl, window.Quill.sources.USER);
+              quill.setSelection(range.index + 1, window.Quill.sources.SILENT);
+
+              setTimeout(() => {
+                const editor = containerRef.current?.querySelector('.ql-editor');
+                if (!editor) return;
+                const imgs = editor.querySelectorAll('img');
+                const newImg = Array.from(imgs).find((im) => im.src === compressedUrl) || imgs[imgs.length - 1];
+                if (newImg) {
+                  formatImageAsBehindText(newImg, bounds.left || 24, bounds.top || 40);
+                  setSelectedImg(newImg);
+                  quill.update();
+                  onChange(quill.root.innerHTML);
+                }
+              }, 50);
+            });
+          }
+        };
+      });
+    }
+
+    quill.root.addEventListener('paste', handlePaste, true);
+    quill.root.addEventListener('drop', handleDrop, true);
+    quill.root.addEventListener('click', handleClick);
 
     if (value) {
       if (isHtmlContent(value)) {
@@ -60,6 +347,7 @@ function KbRichEditor({
           .map((line) => `<p>${line || '<br>'}</p>`)
           .join('');
       }
+      setTimeout(initAllImagesBehindText, 50);
     }
 
     quill.on('text-change', () => {
@@ -75,6 +363,11 @@ function KbRichEditor({
     quillRef.current = quill;
 
     return () => {
+      if (quill && quill.root) {
+        quill.root.removeEventListener('paste', handlePaste, true);
+        quill.root.removeEventListener('drop', handleDrop, true);
+        quill.root.removeEventListener('click', handleClick);
+      }
       quillRef.current = null;
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
@@ -106,10 +399,134 @@ function KbRichEditor({
     }
   }, [value]);
 
+  // Word / Google Docs 8-Directional Drag-to-Resize Handler
+  // Supports independent horizontal resizing on 'w' & 'e' handles!
+  const handleResizeMouseDown = (e, direction) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selectedImg) return;
+
+    isInteractingRef.current = true;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startWidth = selectedImg.offsetWidth;
+    const startHeight = selectedImg.offsetHeight;
+    const aspectRatio = startWidth / (startHeight || 1);
+    const startLeft = parseFloat(selectedImg.style.left || '0') || selectedImg.offsetLeft || 0;
+    const startTop = parseFloat(selectedImg.style.top || '0') || selectedImg.offsetTop || 0;
+
+    const onMouseMove = (moveEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+
+      let newWidth = startWidth;
+      let newHeight = startHeight;
+
+      if (direction === 'e') {
+        // Horizontal Resize Right: change width only!
+        newWidth = Math.max(30, startWidth + deltaX);
+        newHeight = startHeight;
+      } else if (direction === 'w') {
+        // Horizontal Resize Left: change width and left position only!
+        newWidth = Math.max(30, startWidth - deltaX);
+        newHeight = startHeight;
+        selectedImg.style.left = `${startLeft + deltaX}px`;
+      } else if (direction === 's') {
+        // Vertical Resize Bottom: change height only!
+        newHeight = Math.max(30, startHeight + deltaY);
+        newWidth = startWidth;
+      } else if (direction === 'n') {
+        // Vertical Resize Top: change height and top position only!
+        newHeight = Math.max(30, startHeight - deltaY);
+        newWidth = startWidth;
+        selectedImg.style.top = `${startTop + deltaY}px`;
+      } else if (direction === 'se') {
+        // Corner Bottom-Right: proportional resize
+        newWidth = Math.max(40, startWidth + deltaX);
+        newHeight = Math.max(30, newWidth / aspectRatio);
+      } else if (direction === 'sw') {
+        // Corner Bottom-Left: proportional resize
+        newWidth = Math.max(40, startWidth - deltaX);
+        newHeight = Math.max(30, newWidth / aspectRatio);
+        selectedImg.style.left = `${startLeft + deltaX}px`;
+      } else if (direction === 'ne') {
+        // Corner Top-Right: proportional resize
+        newWidth = Math.max(40, startWidth + deltaX);
+        newHeight = Math.max(30, newWidth / aspectRatio);
+        selectedImg.style.top = `${startTop - (newHeight - startHeight)}px`;
+      } else if (direction === 'nw') {
+        // Corner Top-Left: proportional resize
+        newWidth = Math.max(40, startWidth - deltaX);
+        newHeight = Math.max(30, newWidth / aspectRatio);
+        selectedImg.style.left = `${startLeft + deltaX}px`;
+        selectedImg.style.top = `${startTop - (newHeight - startHeight)}px`;
+      }
+
+      selectedImg.style.width = `${Math.round(newWidth)}px`;
+      selectedImg.style.height = `${Math.round(newHeight)}px`;
+      selectedImg.style.maxWidth = 'none';
+      selectedImg.style.maxHeight = 'none';
+      updateOverlay();
+    };
+
+    const onMouseUp = () => {
+      isInteractingRef.current = false;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      if (quillRef.current) {
+        quillRef.current.update();
+        onChange(quillRef.current.root.innerHTML);
+      }
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  // Free Move / Drag anywhere across canvas (Behind Text)
+  const handleMoveMouseDown = (e) => {
+    if (e.target.classList.contains('kb-resize-handle')) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    isInteractingRef.current = true;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startLeft = parseFloat(selectedImg.style.left || '0') || selectedImg.offsetLeft || 0;
+    const startTop = parseFloat(selectedImg.style.top || '0') || selectedImg.offsetTop || 0;
+
+    const onMouseMove = (moveEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+
+      const newLeft = Math.max(0, startLeft + deltaX);
+      const newTop = Math.max(0, startTop + deltaY);
+
+      selectedImg.style.position = 'absolute';
+      selectedImg.style.left = `${Math.round(newLeft)}px`;
+      selectedImg.style.top = `${Math.round(newTop)}px`;
+      updateOverlay();
+    };
+
+    const onMouseUp = () => {
+      isInteractingRef.current = false;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      if (quillRef.current) {
+        quillRef.current.update();
+        onChange(quillRef.current.root.innerHTML);
+      }
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
   if (typeof window.Quill === 'undefined') {
     return (
       <textarea
-        className="form-control kb-textarea-steps"
+        className="kb-form-input kb-textarea-steps"
         rows={8}
         placeholder={placeholder}
         value={value}
@@ -119,7 +536,37 @@ function KbRichEditor({
     );
   }
 
-  return <div className="kb-quill-wrapper reminder-quill-wrapper" ref={containerRef} />;
+  return (
+    <div className="kb-quill-wrapper reminder-quill-wrapper" ref={containerRef} style={{ position: 'relative' }}>
+      {/* Interactive Word / Docs Style Image Resizer Overlay without floating toolbar */}
+      {selectedImg && imgBox && (
+        <div
+          className="kb-image-resizer-overlay is-behind-mode"
+          style={{
+            top: imgBox.top,
+            left: imgBox.left,
+            width: imgBox.width,
+            height: imgBox.height,
+            cursor: 'move',
+          }}
+          onMouseDown={handleMoveMouseDown}
+        >
+          {/* 8-Directional Word / Google Docs Drag-to-Resize Handles */}
+          {/* Corners (Proportional) */}
+          <div className="kb-resize-handle kb-handle-nw" onMouseDown={(e) => handleResizeMouseDown(e, 'nw')} title="Resize Top-Left" />
+          <div className="kb-resize-handle kb-handle-ne" onMouseDown={(e) => handleResizeMouseDown(e, 'ne')} title="Resize Top-Right" />
+          <div className="kb-resize-handle kb-handle-se" onMouseDown={(e) => handleResizeMouseDown(e, 'se')} title="Resize Bottom-Right" />
+          <div className="kb-resize-handle kb-handle-sw" onMouseDown={(e) => handleResizeMouseDown(e, 'sw')} title="Resize Bottom-Left" />
+
+          {/* Edges (Horizontal and Vertical) */}
+          <div className="kb-resize-handle kb-handle-n" onMouseDown={(e) => handleResizeMouseDown(e, 'n')} title="Resize Height (Top)" />
+          <div className="kb-resize-handle kb-handle-s" onMouseDown={(e) => handleResizeMouseDown(e, 's')} title="Resize Height (Bottom)" />
+          <div className="kb-resize-handle kb-handle-w" onMouseDown={(e) => handleResizeMouseDown(e, 'w')} title="Resize Horizontally (Left)" />
+          <div className="kb-resize-handle kb-handle-e" onMouseDown={(e) => handleResizeMouseDown(e, 'e')} title="Resize Horizontally (Right)" />
+        </div>
+      )}
+    </div>
+  );
 }
 
 function formatKbDate(isoString) {
@@ -141,8 +588,30 @@ function formatKbDate(isoString) {
 
 export default function KnowledgeBasePage({ onBackToDashboard }) {
   const [items, setItems] = useState(() => {
-    return sortKnowledgeBaseItemsAZ(getStoredKnowledgeBaseItems());
+    return sortKnowledgeBaseItemsAZ(purgeExampleGuides());
   });
+
+  // Supabase cloud sync (hardcoded in background)
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Sync guides silently from Supabase in background
+  const loadGuidesFromCloud = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await fetchKnowledgeBase();
+      if (res.success && res.items) {
+        setItems(sortKnowledgeBaseItemsAZ(res.items));
+      }
+    } catch (err) {
+      console.error('Error syncing knowledge base from cloud:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadGuidesFromCloud();
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
@@ -155,6 +624,15 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   const [tagSearchQuery, setTagSearchQuery] = useState('');
   const filterDropdownRef = useRef(null);
 
+  // Custom tag creation state inside filter popover
+  const [customTags, setCustomTags] = useState(() => getStoredCustomTags());
+  const [deletedTags, setDeletedTags] = useState(() => getStoredDeletedTags());
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [newTagInput, setNewTagInput] = useState('');
+  const [newTagError, setNewTagError] = useState('');
+  const [tagToDeleteConfirm, setTagToDeleteConfirm] = useState(null);
+  const [activeZoomImage, setActiveZoomImage] = useState(null);
+
   // Close filter dropdown on outside click or Esc
   useEffect(() => {
     if (!isFilterOpen) return;
@@ -166,8 +644,18 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     };
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        setIsFilterOpen(false);
-        setTagSearchQuery('');
+        if (activeZoomImage) {
+          setActiveZoomImage(null);
+        } else if (tagToDeleteConfirm) {
+          setTagToDeleteConfirm(null);
+        } else if (isAddingTag) {
+          setIsAddingTag(false);
+          setNewTagInput('');
+          setNewTagError('');
+        } else {
+          setIsFilterOpen(false);
+          setTagSearchQuery('');
+        }
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -230,21 +718,96 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     return ['General'];
   };
 
-  // Derive categories: EXACT specified order: Clover, Dejavoo, FD150, PAX, Nexgo, Buypass, TSYS, Nashville, etc.
+  // Derive categories: EXACT specified order: Clover, Dejavoo, FD150, PAX, Nexgo, Buypass, TSYS, Nashville, etc. + custom tags (excluding deleted)
   const categories = useMemo(() => {
-    const officialSet = new Set(OFFICIAL_KB_CATEGORIES.map(c => c.toLowerCase()));
-    const customCats = [];
+    const deletedSet = new Set(deletedTags.map((t) => t.toLowerCase()));
+    const officialSet = new Set(OFFICIAL_KB_CATEGORIES.map((c) => c.toLowerCase()));
+    const allCustom = [...customTags];
     items.forEach((it) => {
       const itTags = getItemTags(it);
       itTags.forEach((cat) => {
         const trimmed = (cat || '').trim();
-        if (trimmed && !officialSet.has(trimmed.toLowerCase()) && !customCats.includes(trimmed)) {
-          customCats.push(trimmed);
+        if (
+          trimmed &&
+          !deletedSet.has(trimmed.toLowerCase()) &&
+          !officialSet.has(trimmed.toLowerCase()) &&
+          !allCustom.some((c) => c.toLowerCase() === trimmed.toLowerCase())
+        ) {
+          allCustom.push(trimmed);
         }
       });
     });
-    return [...OFFICIAL_KB_CATEGORIES, ...customCats];
-  }, [items]);
+    const combined = [...OFFICIAL_KB_CATEGORIES, ...allCustom];
+    return combined.filter((c) => !deletedSet.has(c.toLowerCase()));
+  }, [items, customTags, deletedTags]);
+
+  const handleAddNewTag = () => {
+    const trimmed = (newTagInput || '').trim();
+    if (!trimmed) {
+      setNewTagError('Please enter a tag name');
+      return;
+    }
+    if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      setNewTagError(`Tag "${trimmed}" already exists`);
+      return;
+    }
+
+    // Un-delete if previously deleted
+    const updatedDeleted = deletedTags.filter((t) => t.toLowerCase() !== trimmed.toLowerCase());
+    if (updatedDeleted.length !== deletedTags.length) {
+      setDeletedTags(updatedDeleted);
+      saveStoredDeletedTags(updatedDeleted);
+    }
+
+    const updatedCustom = [...customTags.filter((t) => t.toLowerCase() !== trimmed.toLowerCase()), trimmed];
+    setCustomTags(updatedCustom);
+    saveStoredCustomTags(updatedCustom);
+    setNewTagInput('');
+    setIsAddingTag(false);
+    setNewTagError('');
+    if (!selectedTags.includes(trimmed)) {
+      setSelectedTags((prev) => [...prev, trimmed]);
+    }
+    showToast(`Tag "${trimmed}" added!`, 'success');
+  };
+
+  const handleConfirmDeleteTag = () => {
+    if (!tagToDeleteConfirm) return;
+    const tagToDelete = tagToDeleteConfirm;
+
+    // Track in deletedTags so default or custom tags are properly removed from list
+    const updatedDeleted = Array.from(new Set([...deletedTags, tagToDelete.toLowerCase()]));
+    setDeletedTags(updatedDeleted);
+    saveStoredDeletedTags(updatedDeleted);
+
+    // Remove from customTags
+    const updatedCustom = customTags.filter((t) => t.toLowerCase() !== tagToDelete.toLowerCase());
+    setCustomTags(updatedCustom);
+    saveStoredCustomTags(updatedCustom);
+
+    // Remove from active selected filter tags
+    setSelectedTags((prev) => prev.filter((t) => t.toLowerCase() !== tagToDelete.toLowerCase()));
+
+    // Also remove tag from any guides that have it
+    const updatedItems = items.map((it) => {
+      const itTags = getItemTags(it);
+      if (itTags.some((t) => t.toLowerCase() === tagToDelete.toLowerCase())) {
+        const filteredTags = itTags.filter((t) => t.toLowerCase() !== tagToDelete.toLowerCase());
+        const finalTags = filteredTags.length > 0 ? filteredTags : ['General'];
+        return {
+          ...it,
+          tags: finalTags,
+          category: finalTags.join(', ')
+        };
+      }
+      return it;
+    });
+    setItems(updatedItems);
+    saveKnowledgeBaseItemsList(updatedItems);
+
+    setTagToDeleteConfirm(null);
+    showToast(`Tag "${tagToDelete}" deleted.`, 'info');
+  };
 
   const getTagCount = (cat) => {
     return items.filter((it) =>
@@ -310,6 +873,19 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     setViewingItem(filteredItems[nextIdx]);
   };
 
+  // Calculate dynamic minHeight for viewingItem so absolute images are never clipped
+  const computedMinHeight = useMemo(() => {
+    if (!viewingItem?.description) return 480;
+    let maxBottom = 480;
+    const tops = [...viewingItem.description.matchAll(/top:s*(d+)px/gi)].map((m) => parseInt(m[1], 10));
+    const heights = [...viewingItem.description.matchAll(/height:s*(d+)px/gi)].map((m) => parseInt(m[1], 10));
+    for (let i = 0; i < tops.length; i++) {
+      const bottom = (tops[i] || 0) + (heights[i] || 320) + 80;
+      if (bottom > maxBottom) maxBottom = bottom;
+    }
+    return maxBottom;
+  }, [viewingItem]);
+
   // Keyboard navigation for viewing guide
   useEffect(() => {
     if (!viewingItem || isEditorOpen) return;
@@ -361,8 +937,8 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
     if (formError) setFormError('');
   };
 
-  // Save handler (Add or Update)
-  const handleSaveGuide = (e) => {
+  // Save handler (Add or Update) with Supabase Cloud persistence
+  const handleSaveGuide = async (e) => {
     e.preventDefault();
     const cleanTitle = formTitle.trim();
     const cleanDesc = formDescription.trim();
@@ -381,52 +957,57 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
       return;
     }
 
-    let updatedList;
     if (editingItem) {
-      // Update existing item
-      const updatedItem = {
-        ...editingItem,
+      // Update existing item in cloud & locally
+      const updates = {
         title: cleanTitle,
         tags: formTags,
         category: formTags.join(', ') || 'General',
         description: cleanDesc,
-        updatedAt: new Date().toISOString(),
       };
-      updatedList = items.map((it) => (it.id === editingItem.id ? updatedItem : it));
+      const res = await updateKnowledgeBaseGuide(editingItem.id, updates);
+      const updatedItem = res.item || { ...editingItem, ...updates, updatedAt: new Date().toISOString() };
+
+      const updatedList = items.map((it) => (it.id === editingItem.id ? updatedItem : it));
+      const sorted = sortKnowledgeBaseItemsAZ(updatedList);
+      setItems(sorted);
       if (viewingItem && viewingItem.id === editingItem.id) {
         setViewingItem(updatedItem);
       }
       showToast(`Updated "${cleanTitle}" successfully!`, 'success');
     } else {
-      // Create new item
+      // Create new item in cloud & locally
       const newItem = {
-        id: `kb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         title: cleanTitle,
         tags: formTags,
         category: formTags.join(', ') || 'General',
         description: cleanDesc,
+      };
+      const res = await addKnowledgeBaseGuide(newItem);
+      const savedItem = res.item || {
+        ...newItem,
+        id: `kb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      updatedList = [...items, newItem];
-      showToast(`Created "${cleanTitle}" and added to Knowledge Base!`, 'success');
+
+      const updatedList = [...items, savedItem];
+      const sorted = sortKnowledgeBaseItemsAZ(updatedList);
+      setItems(sorted);
+      showToast(`Created "${cleanTitle}" and saved to cloud!`, 'success');
     }
 
-    // Always sort alphabetically A–Z
-    const sorted = sortKnowledgeBaseItemsAZ(updatedList);
-    setItems(sorted);
-    saveKnowledgeBaseItemsList(sorted);
     setIsEditorOpen(false);
     setEditingItem(null);
   };
 
-  // Delete handler
-  const handleDeleteGuide = (id, title) => {
+  // Delete handler with Supabase Cloud persistence
+  const handleDeleteGuide = async (id, title) => {
     if (window.confirm(`Are you sure you want to delete "${title}" from the Knowledge Base?`)) {
+      await deleteKnowledgeBaseGuide(id);
       const remaining = items.filter((it) => it.id !== id);
       const sorted = sortKnowledgeBaseItemsAZ(remaining);
       setItems(sorted);
-      saveKnowledgeBaseItemsList(sorted);
       if (viewingItem && viewingItem.id === id) {
         setViewingItem(null);
       }
@@ -481,7 +1062,6 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
             <span className="kicker-pill" style={{ background: 'rgba(139, 92, 246, 0.2)', color: '#c084fc', border: '1px solid rgba(139, 92, 246, 0.4)' }}>
               <i className="bi bi-journal-bookmark-fill me-1" aria-hidden="true"></i> Troubleshooting Steps
             </span>
-            <span className="badge-local-pill">LOCAL ONLY</span>
           </div>
           <h1 className="kb-main-title">KNOWLEDGE BASE</h1>
 
@@ -507,11 +1087,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
           </div>
         </div>
 
-        <div className="kb-header-right">
-          <p className="kb-header-desc">
-            Searchable library of terminal troubleshooting steps, host error resolutions, and standard operating procedures.
-          </p>
-        </div>
+
       </div>
 
       {/* Search & Filter Header Bar */}
@@ -555,7 +1131,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
               <i className={`bi ${selectedTags.length > 0 ? 'bi-funnel-fill' : 'bi-funnel'} me-1`}></i>
               <span className="kb-filter-btn-label">
                 {selectedTags.length === 0
-                  ? 'Filter by Tag'
+                  ? 'Tag'
                   : selectedTags.length === 1
                   ? selectedTags[0]
                   : `${selectedTags.length} Tags`}
@@ -606,7 +1182,6 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                     <i className="bi bi-search"></i>
                     <input
                       type="text"
-                      placeholder="Find tag..."
                       value={tagSearchQuery}
                       onChange={(e) => setTagSearchQuery(e.target.value)}
                       autoFocus
@@ -647,9 +1222,10 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                       const isSelected = selectedTags.includes(cat);
                       const count = getTagCount(cat);
                       return (
-                        <button
+                        <div
                           key={cat}
-                          type="button"
+                          role="button"
+                          tabIndex={0}
                           className={`kb-filter-menu-item ${isSelected ? 'selected' : ''}`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -657,27 +1233,104 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                               prev.includes(cat) ? prev.filter((t) => t !== cat) : [...prev, cat]
                             );
                           }}
-                          role="menuitemcheckbox"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSelectedTags((prev) =>
+                                prev.includes(cat) ? prev.filter((t) => t !== cat) : [...prev, cat]
+                              );
+                            }
+                          }}
                           aria-checked={isSelected}
                         >
                           <div className="kb-filter-item-left">
                             <i className={`bi ${isSelected ? 'bi-check-square-fill' : 'bi-square'} kb-item-icon`}></i>
                             <span className="kb-item-name">{cat}</span>
                           </div>
-                          <span className="kb-item-count">{count}</span>
-                        </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span className="kb-item-count">{count}</span>
+                            <button
+                              type="button"
+                              className="kb-tag-custom-delete-btn"
+                              title={`Delete tag "${cat}"`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTagToDeleteConfirm(cat);
+                              }}
+                            >
+                              <i className="bi bi-trash3"></i>
+                            </button>
+                          </div>
+                        </div>
                       );
                     })}
                 </div>
 
-                <div className="kb-filter-menu-footer">
-                  <button
-                    type="button"
-                    className="kb-filter-menu-done-btn"
-                    onClick={() => setIsFilterOpen(false)}
-                  >
-                    Done
-                  </button>
+                <div className={`kb-filter-menu-footer ${isAddingTag ? 'adding' : ''}`}>
+                  {isAddingTag ? (
+                    <div className="kb-filter-add-tag-box kb-filter-footer-add-box">
+                      <div className="kb-filter-add-tag-input-row">
+                        <input
+                          type="text"
+                          className="kb-filter-add-tag-input"
+                          value={newTagInput}
+                          onChange={(e) => {
+                            setNewTagInput(e.target.value);
+                            if (newTagError) setNewTagError('');
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddNewTag();
+                            } else if (e.key === 'Escape') {
+                              setIsAddingTag(false);
+                              setNewTagInput('');
+                              setNewTagError('');
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="kb-filter-add-tag-save-btn"
+                          onClick={handleAddNewTag}
+                          title="Save Tag"
+                        >
+                          <i className="bi bi-check-lg"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="kb-filter-add-tag-cancel-btn"
+                          onClick={() => {
+                            setIsAddingTag(false);
+                            setNewTagInput('');
+                            setNewTagError('');
+                          }}
+                          title="Cancel"
+                        >
+                          <i className="bi bi-dash-lg"></i>
+                        </button>
+                      </div>
+                      {newTagError && (
+                        <div className="kb-filter-add-tag-error">
+                          {newTagError}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="kb-filter-menu-done-btn kb-filter-menu-add-btn"
+                      onClick={() => {
+                        setIsAddingTag(true);
+                        setNewTagError('');
+                        setNewTagInput('');
+                      }}
+                      title="Add a custom tag"
+                    >
+                      <i className="bi bi-plus-lg me-1"></i> Add
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -740,7 +1393,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
             <p>
               {searchQuery.trim()
                 ? `No guides match your search "${searchQuery}". Try different keywords or click below to clear.`
-                : 'No guides available in this category.'}
+                : 'No guides created yet. Click below to add your first troubleshooting guide.'}
             </p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 12 }}>
               {searchQuery.trim() && (
@@ -808,95 +1461,97 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
           <div
             className="break-modal-content kb-detail-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ width: 'min(95vw, 860px)', maxWidth: 860, padding: 28 }}
+            style={{ width: 'min(96vw, 1100px)', maxWidth: 1100, padding: '24px 30px' }}
           >
-            {/* Modal Header */}
-            <div className="kb-modal-top-bar">
-              <div className="kb-detail-breadcrumbs" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                {getItemTags(viewingItem).map((t) => (
-                  <span key={t} className="kb-category-pill-lg">{t}</span>
-                ))}
-                <span className="kb-nav-counter">
-                  Guide {currentNavIndex + 1} of {filteredItems.length} (A–Z)
-                </span>
-              </div>
+            {/* Guide Title Row with Delete Button & Navigation Controls on Upper Right */}
+            <div className="kb-detail-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 10 }}>
+              <h2 id="kb-detail-title" className="kb-detail-title" style={{ margin: 0, fontSize: '1.55rem', fontWeight: 800, wordBreak: 'break-word', flex: 1 }}>
+                {viewingItem.title}
+              </h2>
 
-              <div className="kb-modal-nav-controls">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                 <button
                   type="button"
-                  className="feed-refresh-btn"
-                  onClick={handlePrevItem}
-                  disabled={filteredItems.length <= 1}
-                  title="Previous guide (Left Arrow)"
-                  aria-label="Previous guide"
+                  className="btn-kb-action-danger"
+                  onClick={() => handleDeleteGuide(viewingItem.id, viewingItem.title)}
+                  title="Delete Guide"
+                  style={{ margin: 0, height: 32, display: 'inline-flex', alignItems: 'center', gap: 5 }}
                 >
-                  <i className="bi bi-chevron-left"></i>
+                  <i className="bi bi-trash3"></i> Delete
                 </button>
-                <button
-                  type="button"
-                  className="feed-refresh-btn"
-                  onClick={handleNextItem}
-                  disabled={filteredItems.length <= 1}
-                  title="Next guide (Right Arrow)"
-                  aria-label="Next guide"
-                >
-                  <i className="bi bi-chevron-right"></i>
-                </button>
-                <button
-                  type="button"
-                  className="break-close-btn ms-2"
-                  onClick={() => setViewingItem(null)}
-                  title="Close (Esc)"
-                  aria-label="Close"
-                >
-                  <i className="bi bi-x-lg"></i>
-                </button>
+                <div className="kb-modal-nav-controls">
+                  <button
+                    type="button"
+                    className="feed-refresh-btn"
+                    onClick={handlePrevItem}
+                    disabled={filteredItems.length <= 1}
+                    title="Previous guide (Left Arrow)"
+                    aria-label="Previous guide"
+                  >
+                    <i className="bi bi-chevron-left"></i>
+                  </button>
+                  <button
+                    type="button"
+                    className="feed-refresh-btn"
+                    onClick={handleNextItem}
+                    disabled={filteredItems.length <= 1}
+                    title="Next guide (Right Arrow)"
+                    aria-label="Next guide"
+                  >
+                    <i className="bi bi-chevron-right"></i>
+                  </button>
+                  <button
+                    type="button"
+                    className="break-close-btn ms-2"
+                    onClick={() => setViewingItem(null)}
+                    title="Close (Esc)"
+                    aria-label="Close"
+                  >
+                    <i className="bi bi-x-lg"></i>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Guide Title */}
-            <h2 id="kb-detail-title" className="kb-detail-title">
-              {viewingItem.title}
-            </h2>
-
-            {/* Action Bar */}
-            <div className="kb-detail-actions-bar">
-              <button
-                type="button"
-                className="btn-kb-action-primary"
-                onClick={() => handleCopySteps(viewingItem)}
-              >
-                <i className={`bi ${copiedId === viewingItem.id ? 'bi-check2-all' : 'bi-clipboard-check'} me-1`}></i>
-                {copiedId === viewingItem.id ? 'Copied Steps!' : 'Copy Steps to Clipboard'}
-              </button>
-
-              <button
-                type="button"
-                className="btn-kb-action-secondary"
-                onClick={() => handleOpenEdit(viewingItem)}
-              >
-                <i className="bi bi-pencil-square me-1"></i> Edit Guide
-              </button>
-
-              <button
-                type="button"
-                className="btn-kb-action-danger"
-                onClick={() => handleDeleteGuide(viewingItem.id, viewingItem.title)}
-              >
-                <i className="bi bi-trash3 me-1"></i> Delete
-              </button>
+            {/* Tags placed directly UNDER the title */}
+            <div className="kb-detail-breadcrumbs" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
+              {getItemTags(viewingItem).map((t) => (
+                <span key={t} className="kb-category-pill-lg">{t}</span>
+              ))}
             </div>
 
-            {/* Full Steps Content */}
+            {/* Description Header */}
+            <div className="kb-detail-section-header" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <i className="bi bi-file-text-fill" style={{ color: '#38bdf8', fontSize: '1rem' }}></i>
+              <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#f8fafc', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                Description
+              </span>
+            </div>
+
+            {/* Full Steps Content - Clean Expansive Canvas */}
             <div className="kb-detail-body">
-              <h4 className="kb-body-heading">
-                <i className="bi bi-list-check me-2" style={{ color: '#38bdf8' }}></i>
-                Troubleshooting Steps & Procedures
-              </h4>
               {isHtmlContent(viewingItem.description) ? (
                 <div
-                  className="kb-steps-rich-content"
-                  dangerouslySetInnerHTML={{ __html: viewingItem.description }}
+                  className="kb-steps-rich-content ql-snow ql-editor"
+                  style={{ minHeight: `${computedMinHeight}px` }}
+                  dangerouslySetInnerHTML={{
+                    __html: (viewingItem.description || '')
+                      .replace(
+                        /<ol(\s+[^>]*)?>([\s\S]*?)<\/ol>/gi,
+                        (match, attrs, inner) => {
+                          if (inner.includes('data-list="bullet"')) {
+                            return `<ul${attrs || ''}>${inner}</ul>`;
+                          }
+                          return match;
+                        }
+                      )
+                      .replace(/<span class="ql-ui"[^>]*><\/span>/gi, '')
+                  }}
+                  onClick={(e) => {
+                    if (e.target.tagName === 'IMG' && e.target.src) {
+                      setActiveZoomImage(e.target.src);
+                    }
+                  }}
                 />
               ) : (
                 <div className="kb-steps-formatted">
@@ -944,14 +1599,18 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
               )}
             </div>
 
-            {/* Modal Bottom Footer */}
-            <div className="kb-modal-footer">
-              <span className="kb-footer-note">
-                <i className="bi bi-info-circle me-1"></i> Tip: Use Left / Right arrow keys to browse other guides in alphabetical order.
-              </span>
+            {/* Modal Bottom Footer: Edit Guide on left of Close Guide */}
+            <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color, #334155)', paddingTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
               <button
                 type="button"
-                className="btn btn-sm btn-secondary"
+                className="btn btn-sm btn-primary kb-btn-modal-action"
+                onClick={() => handleOpenEdit(viewingItem)}
+              >
+                <i className="bi bi-pencil-square me-1"></i> Edit Guide
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-secondary kb-btn-modal-action"
                 onClick={() => setViewingItem(null)}
               >
                 Close Guide
@@ -965,14 +1624,13 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
       {isEditorOpen && (
         <div
           className="break-modal-overlay"
-          onClick={() => setIsEditorOpen(false)}
           role="dialog"
           aria-modal="true"
         >
           <div
             className="break-modal-content kb-editor-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ width: 'min(95vw, 760px)', maxWidth: 760, padding: 24 }}
+            style={{ width: 'min(96vw, 1100px)', maxWidth: 1100, padding: 24 }}
           >
             <div className="break-modal-header" style={{ padding: '0 0 12px', marginBottom: 14 }}>
               <div>
@@ -1009,8 +1667,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                 </label>
                 <input
                   type="text"
-                  className="form-control"
-                  placeholder="e.g., FD150 EBT Settlement Table Error"
+                  className="kb-form-input"
                   value={formTitle}
                   onChange={(e) => {
                     setFormTitle(e.target.value);
@@ -1043,31 +1700,24 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                   title="Click to select tags"
                 >
                   <div className="kb-form-tag-badges-container">
-                    {formTags.length === 0 ? (
-                      <span className="kb-form-tag-placeholder">
-                        <i className="bi bi-tags me-2"></i>
-                        Click to select tags (e.g., Clover, FD150, PAX...)
+                    {formTags.map((tag) => (
+                      <span key={tag} className="kb-form-tag-badge">
+                        <i className="bi bi-tag-fill me-1"></i>
+                        {tag}
+                        <button
+                          type="button"
+                          className="kb-form-tag-remove"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleTag(tag);
+                          }}
+                          title={`Remove ${tag}`}
+                          aria-label={`Remove ${tag}`}
+                        >
+                          <i className="bi bi-x"></i>
+                        </button>
                       </span>
-                    ) : (
-                      formTags.map((tag) => (
-                        <span key={tag} className="kb-form-tag-badge">
-                          <i className="bi bi-tag-fill me-1"></i>
-                          {tag}
-                          <button
-                            type="button"
-                            className="kb-form-tag-remove"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleTag(tag);
-                            }}
-                            title={`Remove ${tag}`}
-                            aria-label={`Remove ${tag}`}
-                          >
-                            <i className="bi bi-x"></i>
-                          </button>
-                        </span>
-                      ))
-                    )}
+                    ))}
                   </div>
 
                   <div className="kb-form-tag-trigger-actions">
@@ -1127,7 +1777,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                     </div>
 
                     <div className="kb-form-tag-options-grid">
-                      {OFFICIAL_KB_CATEGORIES
+                      {categories
                         .filter((tag) => {
                           if (!formTagSearch.trim()) return true;
                           return tag.toLowerCase().includes(formTagSearch.trim().toLowerCase());
@@ -1155,7 +1805,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
 
                     <div className="kb-form-tag-popover-footer">
                       <span className="text-muted" style={{ fontSize: 11 }}>
-                        {formTags.length} of {OFFICIAL_KB_CATEGORIES.length} selected
+                        {formTags.length} of {categories.length} selected
                       </span>
                       <button
                         type="button"
@@ -1183,7 +1833,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                     setFormDescription(val);
                     if (formError) setFormError('');
                   }}
-                  placeholder="Enter details, instructions, or notes for the team..."
+                  placeholder=""
                 />
               </div>
 
@@ -1201,6 +1851,72 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Tag Confirmation Modal */}
+      {tagToDeleteConfirm && (
+        <div
+          className="break-modal-overlay kb-tag-delete-confirm-overlay"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="kb-tag-delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="kb-tag-delete-confirm-header">
+              <div className="kb-tag-delete-warning-icon">
+                <i className="bi bi-exclamation-triangle-fill"></i>
+              </div>
+              <h4 className="kb-tag-delete-title">Delete Tag</h4>
+            </div>
+            <div className="kb-tag-delete-confirm-body">
+              <p>
+                Are you sure you want to delete the tag{' '}
+                <strong className="kb-tag-delete-name">"{tagToDeleteConfirm}"</strong>?
+              </p>
+              <p className="kb-tag-delete-warning-sub">
+                This will remove the tag from the filter and ticket options.
+              </p>
+            </div>
+            <div className="kb-tag-delete-confirm-actions">
+              <button
+                type="button"
+                className="btn-kb-action-secondary"
+                onClick={() => setTagToDeleteConfirm(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-kb-delete-confirm-danger"
+                onClick={handleConfirmDeleteTag}
+                autoFocus
+              >
+                <i className="bi bi-trash3 me-1"></i> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-Screen Image Zoom Lightbox Modal */}
+      {activeZoomImage && (
+        <div
+          className="break-modal-overlay kb-image-zoom-overlay"
+          onClick={() => setActiveZoomImage(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="kb-image-zoom-container" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="kb-image-zoom-close-btn"
+              onClick={() => setActiveZoomImage(null)}
+              title="Close Image (Esc)"
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+            <img src={activeZoomImage} alt="Terminal Guide Screenshot Zoom" className="kb-image-zoom-img" />
           </div>
         </div>
       )}
