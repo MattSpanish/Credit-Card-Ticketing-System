@@ -6,6 +6,7 @@ import tatiBanner from './tati2.png';
 import appLogo from './logo2.png';
 import ShiftReportPage from './ShiftReportPage';
 import ToolsPage from './ToolsPage';
+import YouTubePage from './YouTubePage';
 import {
   fetchReminders,
   addReminder,
@@ -96,11 +97,43 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-09-v21100",
+    version: "v2.11.0",
+    date: "October 9 2026",
+    isLatest: true,
+    badge: "MAJOR FEATURE",
+    title: "YouTube & Background Music Player",
+    summary: "Added a dedicated YouTube player tab with seamless background playback and a floating mini-player (PIP) that continues playing while working on tickets and switching tabs.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-youtube",
+        title: "Persistent YouTube & Music Player",
+        desc: "Play study beats, podcasts, or music without interruption. Playback automatically transitions into a floating mini-player or minimized audio pill when navigating to Dashboard, Shift Report, Tools, or Announcements.",
+        tag: "Audio / Video"
+      },
+      {
+        type: "feature",
+        icon: "bi-music-note-beamed",
+        title: "Curated Work Stations & Custom Favorites",
+        desc: "Quick 1-click presets for Lofi Girl, Chillhop, Synthwave, Deep Focus, Coffee Shop Jazz, and Piano, plus custom URL pasting and saved shift favorites.",
+        tag: "Productivity"
+      },
+      {
+        type: "ui",
+        icon: "bi-layout-sidebar-inset",
+        title: "Sidebar Integration with Live Equalizer",
+        desc: "New YouTube sidebar navigation tab with animated soundwave equalizer indicator when audio is playing in the background.",
+        tag: "Sidebar Navigation"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-04-v21024",
     version: "v2.10.24",
     date: "October 4 2026",
-    isLatest: true,
-    badge: "LOCAL CLEANUP",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
     title: "Dashboard Tabs Streamlined",
     summary: "Removed the Shift Report and Tools tab buttons from the dashboard top tabs bar, keeping the layout focused on New Ticket.",
     items: [
@@ -2019,7 +2052,8 @@ function Sidebar({
   onOpenTemplates, 
   onOpenBreakSchedule,
   currentView = 'dashboard',
-  onSelectView
+  onSelectView,
+  isYouTubePlaying = false
 }) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
@@ -2068,11 +2102,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.10.24">
+          <div className="logo" title="PH Portal v2.11.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.10.24</span>
+              <span className="logo-version">v2.11.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -2166,6 +2200,28 @@ function Sidebar({
               <i className="bi bi-tools me-1" aria-hidden="true"></i>
               <span className="nav-text">Tools</span>
               <span className="nav-item-badge">BETA</span>
+            </button>
+
+            {/* Dedicated YouTube & Music Tab */}
+            <button 
+              id="nav-youtube"
+              className={`nav-item ${currentView === 'youtube' ? 'active' : ''}`}
+              onClick={() => handleNavAction(() => {
+                onSelectView && onSelectView('youtube');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              })}
+              aria-current={currentView === 'youtube' ? 'page' : undefined}
+              title={isYouTubePlaying ? "YouTube & Music (Playing)" : "YouTube & Music"}
+            >
+              <i className="bi bi-youtube me-1 nav-youtube-icon" aria-hidden="true"></i>
+              <span className="nav-text">YouTube</span>
+              {isYouTubePlaying && (
+                <span className="nav-youtube-pulse" title="Playing">
+                  <span className="pulse-bar bar-1"></span>
+                  <span className="pulse-bar bar-2"></span>
+                  <span className="pulse-bar bar-3"></span>
+                </span>
+              )}
             </button>
           </nav>
 
@@ -3999,6 +4055,36 @@ export default function App() {
     return localStorage.getItem('sidebar_collapsed_creditcard') === 'true';
   });
 
+  // YouTube Persistent Background Media state
+  const [ytActiveVideo, setYtActiveVideo] = useState(() => {
+    try {
+      const saved = localStorage.getItem('yt_active_video');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isYtPlaying, setIsYtPlaying] = useState(false);
+  const [isYtMiniMinimized, setIsYtMiniMinimized] = useState(() => {
+    return localStorage.getItem('yt_mini_minimized') === 'true';
+  });
+
+  useEffect(() => {
+    try {
+      if (ytActiveVideo) {
+        localStorage.setItem('yt_active_video', JSON.stringify(ytActiveVideo));
+      } else {
+        localStorage.removeItem('yt_active_video');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [ytActiveVideo]);
+
+  useEffect(() => {
+    localStorage.setItem('yt_mini_minimized', isYtMiniMinimized ? 'true' : 'false');
+  }, [isYtMiniMinimized]);
+
   // Team Reminders state (cached in localStorage, synced in real-time to Supabase)
   const [reminders, setReminders] = useState(() => {
     return getLocalReminders();
@@ -4139,7 +4225,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.24';
+      const currentVersion = latestAnnouncement?.version || 'v2.11.0';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -4155,7 +4241,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.10.24';
+      const currentVersion = latestAnnouncement?.version || 'v2.11.0';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -4372,6 +4458,7 @@ export default function App() {
           onOpenBreakSchedule={() => setShowBreakSchedule(true)} 
           currentView={currentView}
           onSelectView={setCurrentView}
+          isYouTubePlaying={isYtPlaying}
         />
         <main className="main-area">
           {/* ✅ TICKETING DASHBOARD VIEW (Preserved in DOM to retain Quill, form drafts & event listeners) */}
@@ -4428,6 +4515,21 @@ export default function App() {
           {/* ✅ INDEPENDENT TOOLS PAGE (Utilities & PDF Generators) */}
           <div style={{ display: currentView === 'tools' ? 'block' : 'none' }}>
             <ToolsPage onBackToDashboard={() => setCurrentView('dashboard')} />
+          </div>
+
+          {/* ▶️ INDEPENDENT YOUTUBE PAGE & PERSISTENT MEDIA PLAYER */}
+          <div className={`youtube-view-wrapper ${currentView === 'youtube' ? 'view-active' : 'view-background'}`}>
+            <YouTubePage 
+              onBackToDashboard={() => setCurrentView('dashboard')}
+              currentView={currentView}
+              onSelectView={setCurrentView}
+              activeVideo={ytActiveVideo}
+              setActiveVideo={setYtActiveVideo}
+              isPlaying={isYtPlaying}
+              setIsPlaying={setIsYtPlaying}
+              isMiniMinimized={isYtMiniMinimized}
+              setIsMiniMinimized={setIsYtMiniMinimized}
+            />
           </div>
 
           <div id="notification"></div>
