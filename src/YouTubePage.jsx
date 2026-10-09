@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 // ==========================================
 // 🎵 CURATED WORK & STUDY RADIO PRESETS
@@ -58,7 +58,7 @@ export const PRESET_STATIONS = [
     tag: 'Coding / Flow',
     icon: 'bi-cpu',
     badgeColor: '#06b6d4',
-    description: 'Driving mid-tempo electronic synth beats to power through ticketing shifts.'
+    description: 'Driving electronic synth beats to power through ticketing shifts.'
   },
   {
     id: 'mPZkdNFkNps',
@@ -69,6 +69,48 @@ export const PRESET_STATIONS = [
     description: 'Gentle raindrops on glass with warm crackling fireplace sounds.'
   }
 ];
+
+export const POPULAR_SEARCH_TAGS = [
+  'Lofi Girl',
+  'Taylor Swift',
+  'Coldplay',
+  'Chillhop Radio',
+  'Piano Study Music',
+  'Synthwave 80s',
+  'Coffee Shop Jazz',
+  'Acoustic Guitar',
+  'Ed Sheeran',
+  'Deep Focus Ambient'
+];
+
+// Helper to format duration from seconds to MM:SS or LIVE
+export function formatDuration(sec) {
+  if (sec === undefined || sec === null || sec < 0) return 'LIVE';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+// Helper to format view counts cleanly (e.g. 1.2M, 450K)
+export function formatViews(views) {
+  if (!views) return '';
+  if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M views`;
+  if (views >= 1000) return `${(views / 1000).toFixed(0)}K views`;
+  return `${views} views`;
+}
+
+// Helper to extract 11-char video ID from any URL or Piped path
+export function extractVideoId(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  const match = rawUrl.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (match) return match[1];
+  const shortMatch = rawUrl.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (shortMatch) return shortMatch[1];
+  const embedMatch = rawUrl.match(/\/(shorts|embed|live|v)\/([a-zA-Z0-9_-]{11})/);
+  if (embedMatch) return embedMatch[2];
+  if (/^[a-zA-Z0-9_-]{11}$/.test(rawUrl.trim())) return rawUrl.trim();
+  return '';
+}
 
 // Helper to parse any YouTube URL, short link, embed link, playlist, or raw ID
 export function parseYouTubeInput(raw) {
@@ -139,14 +181,86 @@ export function buildEmbedUrl(video) {
   }
 
   if (type === 'playlist' || (!id && playlistId)) {
-    return `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(playlistId)}&${params.toString()}`;
+    return `https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(playlistId)}&${params.toString()}`;
   }
 
   if (playlistId) {
     params.set('list', playlistId);
   }
 
-  return `https://www.youtube.com/embed/${encodeURIComponent(id)}?${params.toString()}`;
+  return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?${params.toString()}`;
+}
+
+// Fetch YouTube search results without API key via reliable CORS-enabled endpoints
+export async function searchYouTubeMusic(query) {
+  if (!query || !query.trim()) return [];
+
+  const trimmed = query.trim();
+  const searchEndpoints = [
+    `https://api.piped.private.coffee/search?q=${encodeURIComponent(trimmed)}&filter=all`,
+    `https://invidious.f5.si/api/v1/search?q=${encodeURIComponent(trimmed)}&type=video`
+  ];
+
+  for (const endpoint of searchEndpoints) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 7000);
+
+      const response = await fetch(endpoint, {
+        signal: controller.signal,
+        headers: { Accept: 'application/json' }
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) continue;
+      const data = await response.json();
+
+      // Normalize Piped items array
+      if (Array.isArray(data?.items)) {
+        const results = data.items
+          .filter((item) => item && (item.type === 'stream' || item.url?.includes('/watch?v=')))
+          .map((item) => {
+            const vidId = extractVideoId(item.url);
+            return {
+              id: vidId,
+              title: item.title || 'Untitled Track',
+              uploader: item.uploaderName || 'YouTube Artist',
+              duration: formatDuration(item.duration),
+              durationSec: item.duration,
+              thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
+              views: item.views ? formatViews(item.views) : null,
+              rawUrl: `https://www.youtube.com/watch?v=${vidId}`
+            };
+          })
+          .filter((item) => Boolean(item.id));
+
+        if (results.length > 0) return results;
+      }
+
+      // Normalize Invidious array
+      if (Array.isArray(data)) {
+        const results = data
+          .filter((item) => item && item.videoId)
+          .map((item) => ({
+            id: item.videoId,
+            title: item.title || 'Untitled Track',
+            uploader: item.author || 'YouTube Artist',
+            duration: formatDuration(item.lengthSeconds),
+            durationSec: item.lengthSeconds,
+            thumbnail: item.videoThumbnails?.[0]?.url || `https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg`,
+            views: item.viewCount ? formatViews(item.viewCount) : null,
+            rawUrl: `https://www.youtube.com/watch?v=${item.videoId}`
+          }))
+          .filter((item) => Boolean(item.id));
+
+        if (results.length > 0) return results;
+      }
+    } catch (err) {
+      console.warn(`Search failed on ${endpoint}:`, err);
+    }
+  }
+
+  return [];
 }
 
 export default function YouTubePage({
@@ -162,9 +276,12 @@ export default function YouTubePage({
 }) {
   const isFullView = currentView === 'youtube';
 
-  // URL / search input state
-  const [urlInput, setUrlInput] = useState('');
-  const [inputError, setInputError] = useState('');
+  // Search input state
+  const [searchInput, setSearchInput] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [searchError, setSearchError] = useState('');
 
   // Favorites saved in localStorage
   const [favorites, setFavorites] = useState(() => {
@@ -185,60 +302,125 @@ export default function YouTubePage({
     }
   }, [favorites]);
 
-  // Handle play from URL input
-  const handlePlayInput = (e) => {
-    if (e) e.preventDefault();
-    setInputError('');
+  // Initial popular search on load if search results are empty
+  useEffect(() => {
+    let isMounted = true;
+    const initialQuery = 'lofi hip hop radio';
 
-    if (!urlInput.trim()) {
-      setInputError('Please enter a YouTube link or video ID.');
-      return;
-    }
-
-    const parsed = parseYouTubeInput(urlInput);
-    if (!parsed) {
-      setInputError('Invalid YouTube link. You can paste watch URLs, youtu.be links, shorts, or playlists.');
-      return;
-    }
-
-    const newVideo = {
-      ...parsed,
-      title: parsed.type === 'playlist' ? 'YouTube Playlist' : `YouTube Video (${parsed.id})`,
-      rawUrl: urlInput.trim()
+    const loadInitialResults = async () => {
+      try {
+        setIsSearching(true);
+        const results = await searchYouTubeMusic(initialQuery);
+        if (isMounted && results.length > 0) {
+          setSearchResults(results);
+          setHasSearched(true);
+        }
+      } catch (err) {
+        console.error('Initial music load error:', err);
+      } finally {
+        if (isMounted) setIsSearching(false);
+      }
     };
 
-    setActiveVideo(newVideo);
+    loadInitialResults();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Perform search by keyword or handle direct paste URL
+  const handleExecuteSearch = async (queryText) => {
+    const q = (queryText !== undefined ? queryText : searchInput).trim();
+    if (!q) {
+      setSearchError('Please type a song, artist, or music title to search.');
+      return;
+    }
+
+    setSearchError('');
+
+    // If user pasted a direct YouTube link, play it directly!
+    const parsedDirectLink = parseYouTubeInput(q);
+    if (parsedDirectLink) {
+      setActiveVideo({
+        type: parsedDirectLink.type,
+        id: parsedDirectLink.id,
+        playlistId: parsedDirectLink.playlistId,
+        title: parsedDirectLink.type === 'playlist' ? 'YouTube Playlist' : `YouTube Video (${parsedDirectLink.id})`,
+        uploader: 'YouTube',
+        rawUrl: q,
+        thumbnail: `https://i.ytimg.com/vi/${parsedDirectLink.id}/hqdefault.jpg`
+      });
+      setIsPlaying(true);
+      return;
+    }
+
+    // Otherwise, search for the song!
+    setIsSearching(true);
+    setHasSearched(true);
+
+    try {
+      const results = await searchYouTubeMusic(q);
+      if (results && results.length > 0) {
+        setSearchResults(results);
+      } else {
+        setSearchResults([]);
+        setSearchError(`No direct results found for "${q}". Try another song title or artist!`);
+      }
+    } catch (err) {
+      console.error('Search error:', err);
+      setSearchError('Search failed. Please check your network connection or try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleFormSubmit = (e) => {
+    if (e) e.preventDefault();
+    handleExecuteSearch();
+  };
+
+  // Play a searched track
+  const handlePlaySearchResult = (item) => {
+    setActiveVideo({
+      type: 'video',
+      id: item.id,
+      playlistId: null,
+      title: item.title,
+      uploader: item.uploader,
+      duration: item.duration,
+      thumbnail: item.thumbnail,
+      rawUrl: item.rawUrl || `https://www.youtube.com/watch?v=${item.id}`
+    });
     setIsPlaying(true);
-    setUrlInput('');
   };
 
   // Play a curated preset
   const handlePlayPreset = (preset) => {
-    setInputError('');
     setActiveVideo({
       type: 'video',
       id: preset.id,
       playlistId: null,
       title: preset.title,
+      uploader: 'Focus Radio',
+      thumbnail: `https://i.ytimg.com/vi/${preset.id}/hqdefault.jpg`,
       rawUrl: `https://www.youtube.com/watch?v=${preset.id}`
     });
     setIsPlaying(true);
   };
 
   // Search on YouTube in new tab
-  const handleOpenSearch = () => {
-    const query = urlInput.trim() || 'lofi hip hop radio';
+  const handleOpenSearchExternal = () => {
+    const query = searchInput.trim() || 'lofi hip hop radio';
     window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
   };
 
-  // Add currently playing to favorites
-  const handleAddToFavorites = () => {
-    if (!activeVideo) return;
-    const key = activeVideo.id || activeVideo.playlistId;
+  // Add currently playing or result to favorites
+  const handleAddToFavorites = (itemToFav) => {
+    const target = itemToFav || activeVideo;
+    if (!target) return;
+    const key = target.id || target.playlistId;
     if (favorites.some((f) => (f.id || f.playlistId) === key)) return;
 
     const newFav = {
-      ...activeVideo,
+      ...target,
       addedAt: new Date().toLocaleDateString()
     };
     setFavorites((prev) => [newFav, ...prev]);
@@ -278,9 +460,9 @@ export default function YouTubePage({
                 <i className="bi bi-youtube me-1 text-danger" aria-hidden="true"></i> Background Media & Music
               </span>
             </div>
-            <h1>YOUTUBE PLAYER</h1>
+            <h1>YOUTUBE MUSIC SEARCH & PLAYER</h1>
             <p className="panel-subtitle">
-              Play music, study radios, or podcasts without interruption while working across any tab or ticketing screen.
+              Search any song, artist, or stream and play it directly without pasting links. Keeps playing continuously while you work across other tabs.
             </p>
           </div>
           <button
@@ -295,7 +477,7 @@ export default function YouTubePage({
       </div>
 
       {/* ========================================================= */}
-      {/* 2. MAIN LAYOUT GRID (Player Column & Control Column)       */}
+      {/* 2. MAIN LAYOUT GRID (Player Column & Search/Results Column)*/}
       {/* ========================================================= */}
       <div className="youtube-page-grid">
         {/* LEFT COLUMN: Persistent Video Player & Now Playing Dock */}
@@ -306,7 +488,7 @@ export default function YouTubePage({
               isMiniMinimized ? 'is-minimized' : ''
             } ${!isPlaying || !activeVideo ? 'is-idle' : ''}`}
           >
-            {/* FLOATING HEADER (Visible in Mini-Player mode) */}
+            {/* FLOATING HEADER (Visible in Mini-Player mode on other tabs) */}
             {!isFullView && isPlaying && activeVideo && (
               <div className="youtube-mini-header">
                 <div className="youtube-mini-title-wrap" title={activeVideo.title || 'YouTube Player'}>
@@ -377,16 +559,16 @@ export default function YouTubePage({
               ) : isFullView ? (
                 <div className="youtube-empty-player-placeholder">
                   <div className="youtube-empty-icon-wrap">
-                    <i className="bi bi-youtube"></i>
+                    <i className="bi bi-music-note-beamed"></i>
                   </div>
                   <h3>Ready to Stream</h3>
-                  <p>Paste any YouTube URL or click a focus station on the right to start playing.</p>
+                  <p>Search any artist, song, or lofi mix on the right to start playing instantly.</p>
                   <button
                     type="button"
                     className="btn-quick-start"
                     onClick={() => handlePlayPreset(PRESET_STATIONS[0])}
                   >
-                    <i className="bi bi-play-fill me-1"></i> Play Lofi Girl Radio
+                    <i className="bi bi-play-fill me-1"></i> Quick Play Lofi Girl
                   </button>
                 </div>
               ) : null}
@@ -402,24 +584,32 @@ export default function YouTubePage({
                     <span className="pulse-dot"></span> NOW PLAYING
                   </span>
                   <h3 className="now-playing-title">{activeVideo.title || 'YouTube Stream'}</h3>
-                  {activeVideo.rawUrl && (
-                    <a
-                      href={activeVideo.rawUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="now-playing-link"
-                    >
-                      <i className="bi bi-box-arrow-up-right me-1"></i> Open on YouTube
-                    </a>
-                  )}
+                  <div className="now-playing-meta">
+                    {activeVideo.uploader && (
+                      <span className="now-playing-channel">
+                        <i className="bi bi-person-circle me-1"></i>
+                        {activeVideo.uploader}
+                      </span>
+                    )}
+                    {activeVideo.rawUrl && (
+                      <a
+                        href={activeVideo.rawUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="now-playing-link"
+                      >
+                        <i className="bi bi-box-arrow-up-right me-1"></i> YouTube.com
+                      </a>
+                    )}
+                  </div>
                 </div>
                 <div className="now-playing-right">
                   <button
                     type="button"
                     className={`btn-yt-action ${isCurrentInFavorites ? 'btn-yt-fav-active' : ''}`}
-                    onClick={handleAddToFavorites}
+                    onClick={() => handleAddToFavorites()}
                     disabled={isCurrentInFavorites}
-                    title={isCurrentInFavorites ? 'In Favorites' : 'Add to Favorites'}
+                    title={isCurrentInFavorites ? 'Saved in Favorites' : 'Add to Favorites'}
                   >
                     <i className={`bi ${isCurrentInFavorites ? 'bi-star-fill text-warning' : 'bi-star'} me-1`}></i>
                     {isCurrentInFavorites ? 'Saved' : 'Favorite'}
@@ -440,116 +630,249 @@ export default function YouTubePage({
             <div className="youtube-pip-hint-card">
               <i className="bi bi-info-circle-fill me-2 text-info"></i>
               <div>
-                <strong>Seamless Background Playback:</strong> You can switch to any sidebar tab (Dashboard, Shift Report, Tools, Announcements) without stopping your music. The player will smoothly stay alive in a floating mini-player in the bottom-right corner!
+                <strong>Seamless Background Playback:</strong> Once you click Play on any song, you can switch freely to the <strong>Dashboard</strong>, <strong>Shift Report</strong>, or <strong>Tools</strong>. Your music stays playing in a floating mini-player!
+              </div>
+            </div>
+
+            {/* CURATED FOCUS & WORK STATIONS (Below player in left column) */}
+            <div className="youtube-card mt-3">
+              <div className="youtube-card-header">
+                <h4 className="youtube-card-title">
+                  <i className="bi bi-soundwave me-1 text-primary"></i> 1-Click Focus & Work Radios
+                </h4>
+              </div>
+              <div className="youtube-card-body">
+                <div className="preset-stations-grid">
+                  {PRESET_STATIONS.map((preset) => {
+                    const isCurrent = activeVideo?.id === preset.id && isPlaying;
+                    return (
+                      <div
+                        key={preset.id}
+                        className={`preset-station-card ${isCurrent ? 'is-active-station' : ''}`}
+                        onClick={() => handlePlayPreset(preset)}
+                        title={`Play ${preset.title}`}
+                      >
+                        <div
+                          className="preset-icon-wrap"
+                          style={{ backgroundColor: `${preset.badgeColor}22`, color: preset.badgeColor }}
+                        >
+                          <i className={`bi ${isCurrent ? 'bi-soundwave' : preset.icon}`}></i>
+                        </div>
+                        <div className="preset-info">
+                          <div className="preset-title-row">
+                            <span className="preset-title">{preset.title}</span>
+                            <span
+                              className="preset-tag"
+                              style={{ backgroundColor: `${preset.badgeColor}18`, color: preset.badgeColor }}
+                            >
+                              {preset.tag}
+                            </span>
+                          </div>
+                          <p className="preset-desc">{preset.description}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-preset-play"
+                          aria-label={`Play ${preset.title}`}
+                          tabIndex="-1"
+                        >
+                          <i className={`bi ${isCurrent ? 'bi-pause-fill' : 'bi-play-fill'}`}></i>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: URL Input, Presets & Favorites (Hidden in background) */}
+        {/* RIGHT COLUMN: Search Bar, Live Results & Favorites */}
         <div className={`youtube-controls-column youtube-hide-in-background ${isFullView ? '' : 'is-hidden-bg'}`}>
-          {/* CARD 1: URL / SEARCH INPUT */}
+          {/* CARD 1: SEARCH FOR MUSIC BY TITLE / ARTIST */}
           <div className="youtube-card">
             <div className="youtube-card-header">
               <h4 className="youtube-card-title">
-                <i className="bi bi-link-45deg me-1 text-danger"></i> Paste Link or Search
+                <i className="bi bi-search me-1 text-danger"></i> Search Music & Songs
               </h4>
             </div>
             <div className="youtube-card-body">
-              <form onSubmit={handlePlayInput} className="youtube-input-form">
+              <form onSubmit={handleFormSubmit} className="youtube-input-form">
                 <div className="youtube-input-wrap">
                   <i className="bi bi-search youtube-input-icon"></i>
                   <input
                     type="text"
                     className="youtube-search-input"
-                    placeholder="Paste YouTube link (watch, playlist, shorts)..."
-                    value={urlInput}
+                    placeholder="Type song or artist (e.g. Taylor Swift, Coldplay, Lofi)..."
+                    value={searchInput}
                     onChange={(e) => {
-                      setUrlInput(e.target.value);
-                      if (inputError) setInputError('');
+                      setSearchInput(e.target.value);
+                      if (searchError) setSearchError('');
                     }}
                   />
-                  {urlInput && (
+                  {searchInput && (
                     <button
                       type="button"
                       className="youtube-clear-btn"
-                      onClick={() => setUrlInput('')}
-                      title="Clear input"
+                      onClick={() => setSearchInput('')}
+                      title="Clear search"
                     >
                       <i className="bi bi-x"></i>
                     </button>
                   )}
                 </div>
-                {inputError && <div className="youtube-input-error">{inputError}</div>}
+                {searchError && <div className="youtube-input-error">{searchError}</div>}
                 <div className="youtube-form-actions">
-                  <button type="submit" className="btn-yt-play">
-                    <i className="bi bi-play-fill me-1"></i> Play
+                  <button type="submit" className="btn-yt-play" disabled={isSearching}>
+                    {isSearching ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        Searching...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-search me-1"></i> Search Songs
+                      </>
+                    )}
                   </button>
                   <button
                     type="button"
                     className="btn-yt-search-external"
-                    onClick={handleOpenSearch}
-                    title="Search YouTube in a new tab"
+                    onClick={handleOpenSearchExternal}
+                    title="Search YouTube.com in a new tab"
                   >
-                    <i className="bi bi-youtube me-1"></i> Search YouTube
+                    <i className="bi bi-youtube me-1"></i> Open on YouTube
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
 
-          {/* CARD 2: FOCUS & WORK STATIONS */}
-          <div className="youtube-card">
-            <div className="youtube-card-header">
-              <h4 className="youtube-card-title">
-                <i className="bi bi-soundwave me-1 text-primary"></i> Focus & Work Radios
-              </h4>
-            </div>
-            <div className="youtube-card-body">
-              <div className="preset-stations-grid">
-                {PRESET_STATIONS.map((preset) => {
-                  const isCurrent = activeVideo?.id === preset.id && isPlaying;
-                  return (
-                    <div
-                      key={preset.id}
-                      className={`preset-station-card ${isCurrent ? 'is-active-station' : ''}`}
-                      onClick={() => handlePlayPreset(preset)}
-                      title={`Play ${preset.title}`}
+              {/* QUICK SEARCH GENRE / ARTIST PILLS */}
+              <div className="search-genre-pills-row">
+                <span className="search-genre-label">Quick Search:</span>
+                <div className="search-genre-pills">
+                  {POPULAR_SEARCH_TAGS.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      className="genre-pill-btn"
+                      onClick={() => {
+                        setSearchInput(tag);
+                        handleExecuteSearch(tag);
+                      }}
                     >
-                      <div
-                        className="preset-icon-wrap"
-                        style={{ backgroundColor: `${preset.badgeColor}22`, color: preset.badgeColor }}
-                      >
-                        <i className={`bi ${isCurrent ? 'bi-soundwave' : preset.icon}`}></i>
-                      </div>
-                      <div className="preset-info">
-                        <div className="preset-title-row">
-                          <span className="preset-title">{preset.title}</span>
-                          <span
-                            className="preset-tag"
-                            style={{ backgroundColor: `${preset.badgeColor}18`, color: preset.badgeColor }}
-                          >
-                            {preset.tag}
-                          </span>
-                        </div>
-                        <p className="preset-desc">{preset.description}</p>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn-preset-play"
-                        aria-label={`Play ${preset.title}`}
-                        tabIndex="-1"
-                      >
-                        <i className={`bi ${isCurrent ? 'bi-pause-fill' : 'bi-play-fill'}`}></i>
-                      </button>
-                    </div>
-                  );
-                })}
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* CARD 3: SAVED FAVORITES */}
+          {/* CARD 2: SEARCH RESULTS LIST */}
+          <div className="youtube-card">
+            <div className="youtube-card-header d-flex justify-content-between align-items-center">
+              <h4 className="youtube-card-title">
+                <i className="bi bi-music-note-list me-1 text-danger"></i>
+                {isSearching ? 'Searching Tracks...' : hasSearched ? `Songs Found (${searchResults.length})` : 'Popular Tracks'}
+              </h4>
+              {isSearching && (
+                <span className="spinner-border spinner-border-sm text-danger" role="status"></span>
+              )}
+            </div>
+            <div className="youtube-card-body p-0">
+              {isSearching ? (
+                <div className="youtube-search-loading">
+                  <div className="spinner-border text-danger mb-2" role="status"></div>
+                  <p>Searching YouTube for matching songs...</p>
+                </div>
+              ) : searchResults.length === 0 ? (
+                <div className="youtube-search-empty">
+                  <i className="bi bi-music-note text-muted mb-2"></i>
+                  <p>Type any song name or artist above and click <strong>Search Songs</strong> to find tracks!</p>
+                </div>
+              ) : (
+                <div className="youtube-results-scrollable">
+                  {searchResults.map((item) => {
+                    const isCurrent = activeVideo?.id === item.id && isPlaying;
+                    const isFav = favorites.some((f) => (f.id || f.playlistId) === item.id);
+                    return (
+                      <div
+                        key={item.id}
+                        className={`youtube-result-row ${isCurrent ? 'is-playing-row' : ''}`}
+                      >
+                        {/* Thumbnail with duration badge */}
+                        <div
+                          className="yt-result-thumb-box"
+                          onClick={() => handlePlaySearchResult(item)}
+                          title={`Play ${item.title}`}
+                        >
+                          <img
+                            src={item.thumbnail}
+                            alt={item.title}
+                            className="yt-result-thumb-img"
+                            loading="lazy"
+                            onError={(e) => {
+                              e.target.src = `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`;
+                            }}
+                          />
+                          <span className={`yt-duration-badge ${item.duration === 'LIVE' ? 'is-live-badge' : ''}`}>
+                            {item.duration}
+                          </span>
+                          <div className="yt-thumb-play-overlay">
+                            <i className={`bi ${isCurrent ? 'bi-soundwave' : 'bi-play-fill'}`}></i>
+                          </div>
+                        </div>
+
+                        {/* Title, Artist, Views */}
+                        <div
+                          className="yt-result-info-box"
+                          onClick={() => handlePlaySearchResult(item)}
+                          title={`Play ${item.title}`}
+                        >
+                          <h5 className="yt-result-title">{item.title}</h5>
+                          <div className="yt-result-meta-row">
+                            <span className="yt-result-uploader">
+                              <i className="bi bi-person-circle me-1"></i>
+                              {item.uploader}
+                            </span>
+                            {item.views && (
+                              <span className="yt-result-views">
+                                • {item.views}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="yt-result-actions-box">
+                          <button
+                            type="button"
+                            className={`btn-yt-row-play ${isCurrent ? 'is-active-btn' : ''}`}
+                            onClick={() => handlePlaySearchResult(item)}
+                            title={isCurrent ? 'Currently Playing' : 'Play this song'}
+                          >
+                            <i className={`bi ${isCurrent ? 'bi-pause-fill' : 'bi-play-fill'}`}></i>
+                            <span>{isCurrent ? 'Playing' : 'Play'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`btn-yt-row-fav ${isFav ? 'is-fav-saved' : ''}`}
+                            onClick={() => handleAddToFavorites(item)}
+                            title={isFav ? 'Saved in Favorites' : 'Add to Favorites'}
+                            disabled={isFav}
+                          >
+                            <i className={`bi ${isFav ? 'bi-star-fill text-warning' : 'bi-star'}`}></i>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* CARD 3: SAVED SHIFT FAVORITES */}
           <div className="youtube-card">
             <div className="youtube-card-header d-flex justify-content-between align-items-center">
               <h4 className="youtube-card-title">
@@ -563,7 +886,7 @@ export default function YouTubePage({
               {favorites.length === 0 ? (
                 <div className="favorites-empty-state">
                   <i className="bi bi-star me-1 text-muted"></i>
-                  <span>No saved favorites yet. Click <strong>Favorite</strong> on any playing video to bookmark it here!</span>
+                  <span>No saved favorites yet. Click the <strong>star icon</strong> on any search result to save it here for fast 1-click access!</span>
                 </div>
               ) : (
                 <div className="favorites-list">

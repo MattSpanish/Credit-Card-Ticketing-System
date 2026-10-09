@@ -97,11 +97,36 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-09-v21110",
+    version: "v2.11.1",
+    date: "October 9 2026",
+    isLatest: true,
+    badge: "SEARCH UPDATE",
+    title: "Direct Song & Artist Search for Music",
+    summary: "Search any song, artist, or music track directly without needing to copy-paste YouTube links. Results show thumbnails, duration, channel, and 1-click play.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-search",
+        title: "Direct Song & Artist Search",
+        desc: "Type any song title, band, or artist (e.g. Taylor Swift, Coldplay, Lofi Girl) to instantly browse and stream YouTube tracks without copying links.",
+        tag: "Music Search"
+      },
+      {
+        type: "ui",
+        icon: "bi-tags-fill",
+        title: "Quick-Search Genre Pills",
+        desc: "Added 1-click genre and artist discovery pills under the search bar for fast focus tunes during ticketing shifts.",
+        tag: "User Experience"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-09-v21100",
     version: "v2.11.0",
     date: "October 9 2026",
-    isLatest: true,
-    badge: "MAJOR FEATURE",
+    isLatest: false,
+    badge: "PREVIOUS RELEASE",
     title: "YouTube & Background Music Player",
     summary: "Added a dedicated YouTube player tab with seamless background playback and a floating mini-player (PIP) that continues playing while working on tickets and switching tabs.",
     items: [
@@ -2102,11 +2127,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.11.0">
+          <div className="logo" title="PH Portal v2.11.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.11.0</span>
+              <span className="logo-version">v2.11.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4225,7 +4250,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.11.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.11.1';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -4241,7 +4266,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.11.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.11.1';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
