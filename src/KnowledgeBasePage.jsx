@@ -1419,7 +1419,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
               )}
               <button
                 type="button"
-                className="btn btn-sm btn-primary"
+                className="btn-add-kb-guide kb-empty-add-btn"
                 onClick={handleOpenAdd}
               >
                 <i className="bi bi-plus-lg me-1"></i> Add "{searchQuery.trim() || 'New Guide'}"
