@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   generateCloseAccountPdfBlob,
-  saveOrDownloadCloseAccountPdf
+  saveOrDownloadCloseAccountPdf,
+  CLOSE_ACCOUNT_WORKFLOW_SECTIONS,
+  getDefaultCheckboxState
 } from './closeAccountPdfGenerator';
 
 export default function ToolsPage({ onBackToDashboard }) {
@@ -14,6 +16,10 @@ export default function ToolsPage({ onBackToDashboard }) {
   const [fileName, setFileName] = useState('Close_Account_NASHVILLE.pdf');
   const [isCustomFileName, setIsCustomFileName] = useState(false);
 
+  // Editable Checkbox States mapped by item id
+  const [checkedItems, setCheckedItems] = useState(() => getDefaultCheckboxState('NASHVILLE'));
+  const [showChecklistDrawer, setShowChecklistDrawer] = useState(false);
+
   // Folder path / File System Access state
   const [savedFolderName, setSavedFolderName] = useState(() => {
     return localStorage.getItem('close_account_save_folder_name') || '';
@@ -25,24 +31,72 @@ export default function ToolsPage({ onBackToDashboard }) {
 
   // PDF Preview State
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
-  const [previewMode, setPreviewMode] = useState('pdf'); // 'pdf' or 'sheet'
-  const [sheetPage, setSheetPage] = useState(1); // 1 or 2
 
-  // Update default file name when processor changes (if user hasn't typed custom name)
-  useEffect(() => {
+  // Select processor variant: automatically re-applies default checkbox settings for that processor
+  const handleSelectProcessor = (selectedProc) => {
+    setProcessor(selectedProc);
+    setCheckedItems(getDefaultCheckboxState(selectedProc));
     if (!isCustomFileName) {
-      setFileName(`Close_Account_${processor}.pdf`);
+      setFileName(`Close_Account_${selectedProc}.pdf`);
     }
-  }, [processor, isCustomFileName]);
+  };
 
-  // Live PDF preview blob generator with debounce to avoid reload flicker on typing
+  // Toggle individual item checkbox
+  const handleToggleCheckbox = (id) => {
+    setCheckedItems((prev) => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  // Reset checkboxes to default for currently selected processor
+  const handleResetCheckboxes = () => {
+    setCheckedItems(getDefaultCheckboxState(processor));
+    showToast(`Reset to default ${processor} checkboxes`, 'info');
+  };
+
+  // Check all items
+  const handleCheckAll = () => {
+    const allChecked = {};
+    CLOSE_ACCOUNT_WORKFLOW_SECTIONS.forEach((sec) => {
+      sec.items.forEach((item) => {
+        allChecked[item.id] = true;
+      });
+    });
+    setCheckedItems(allChecked);
+    showToast('All items checked', 'info');
+  };
+
+  // Uncheck all items
+  const handleUncheckAll = () => {
+    const allUnchecked = {};
+    CLOSE_ACCOUNT_WORKFLOW_SECTIONS.forEach((sec) => {
+      sec.items.forEach((item) => {
+        allUnchecked[item.id] = false;
+      });
+    });
+    setCheckedItems(allUnchecked);
+    showToast('All items unchecked', 'info');
+  };
+
+  // Counts for UI badge
+  const totalCheckboxes = useMemo(() => {
+    return CLOSE_ACCOUNT_WORKFLOW_SECTIONS.reduce((acc, sec) => acc + sec.items.length, 0);
+  }, []);
+
+  const activeCheckedCount = useMemo(() => {
+    return Object.values(checkedItems).filter(Boolean).length;
+  }, [checkedItems]);
+
+  // Live PDF preview blob generator with debounce
   useEffect(() => {
     let active = true;
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       try {
-        const blob = generateCloseAccountPdfBlob({
+        const blob = await generateCloseAccountPdfBlob({
           processor,
-          reason: reason.trim() || 'N/A'
+          reason: reason.trim() || 'N/A',
+          checkedItems
         });
         const url = URL.createObjectURL(blob);
         if (active) {
@@ -60,7 +114,7 @@ export default function ToolsPage({ onBackToDashboard }) {
       active = false;
       clearTimeout(timer);
     };
-  }, [processor, reason]);
+  }, [processor, reason, checkedItems]);
 
   // Cleanup blob URL on unmount
   useEffect(() => {
@@ -88,7 +142,6 @@ export default function ToolsPage({ onBackToDashboard }) {
         }
       }
     } else {
-      // Fallback manual note for browsers without Directory Picker
       const promptName = window.prompt(
         'Enter preferred folder name/label for your records:',
         savedFolderName || 'Downloads'
@@ -130,6 +183,7 @@ export default function ToolsPage({ onBackToDashboard }) {
       const result = await saveOrDownloadCloseAccountPdf({
         processor,
         reason: reason.trim(),
+        checkedItems,
         fileName: fileName || `Close_Account_${processor}.pdf`,
         dirHandle: directoryHandle
       });
@@ -148,11 +202,12 @@ export default function ToolsPage({ onBackToDashboard }) {
   };
 
   // Preview generated PDF in a new tab
-  const handlePreviewPdf = () => {
+  const handlePreviewPdf = async () => {
     try {
-      const blob = generateCloseAccountPdfBlob({
+      const blob = await generateCloseAccountPdfBlob({
         processor,
-        reason: reason.trim() || 'N/A'
+        reason: reason.trim() || 'N/A',
+        checkedItems
       });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank', 'noopener,noreferrer');
@@ -163,15 +218,24 @@ export default function ToolsPage({ onBackToDashboard }) {
     }
   };
 
-  const handleResetForm = () => {
-    setReason('');
-    setIsCustomFileName(false);
-    setFileName(`Close_Account_${processor}.pdf`);
-    showToast('Form reset', 'info');
-  };
-
   return (
     <div className="tools-page-container">
+      {/* Toast Banner */}
+      {statusMessage && (
+        <div className={`kb-toast-alert kb-toast-${statusMessage.type}`} style={{ position: 'fixed', top: 20, right: 20, zIndex: 9999 }}>
+          <i
+            className={`bi ${
+              statusMessage.type === 'success'
+                ? 'bi-check-circle-fill'
+                : statusMessage.type === 'error'
+                ? 'bi-exclamation-triangle-fill'
+                : 'bi-info-circle-fill'
+            } me-2`}
+          ></i>
+          <span>{statusMessage.text}</span>
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="tools-page-header">
         <div>
@@ -208,6 +272,9 @@ export default function ToolsPage({ onBackToDashboard }) {
             <div className="tool-card-title-row">
               <h4>Close Account PDF Generator</h4>
             </div>
+            <p className="tool-card-desc">
+              Generate 2-page Close Processing Accounts Workflow PDFs with interactive checkboxes and custom reason notes.
+            </p>
           </div>
         </div>
       </div>
@@ -242,10 +309,9 @@ export default function ToolsPage({ onBackToDashboard }) {
                 <div className="processor-toggle-grid">
                   <div
                     className={`processor-card ${processor === 'NASHVILLE' ? 'selected' : ''}`}
-                    onClick={() => {
-                      setProcessor('NASHVILLE');
-                      if (!isCustomFileName) setFileName('Close_Account_NASHVILLE.pdf');
-                    }}
+                    onClick={() => handleSelectProcessor('NASHVILLE')}
+                    role="button"
+                    tabIndex={0}
                   >
                     <div className="processor-card-radio">
                       <input
@@ -253,20 +319,22 @@ export default function ToolsPage({ onBackToDashboard }) {
                         id="proc-nashville"
                         name="processor"
                         checked={processor === 'NASHVILLE'}
-                        onChange={() => setProcessor('NASHVILLE')}
+                        onChange={() => handleSelectProcessor('NASHVILLE')}
                       />
                     </div>
                     <div className="processor-card-content">
                       <div className="processor-title">NASHVILLE</div>
+                      <div className="processor-desc" style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)' }}>
+                        First Data (FD) Workflow Checked
+                      </div>
                     </div>
                   </div>
 
                   <div
                     className={`processor-card ${processor === 'TSYS' ? 'selected' : ''}`}
-                    onClick={() => {
-                      setProcessor('TSYS');
-                      if (!isCustomFileName) setFileName('Close_Account_TSYS.pdf');
-                    }}
+                    onClick={() => handleSelectProcessor('TSYS')}
+                    role="button"
+                    tabIndex={0}
                   >
                     <div className="processor-card-radio">
                       <input
@@ -274,11 +342,14 @@ export default function ToolsPage({ onBackToDashboard }) {
                         id="proc-tsys"
                         name="processor"
                         checked={processor === 'TSYS'}
-                        onChange={() => setProcessor('TSYS')}
+                        onChange={() => handleSelectProcessor('TSYS')}
                       />
                     </div>
                     <div className="processor-card-content">
                       <div className="processor-title">TSYS</div>
+                      <div className="processor-desc" style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)' }}>
+                        TSYS Workflow Checked
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -305,10 +376,87 @@ export default function ToolsPage({ onBackToDashboard }) {
                 ></textarea>
               </div>
 
-              {/* 3. Output File Name */}
+              {/* 3. Editable Workflow Checkboxes Controls */}
+              <div className="form-group mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <label className="form-label-header m-0">
+                    <span className="form-step-badge">3</span>
+                    <span>Workflow Checkboxes</span>
+                  </label>
+                  <span className="badge-checkbox-count">
+                    {activeCheckedCount} / {totalCheckboxes} Checked
+                  </span>
+                </div>
+                <p className="form-hint-text" style={{ fontSize: '0.76rem', color: 'var(--text-muted, #94a3b8)', margin: '4px 0 8px' }}>
+                  Auto-applied defaults for <strong>{processor}</strong>. Click any checkbox directly in the preview or use actions below to customize:
+                </p>
+
+                <div className="checkbox-quick-actions">
+                  <button
+                    type="button"
+                    className="btn-checkbox-action"
+                    onClick={handleResetCheckboxes}
+                    title={`Reset checkboxes to ${processor} defaults`}
+                  >
+                    <i className="bi bi-arrow-counterclockwise me-1"></i> Defaults ({processor})
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-checkbox-action"
+                    onClick={handleCheckAll}
+                    title="Check all items"
+                  >
+                    <i className="bi bi-check-all me-1"></i> Check All
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-checkbox-action"
+                    onClick={handleUncheckAll}
+                    title="Uncheck all items"
+                  >
+                    <i className="bi bi-dash-circle me-1"></i> Uncheck All
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-checkbox-action btn-checkbox-action-toggle"
+                    onClick={() => setShowChecklistDrawer(!showChecklistDrawer)}
+                    title="View item checklist drawer"
+                  >
+                    <i className={`bi ${showChecklistDrawer ? 'bi-chevron-up' : 'bi-list-check'} me-1`}></i>
+                    {showChecklistDrawer ? 'Hide List' : 'Edit in List'}
+                  </button>
+                </div>
+
+                {/* Collapsible Form Checklist Drawer */}
+                {showChecklistDrawer && (
+                  <div className="form-checklist-drawer">
+                    {CLOSE_ACCOUNT_WORKFLOW_SECTIONS.map((sec) => (
+                      <div key={sec.secNum} className="form-checklist-sec">
+                        <div className="form-checklist-sec-title">
+                          {sec.secNum}. {sec.title}
+                        </div>
+                        <div className="form-checklist-items">
+                          {sec.items.map((item) => (
+                            <label key={item.id} className="form-checklist-item-row">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(checkedItems[item.id])}
+                                onChange={() => handleToggleCheckbox(item.id)}
+                              />
+                              <span className="form-checklist-item-text">{item.text}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 4. Output File Name */}
               <div className="form-group mb-3">
                 <label htmlFor="close-account-filename" className="form-label-header">
-                  <span className="form-step-badge">3</span>
+                  <span className="form-step-badge">4</span>
                   <span>PDF File Name</span>
                 </label>
                 <input
@@ -350,10 +498,13 @@ export default function ToolsPage({ onBackToDashboard }) {
             {/* Right Column: Live PDF Document Preview */}
             <div className="tool-preview-card pdf-preview-card-wrap">
               <div className="preview-header">
-                <div className="d-flex align-items-center gap-2">
+                <div className="d-flex align-items-center gap-2 flex-wrap">
                   <i className="bi bi-file-earmark-pdf-fill" style={{ color: '#ef4444', fontSize: '1.15rem' }}></i>
                   <h5 className="m-0" style={{ fontSize: '0.92rem', fontWeight: '700' }}>PDF Document Preview</h5>
                   <span className="preview-proc-badge">{processor}</span>
+                  <span className="preview-interactive-badge" title="Click any checkbox on the sheet to toggle">
+                    <i className="bi bi-hand-index-thumb me-1"></i> Click to Toggle
+                  </span>
                 </div>
 
                 <div className="preview-header-controls">
@@ -384,7 +535,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                 </div>
               </div>
 
-              {/* Continuous 2-Page Document Canvas */}
+              {/* Continuous 2-Page Document Canvas with Interactive Checkboxes */}
               <div className="pdf-sheet-canvas">
                 {/* PAGE 1 */}
                 <div id="doc-sheet-page-1" className="pdf-sheet-paper">
@@ -397,12 +548,24 @@ export default function ToolsPage({ onBackToDashboard }) {
                     {/* Section 1 */}
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">1.  Closure Request Verification</div>
-                      <div className="sheet-item">
-                        <span className="sheet-check checked">&#x2612;</span>
+                      <div
+                        className={`sheet-item sheet-item-interactive ${checkedItems['sec1_confirm_request'] ? 'is-checked' : 'is-unchecked'}`}
+                        onClick={() => handleToggleCheckbox('sec1_confirm_request')}
+                        title="Click to toggle checkbox"
+                      >
+                        <span className={`sheet-check ${checkedItems['sec1_confirm_request'] ? 'checked' : 'unchecked'}`}>
+                          {checkedItems['sec1_confirm_request'] ? '\u2612' : '\u2610'}
+                        </span>
                         <span>Confirm closure request from client (email/case/ticket)</span>
                       </div>
-                      <div className="sheet-item">
-                        <span className="sheet-check checked">&#x2612;</span>
+                      <div
+                        className={`sheet-item sheet-item-interactive ${checkedItems['sec1_confirm_reason'] ? 'is-checked' : 'is-unchecked'}`}
+                        onClick={() => handleToggleCheckbox('sec1_confirm_reason')}
+                        title="Click to toggle checkbox"
+                      >
+                        <span className={`sheet-check ${checkedItems['sec1_confirm_reason'] ? 'checked' : 'unchecked'}`}>
+                          {checkedItems['sec1_confirm_reason'] ? '\u2612' : '\u2610'}
+                        </span>
                         <span>Confirm closure reason</span>
                       </div>
                       <div className="sheet-reason-line">
@@ -410,8 +573,14 @@ export default function ToolsPage({ onBackToDashboard }) {
                           Reason for Closing: <span className="sheet-reason-text">{reason.trim() || ''}</span>
                         </span>
                       </div>
-                      <div className="sheet-item">
-                        <span className="sheet-check checked">&#x2612;</span>
+                      <div
+                        className={`sheet-item sheet-item-interactive ${checkedItems['sec1_check_terms'] ? 'is-checked' : 'is-unchecked'}`}
+                        onClick={() => handleToggleCheckbox('sec1_check_terms')}
+                        title="Click to toggle checkbox"
+                      >
+                        <span className={`sheet-check ${checkedItems['sec1_check_terms'] ? 'checked' : 'unchecked'}`}>
+                          {checkedItems['sec1_check_terms'] ? '\u2612' : '\u2610'}
+                        </span>
                         <span>Check contract terms / early termination fees</span>
                       </div>
                     </div>
@@ -419,76 +588,93 @@ export default function ToolsPage({ onBackToDashboard }) {
                     {/* Section 2 */}
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">2.  Account Review</div>
-                      <div className="sheet-item">
-                        <span className="sheet-check checked">&#x2612;</span>
-                        <span>Ensure no pending transactions</span>
-                      </div>
-                      <div className="sheet-item">
-                        <span className="sheet-check checked">&#x2612;</span>
-                        <span>Confirm all batches are settled</span>
-                      </div>
-                      <div className="sheet-item">
-                        <span className="sheet-check checked">&#x2612;</span>
-                        <span>Check for disputes/chargebacks</span>
-                      </div>
-                      <div className="sheet-item">
-                        <span className="sheet-check checked">&#x2612;</span>
-                        <span>Verify no pending deposits</span>
-                      </div>
+                      {[
+                        { id: 'sec2_no_pending_txns', text: 'Ensure no pending transactions' },
+                        { id: 'sec2_batches_settled', text: 'Confirm all batches are settled' },
+                        { id: 'sec2_check_disputes', text: 'Check for disputes/chargebacks' },
+                        { id: 'sec2_no_pending_deposits', text: 'Verify no pending deposits' }
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          onClick={() => handleToggleCheckbox(item.id)}
+                          title="Click to toggle checkbox"
+                        >
+                          <span className={`sheet-check ${checkedItems[item.id] ? 'checked' : 'unchecked'}`}>
+                            {checkedItems[item.id] ? '\u2612' : '\u2610'}
+                          </span>
+                          <span>{item.text}</span>
+                        </div>
+                      ))}
                     </div>
 
-                    {/* Section 3 */}
+                    {/* Section 3: First Data (FD) Workflow */}
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">3.  First Data (FD) Workflow</div>
                       {[
-                        'Log in to First Data platform',
-                        'Search merchant account',
-                        'Verify account details and status',
-                        'Close merchant account in FD system'
-                      ].map((t) => (
-                        <div key={t} className="sheet-item">
-                          <span className={`sheet-check ${processor === 'NASHVILLE' ? 'checked' : 'unchecked'}`}>
-                            {processor === 'NASHVILLE' ? '\u2612' : '\u2610'}
+                        { id: 'sec3_login_fd', text: 'Log in to First Data platform' },
+                        { id: 'sec3_search_acct', text: 'Search merchant account' },
+                        { id: 'sec3_verify_details', text: 'Verify account details and status' },
+                        { id: 'sec3_close_fd', text: 'Close merchant account in FD system' }
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          onClick={() => handleToggleCheckbox(item.id)}
+                          title="Click to toggle checkbox"
+                        >
+                          <span className={`sheet-check ${checkedItems[item.id] ? 'checked' : 'unchecked'}`}>
+                            {checkedItems[item.id] ? '\u2612' : '\u2610'}
                           </span>
-                          <span>{t}</span>
+                          <span>{item.text}</span>
                         </div>
                       ))}
                     </div>
 
-                    {/* Section 4 */}
+                    {/* Section 4: TSYS Workflow */}
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">4.  TSYS Workflow</div>
                       {[
-                        'Access TSYS system',
-                        'Locate merchant account using MID',
-                        'Verify account status and activity',
-                        'Close account in TSYS',
-                        'Remove terminal configurations'
-                      ].map((t) => (
-                        <div key={t} className="sheet-item">
-                          <span className={`sheet-check ${processor === 'TSYS' ? 'checked' : 'unchecked'}`}>
-                            {processor === 'TSYS' ? '\u2612' : '\u2610'}
+                        { id: 'sec4_access_tsys', text: 'Access TSYS system' },
+                        { id: 'sec4_locate_mid', text: 'Locate merchant account using MID' },
+                        { id: 'sec4_verify_status', text: 'Verify account status and activity' },
+                        { id: 'sec4_close_tsys', text: 'Close account in TSYS' },
+                        { id: 'sec4_remove_configs', text: 'Remove terminal configurations' }
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          onClick={() => handleToggleCheckbox(item.id)}
+                          title="Click to toggle checkbox"
+                        >
+                          <span className={`sheet-check ${checkedItems[item.id] ? 'checked' : 'unchecked'}`}>
+                            {checkedItems[item.id] ? '\u2612' : '\u2610'}
                           </span>
-                          <span>{t}</span>
+                          <span>{item.text}</span>
                         </div>
                       ))}
                     </div>
 
-                    {/* Section 5 (Start on Page 1) */}
+                    {/* Section 5 (Page 1 items) */}
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">5.  Equipment Handling</div>
-                      <div className="sheet-item">
-                        <span className="sheet-check checked">&#x2612;</span>
-                        <span>Identify all active terminals/devices</span>
-                      </div>
-                      <div className="sheet-item">
-                        <span className="sheet-check checked">&#x2612;</span>
-                        <span>Confirm return requirements (with Krupali)</span>
-                      </div>
-                      <div className="sheet-item">
-                        <span className="sheet-check checked">&#x2612;</span>
-                        <span>Send return instructions to client with return label</span>
-                      </div>
+                      {[
+                        { id: 'sec5_identify_terminals', text: 'Identify all active terminals/devices' },
+                        { id: 'sec5_confirm_returns', text: 'Confirm return requirements (with Krupali)' },
+                        { id: 'sec5_send_instructions', text: 'Send return instructions to client with return label' }
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          onClick={() => handleToggleCheckbox(item.id)}
+                          title="Click to toggle checkbox"
+                        >
+                          <span className={`sheet-check ${checkedItems[item.id] ? 'checked' : 'unchecked'}`}>
+                            {checkedItems[item.id] ? '\u2612' : '\u2610'}
+                          </span>
+                          <span>{item.text}</span>
+                        </div>
+                      ))}
                     </div>
 
                     <div className="sheet-page-footer">Page 1 of 2</div>
@@ -500,25 +686,48 @@ export default function ToolsPage({ onBackToDashboard }) {
                   <div className="sheet-content">
                     {/* Continuation of Section 5 */}
                     <div className="sheet-section">
-                      <div className="sheet-item">
-                        <span className="sheet-check checked">&#x2612;</span>
-                        <span>
-                          Deactivate devices in system / Disable any gateway/API integrations (Dejavoo, Valor, Clover, P98 Terminals, Auth.net, NMI, P98 Gateway, Clover Software)
-                        </span>
-                      </div>
+                      {[
+                        {
+                          id: 'sec5_deactivate_devices',
+                          text: 'Deactivate devices in system / Disable any gateway/API integrations (Dejavoo, Valor, Clover, P98 Terminals, Auth.net, NMI, P98 Gateway, Clover Software)'
+                        },
+                        {
+                          id: 'sec5_deactivate_buypass',
+                          text: 'Deactivate ALL buypass IDs under the MID if it is a gas station. (This is done in buypass tools, disable the Buypass Merchant ID and Terminal ID)'
+                        }
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          onClick={() => handleToggleCheckbox(item.id)}
+                          title="Click to toggle checkbox"
+                        >
+                          <span className={`sheet-check ${checkedItems[item.id] ? 'checked' : 'unchecked'}`}>
+                            {checkedItems[item.id] ? '\u2612' : '\u2610'}
+                          </span>
+                          <span>{item.text}</span>
+                        </div>
+                      ))}
                     </div>
 
                     {/* Section 6 */}
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">6.  Financial Closure (Verify with Billing Department)</div>
                       {[
-                        'Apply final fees',
-                        'Check outstanding balances',
-                        'Process final billing adjustments'
-                      ].map((t) => (
-                        <div key={t} className="sheet-item">
-                          <span className="sheet-check checked">&#x2612;</span>
-                          <span>{t}</span>
+                        { id: 'sec6_apply_fees', text: 'Apply final fees' },
+                        { id: 'sec6_check_balances', text: 'Check outstanding balances' },
+                        { id: 'sec6_final_adjustments', text: 'Process final billing adjustments' }
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          onClick={() => handleToggleCheckbox(item.id)}
+                          title="Click to toggle checkbox"
+                        >
+                          <span className={`sheet-check ${checkedItems[item.id] ? 'checked' : 'unchecked'}`}>
+                            {checkedItems[item.id] ? '\u2612' : '\u2610'}
+                          </span>
+                          <span>{item.text}</span>
                         </div>
                       ))}
                     </div>
@@ -527,13 +736,20 @@ export default function ToolsPage({ onBackToDashboard }) {
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">7.  Communication</div>
                       {[
-                        'Send closure confirmation email/message',
-                        'Include closure effective date',
-                        'Provide final statement if needed'
-                      ].map((t) => (
-                        <div key={t} className="sheet-item">
-                          <span className="sheet-check checked">&#x2612;</span>
-                          <span>{t}</span>
+                        { id: 'sec7_send_email', text: 'Send closure confirmation email/message' },
+                        { id: 'sec7_effective_date', text: 'Include closure effective date' },
+                        { id: 'sec7_final_statement', text: 'Provide final statement if needed' }
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          onClick={() => handleToggleCheckbox(item.id)}
+                          title="Click to toggle checkbox"
+                        >
+                          <span className={`sheet-check ${checkedItems[item.id] ? 'checked' : 'unchecked'}`}>
+                            {checkedItems[item.id] ? '\u2612' : '\u2610'}
+                          </span>
+                          <span>{item.text}</span>
                         </div>
                       ))}
                     </div>
@@ -542,12 +758,19 @@ export default function ToolsPage({ onBackToDashboard }) {
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">8.  Final Verification</div>
                       {[
-                        'Confirm account closed in all systems',
-                        'Ensure no active services remain'
-                      ].map((t) => (
-                        <div key={t} className="sheet-item">
-                          <span className="sheet-check checked">&#x2612;</span>
-                          <span>{t}</span>
+                        { id: 'sec8_confirm_closed', text: 'Confirm account closed in all systems' },
+                        { id: 'sec8_no_active_services', text: 'Ensure no active services remain' }
+                      ].map((item) => (
+                        <div
+                          key={item.id}
+                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          onClick={() => handleToggleCheckbox(item.id)}
+                          title="Click to toggle checkbox"
+                        >
+                          <span className={`sheet-check ${checkedItems[item.id] ? 'checked' : 'unchecked'}`}>
+                            {checkedItems[item.id] ? '\u2612' : '\u2610'}
+                          </span>
+                          <span>{item.text}</span>
                         </div>
                       ))}
                     </div>

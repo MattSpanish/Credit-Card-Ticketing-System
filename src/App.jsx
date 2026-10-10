@@ -98,10 +98,42 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-10-v2160",
+    version: "v2.16.0",
+    date: "October 10 2026",
+    isLatest: true,
+    badge: "WORKFLOW & PDF",
+    title: "Close Account PDF: Editable Checkboxes & Updated Template",
+    summary: "Updated the Close Account PDF template with the missing Buypass gas station item, added interactive clickable and fillable PDF checkboxes, and implemented processor auto-defaults (NASHVILLE vs TSYS) with live customization.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-check2-square",
+        title: "Interactive & Fillable Checkboxes",
+        desc: "All checkboxes can now be toggled directly on the preview sheet or form controls, and are generated as fillable AcroForm PDF checkboxes.",
+        tag: "PDF Generator"
+      },
+      {
+        type: "feature",
+        icon: "bi-cpu",
+        title: "Processor Auto-Defaults with Manual Override",
+        desc: "Selecting NASHVILLE or TSYS automatically pre-selects the appropriate workflow checkboxes while allowing full manual customization before saving.",
+        tag: "Workflow"
+      },
+      {
+        type: "update",
+        icon: "bi-file-earmark-check",
+        title: "Template Alignment: Buypass Handling",
+        desc: "Added Section 5.5 gas station Buypass ID deactivation requirement to page 2 of the workflow document.",
+        tag: "Compliance"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-10-v2152",
     version: "v2.15.2",
     date: "October 10 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "UI REFINEMENT",
     title: "Knowledge Base Purple Theme Harmonization",
     summary: "Harmonized the empty-state 'Add New Guide' button with the signature purple gradient styling matching the main header New Guide action.",
@@ -3117,11 +3149,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.15.2">
+          <div className="logo" title="PH Portal v2.16.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.15.2</span>
+              <span className="logo-version">v2.16.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5272,7 +5304,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.15.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.16.0';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5288,7 +5320,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.15.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.16.0';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
