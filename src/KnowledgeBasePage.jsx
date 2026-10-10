@@ -1521,8 +1521,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
             </div>
 
             {/* Description Header */}
-            <div className="kb-detail-section-header" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <i className="bi bi-file-text-fill" style={{ color: '#38bdf8', fontSize: '1rem' }}></i>
+            <div className="kb-detail-section-header" style={{ marginBottom: 12 }}>
               <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#f8fafc', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                 Description
               </span>
