@@ -97,10 +97,28 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-10-v2149",
+    version: "v2.14.9",
+    date: "October 10 2026",
+    isLatest: true,
+    badge: "UI & METADATA",
+    title: "Guide Detail Created Date Display",
+    summary: "Added the creation date badge to the guide viewer metadata row, positioned gracefully alongside the category tag pills with clean typography and subtle divider line.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-calendar3",
+        title: "Creation Date Badge in Guide Viewer",
+        desc: "Integrated a refined creation timestamp directly into the guide header metadata row opposite the tag badges for quick visibility.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-10-v2148",
     version: "v2.14.8",
     date: "October 10 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "BUGFIX",
     title: "Link Tooltip Auto-Hide on Save Fix",
     summary: "Fixed an issue where the link tooltip input field persisted after clicking Save by ensuring proper hidden state priority and cleanly toggling between editing and viewing modes.",
@@ -2979,11 +2997,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.14.8">
+          <div className="logo" title="PH Portal v2.14.9">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.14.8</span>
+              <span className="logo-version">v2.14.9</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5065,7 +5083,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.14.8';
+      const currentVersion = latestAnnouncement?.version || 'v2.14.9';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5081,7 +5099,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.14.8';
+      const currentVersion = latestAnnouncement?.version || 'v2.14.9';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

@@ -1513,11 +1513,43 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
               </div>
             </div>
 
-            {/* Tags placed directly UNDER the title */}
-            <div className="kb-detail-breadcrumbs" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
-              {getItemTags(viewingItem).map((t) => (
-                <span key={t} className="kb-category-pill-lg">{t}</span>
-              ))}
+            {/* Metadata Row: Tags on left, Created Date on right */}
+            <div
+              className="kb-detail-meta-row"
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 12,
+                marginBottom: 16,
+                paddingBottom: 10,
+                borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.07))'
+              }}
+            >
+              <div className="kb-detail-breadcrumbs" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                {getItemTags(viewingItem).map((t) => (
+                  <span key={t} className="kb-category-pill-lg">{t}</span>
+                ))}
+              </div>
+
+              {(viewingItem.createdAt || viewingItem.updatedAt) && (
+                <div
+                  className="kb-detail-created-badge"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: '0.80rem',
+                    color: 'var(--text-muted, #94a3b8)',
+                    fontWeight: 500,
+                  }}
+                  title={`Created on ${formatKbDate(viewingItem.createdAt || viewingItem.updatedAt)}`}
+                >
+                  <i className="bi bi-calendar3" style={{ fontSize: '0.80rem', color: '#64748b' }}></i>
+                  <span>Created {formatKbDate(viewingItem.createdAt || viewingItem.updatedAt)}</span>
+                </div>
+              )}
             </div>
 
             {/* Description Header */}
