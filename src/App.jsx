@@ -98,10 +98,28 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-10-v2151",
+    version: "v2.15.1",
+    date: "October 10 2026",
+    isLatest: true,
+    badge: "BUGFIX & LINKS",
+    title: "Safe External Link Protocol Normalization",
+    summary: "Fixed relative link routing by automatically prepending https:// to entered domains (e.g. facebook.com -> https://facebook.com) and ensuring all external links open in a new tab.",
+    items: [
+      {
+        type: "bugfix",
+        icon: "bi-box-arrow-up-right",
+        title: "Link Protocol & Tab Safety",
+        desc: "Prevented relative URL routing in single-page navigation and safely open all guide and reminder links in a fresh browser tab.",
+        tag: "Rich Text Editor"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-10-v2150",
     version: "v2.15.0",
     date: "October 10 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "MAJOR UPDATE",
     title: "YouTube Music Player & Knowledge Base Combined",
     summary: "Integrated the YouTube & Background Music Player with direct artist search and floating mini-player alongside the Knowledge Base troubleshooting guides and rich text editor.",
@@ -3081,11 +3099,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.15.0">
+          <div className="logo" title="PH Portal v2.15.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.15.0</span>
+              <span className="logo-version">v2.15.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4254,7 +4272,13 @@ function renderReminderBodyHtml(desc) {
       .replace(/>/g, '&gt;')
       .replace(/\n/g, '<br/>');
   }
-  return desc;
+  return desc.replace(/<a\s+([^>]*?)href=(["'])(.*?)\2([^>]*)>/gi, (match, pre, quote, href, post) => {
+    let finalHref = href.trim();
+    if (finalHref && !/^([a-z]+:|\/\/)/i.test(finalHref)) {
+      finalHref = 'https://' + finalHref;
+    }
+    return `<a ${pre}href="${finalHref}" target="_blank" rel="noopener noreferrer"${post}>`;
+  });
 }
 
 function ReminderRichEditor({ value, onChange, placeholder = "Enter details, instructions, or notes for the team..." }) {
@@ -4282,6 +4306,17 @@ function ReminderRichEditor({ value, onChange, placeholder = "Enter details, ins
         ]
       }
     });
+
+    if (quill.theme && quill.theme.tooltip) {
+      const origSave = quill.theme.tooltip.save.bind(quill.theme.tooltip);
+      quill.theme.tooltip.save = function () {
+        let val = (this.textbox?.value || '').trim();
+        if (val && !/^([a-z]+:|\/\/)/i.test(val)) {
+          this.textbox.value = 'https://' + val;
+        }
+        origSave();
+      };
+    }
 
     if (value) {
       quill.root.innerHTML = value;
@@ -5219,7 +5254,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.15.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.15.1';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5235,7 +5270,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.15.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.15.1';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

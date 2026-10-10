@@ -334,6 +334,18 @@ function KbRichEditor({
       });
     }
 
+    // Auto-normalize link URLs so typing "facebook.com" automatically becomes "https://facebook.com"
+    if (quill.theme && quill.theme.tooltip) {
+      const origSave = quill.theme.tooltip.save.bind(quill.theme.tooltip);
+      quill.theme.tooltip.save = function () {
+        let val = (this.textbox?.value || '').trim();
+        if (val && !/^([a-z]+:|\/\/)/i.test(val)) {
+          this.textbox.value = 'https://' + val;
+        }
+        origSave();
+      };
+    }
+
     quill.root.addEventListener('paste', handlePaste, true);
     quill.root.addEventListener('drop', handleDrop, true);
     quill.root.addEventListener('click', handleClick);
@@ -1577,8 +1589,26 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                         }
                       )
                       .replace(/<span class="ql-ui"[^>]*><\/span>/gi, '')
+                      .replace(/<a\s+([^>]*?)href=(["'])(.*?)\2([^>]*)>/gi, (match, pre, quote, href, post) => {
+                        let finalHref = href.trim();
+                        if (finalHref && !/^([a-z]+:|\/\/)/i.test(finalHref)) {
+                          finalHref = 'https://' + finalHref;
+                        }
+                        return `<a ${pre}href="${finalHref}" target="_blank" rel="noopener noreferrer"${post}>`;
+                      })
                   }}
                   onClick={(e) => {
+                    const anchor = e.target.closest('a');
+                    if (anchor) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      let href = anchor.getAttribute('href') || '';
+                      if (href && !/^([a-z]+:|\/\/)/i.test(href)) {
+                        href = 'https://' + href;
+                      }
+                      window.open(href, '_blank', 'noopener,noreferrer');
+                      return;
+                    }
                     if (e.target.tagName === 'IMG' && e.target.src) {
                       setActiveZoomImage(e.target.src);
                     }
