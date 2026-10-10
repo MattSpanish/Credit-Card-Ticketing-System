@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   generateCloseAccountPdfBlob,
   saveOrDownloadCloseAccountPdf,
-  CLOSE_ACCOUNT_WORKFLOW_SECTIONS,
   getDefaultCheckboxState
 } from './closeAccountPdfGenerator';
 
@@ -18,7 +17,6 @@ export default function ToolsPage({ onBackToDashboard }) {
 
   // Editable Checkbox States mapped by item id
   const [checkedItems, setCheckedItems] = useState(() => getDefaultCheckboxState('NASHVILLE'));
-  const [showChecklistDrawer, setShowChecklistDrawer] = useState(false);
 
   // Folder path / File System Access state
   const [savedFolderName, setSavedFolderName] = useState(() => {
@@ -32,7 +30,7 @@ export default function ToolsPage({ onBackToDashboard }) {
   // PDF Preview State
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
 
-  // Select processor variant: automatically re-applies default checkbox settings for that processor
+  // Select processor variant: automatically applies default checkbox settings for that processor
   const handleSelectProcessor = (selectedProc) => {
     setProcessor(selectedProc);
     setCheckedItems(getDefaultCheckboxState(selectedProc));
@@ -41,52 +39,13 @@ export default function ToolsPage({ onBackToDashboard }) {
     }
   };
 
-  // Toggle individual item checkbox
+  // Toggle individual item checkbox by clicking directly on the preview sheet
   const handleToggleCheckbox = (id) => {
     setCheckedItems((prev) => ({
       ...prev,
       [id]: !prev[id]
     }));
   };
-
-  // Reset checkboxes to default for currently selected processor
-  const handleResetCheckboxes = () => {
-    setCheckedItems(getDefaultCheckboxState(processor));
-    showToast(`Reset to default ${processor} checkboxes`, 'info');
-  };
-
-  // Check all items
-  const handleCheckAll = () => {
-    const allChecked = {};
-    CLOSE_ACCOUNT_WORKFLOW_SECTIONS.forEach((sec) => {
-      sec.items.forEach((item) => {
-        allChecked[item.id] = true;
-      });
-    });
-    setCheckedItems(allChecked);
-    showToast('All items checked', 'info');
-  };
-
-  // Uncheck all items
-  const handleUncheckAll = () => {
-    const allUnchecked = {};
-    CLOSE_ACCOUNT_WORKFLOW_SECTIONS.forEach((sec) => {
-      sec.items.forEach((item) => {
-        allUnchecked[item.id] = false;
-      });
-    });
-    setCheckedItems(allUnchecked);
-    showToast('All items unchecked', 'info');
-  };
-
-  // Counts for UI badge
-  const totalCheckboxes = useMemo(() => {
-    return CLOSE_ACCOUNT_WORKFLOW_SECTIONS.reduce((acc, sec) => acc + sec.items.length, 0);
-  }, []);
-
-  const activeCheckedCount = useMemo(() => {
-    return Object.values(checkedItems).filter(Boolean).length;
-  }, [checkedItems]);
 
   // Live PDF preview blob generator with debounce
   useEffect(() => {
@@ -201,23 +160,6 @@ export default function ToolsPage({ onBackToDashboard }) {
     }
   };
 
-  // Preview generated PDF in a new tab
-  const handlePreviewPdf = async () => {
-    try {
-      const blob = await generateCloseAccountPdfBlob({
-        processor,
-        reason: reason.trim() || 'N/A',
-        checkedItems
-      });
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank', 'noopener,noreferrer');
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    } catch (err) {
-      console.error(err);
-      showToast('Error generating preview: ' + err.message, 'error');
-    }
-  };
-
   return (
     <div className="tools-page-container">
       {/* Toast Banner */}
@@ -272,9 +214,6 @@ export default function ToolsPage({ onBackToDashboard }) {
             <div className="tool-card-title-row">
               <h4>Close Account PDF Generator</h4>
             </div>
-            <p className="tool-card-desc">
-              Generate 2-page Close Processing Accounts Workflow PDFs with interactive checkboxes and custom reason notes.
-            </p>
           </div>
         </div>
       </div>
@@ -324,9 +263,6 @@ export default function ToolsPage({ onBackToDashboard }) {
                     </div>
                     <div className="processor-card-content">
                       <div className="processor-title">NASHVILLE</div>
-                      <div className="processor-desc" style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)' }}>
-                        First Data (FD) Workflow Checked
-                      </div>
                     </div>
                   </div>
 
@@ -347,9 +283,6 @@ export default function ToolsPage({ onBackToDashboard }) {
                     </div>
                     <div className="processor-card-content">
                       <div className="processor-title">TSYS</div>
-                      <div className="processor-desc" style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)' }}>
-                        TSYS Workflow Checked
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -376,87 +309,10 @@ export default function ToolsPage({ onBackToDashboard }) {
                 ></textarea>
               </div>
 
-              {/* 3. Editable Workflow Checkboxes Controls */}
-              <div className="form-group mb-3">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <label className="form-label-header m-0">
-                    <span className="form-step-badge">3</span>
-                    <span>Workflow Checkboxes</span>
-                  </label>
-                  <span className="badge-checkbox-count">
-                    {activeCheckedCount} / {totalCheckboxes} Checked
-                  </span>
-                </div>
-                <p className="form-hint-text" style={{ fontSize: '0.76rem', color: 'var(--text-muted, #94a3b8)', margin: '4px 0 8px' }}>
-                  Auto-applied defaults for <strong>{processor}</strong>. Click any checkbox directly in the preview or use actions below to customize:
-                </p>
-
-                <div className="checkbox-quick-actions">
-                  <button
-                    type="button"
-                    className="btn-checkbox-action"
-                    onClick={handleResetCheckboxes}
-                    title={`Reset checkboxes to ${processor} defaults`}
-                  >
-                    <i className="bi bi-arrow-counterclockwise me-1"></i> Defaults ({processor})
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-checkbox-action"
-                    onClick={handleCheckAll}
-                    title="Check all items"
-                  >
-                    <i className="bi bi-check-all me-1"></i> Check All
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-checkbox-action"
-                    onClick={handleUncheckAll}
-                    title="Uncheck all items"
-                  >
-                    <i className="bi bi-dash-circle me-1"></i> Uncheck All
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-checkbox-action btn-checkbox-action-toggle"
-                    onClick={() => setShowChecklistDrawer(!showChecklistDrawer)}
-                    title="View item checklist drawer"
-                  >
-                    <i className={`bi ${showChecklistDrawer ? 'bi-chevron-up' : 'bi-list-check'} me-1`}></i>
-                    {showChecklistDrawer ? 'Hide List' : 'Edit in List'}
-                  </button>
-                </div>
-
-                {/* Collapsible Form Checklist Drawer */}
-                {showChecklistDrawer && (
-                  <div className="form-checklist-drawer">
-                    {CLOSE_ACCOUNT_WORKFLOW_SECTIONS.map((sec) => (
-                      <div key={sec.secNum} className="form-checklist-sec">
-                        <div className="form-checklist-sec-title">
-                          {sec.secNum}. {sec.title}
-                        </div>
-                        <div className="form-checklist-items">
-                          {sec.items.map((item) => (
-                            <label key={item.id} className="form-checklist-item-row">
-                              <input
-                                type="checkbox"
-                                checked={Boolean(checkedItems[item.id])}
-                                onChange={() => handleToggleCheckbox(item.id)}
-                              />
-                              <span className="form-checklist-item-text">{item.text}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* 4. Output File Name */}
+              {/* 3. Output File Name */}
               <div className="form-group mb-3">
                 <label htmlFor="close-account-filename" className="form-label-header">
-                  <span className="form-step-badge">4</span>
+                  <span className="form-step-badge">3</span>
                   <span>PDF File Name</span>
                 </label>
                 <input
@@ -498,13 +354,10 @@ export default function ToolsPage({ onBackToDashboard }) {
             {/* Right Column: Live PDF Document Preview */}
             <div className="tool-preview-card pdf-preview-card-wrap">
               <div className="preview-header">
-                <div className="d-flex align-items-center gap-2 flex-wrap">
+                <div className="d-flex align-items-center gap-2">
                   <i className="bi bi-file-earmark-pdf-fill" style={{ color: '#ef4444', fontSize: '1.15rem' }}></i>
                   <h5 className="m-0" style={{ fontSize: '0.92rem', fontWeight: '700' }}>PDF Document Preview</h5>
                   <span className="preview-proc-badge">{processor}</span>
-                  <span className="preview-interactive-badge" title="Click any checkbox on the sheet to toggle">
-                    <i className="bi bi-hand-index-thumb me-1"></i> Click to Toggle
-                  </span>
                 </div>
 
                 <div className="preview-header-controls">
@@ -549,7 +402,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                     <div className="sheet-section">
                       <div className="sheet-sec-heading">1.  Closure Request Verification</div>
                       <div
-                        className={`sheet-item sheet-item-interactive ${checkedItems['sec1_confirm_request'] ? 'is-checked' : 'is-unchecked'}`}
+                        className="sheet-item"
                         onClick={() => handleToggleCheckbox('sec1_confirm_request')}
                         title="Click to toggle checkbox"
                       >
@@ -559,7 +412,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                         <span>Confirm closure request from client (email/case/ticket)</span>
                       </div>
                       <div
-                        className={`sheet-item sheet-item-interactive ${checkedItems['sec1_confirm_reason'] ? 'is-checked' : 'is-unchecked'}`}
+                        className="sheet-item"
                         onClick={() => handleToggleCheckbox('sec1_confirm_reason')}
                         title="Click to toggle checkbox"
                       >
@@ -574,7 +427,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                         </span>
                       </div>
                       <div
-                        className={`sheet-item sheet-item-interactive ${checkedItems['sec1_check_terms'] ? 'is-checked' : 'is-unchecked'}`}
+                        className="sheet-item"
                         onClick={() => handleToggleCheckbox('sec1_check_terms')}
                         title="Click to toggle checkbox"
                       >
@@ -596,7 +449,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                       ].map((item) => (
                         <div
                           key={item.id}
-                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          className="sheet-item"
                           onClick={() => handleToggleCheckbox(item.id)}
                           title="Click to toggle checkbox"
                         >
@@ -619,7 +472,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                       ].map((item) => (
                         <div
                           key={item.id}
-                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          className="sheet-item"
                           onClick={() => handleToggleCheckbox(item.id)}
                           title="Click to toggle checkbox"
                         >
@@ -643,7 +496,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                       ].map((item) => (
                         <div
                           key={item.id}
-                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          className="sheet-item"
                           onClick={() => handleToggleCheckbox(item.id)}
                           title="Click to toggle checkbox"
                         >
@@ -665,7 +518,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                       ].map((item) => (
                         <div
                           key={item.id}
-                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          className="sheet-item"
                           onClick={() => handleToggleCheckbox(item.id)}
                           title="Click to toggle checkbox"
                         >
@@ -698,7 +551,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                       ].map((item) => (
                         <div
                           key={item.id}
-                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          className="sheet-item"
                           onClick={() => handleToggleCheckbox(item.id)}
                           title="Click to toggle checkbox"
                         >
@@ -720,7 +573,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                       ].map((item) => (
                         <div
                           key={item.id}
-                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          className="sheet-item"
                           onClick={() => handleToggleCheckbox(item.id)}
                           title="Click to toggle checkbox"
                         >
@@ -742,7 +595,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                       ].map((item) => (
                         <div
                           key={item.id}
-                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          className="sheet-item"
                           onClick={() => handleToggleCheckbox(item.id)}
                           title="Click to toggle checkbox"
                         >
@@ -763,7 +616,7 @@ export default function ToolsPage({ onBackToDashboard }) {
                       ].map((item) => (
                         <div
                           key={item.id}
-                          className={`sheet-item sheet-item-interactive ${checkedItems[item.id] ? 'is-checked' : 'is-unchecked'}`}
+                          className="sheet-item"
                           onClick={() => handleToggleCheckbox(item.id)}
                           title="Click to toggle checkbox"
                         >
