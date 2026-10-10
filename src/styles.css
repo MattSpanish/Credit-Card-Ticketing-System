@@ -3878,6 +3878,11 @@ body.dark-mode .ql-snow.ql-toolbar button.ql-active .ql-fill {
 /* ============================================================
    Modernized Quill Link & Media Tooltip Popover
    ============================================================ */
+/* When hidden, tooltip MUST be completely hidden */
+.ql-snow .ql-tooltip.ql-hidden {
+    display: none !important;
+}
+
 .ql-snow .ql-tooltip {
     background: #1e293b !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -3917,7 +3922,14 @@ body.dark-mode .ql-snow.ql-toolbar button.ql-active .ql-fill {
     text-transform: capitalize !important;
 }
 
-.ql-snow .ql-tooltip input[type="text"] {
+/* Hide input by default when viewing link */
+.ql-snow .ql-tooltip:not(.ql-editing) input[type="text"] {
+    display: none !important;
+}
+
+/* Show input only when editing */
+.ql-snow .ql-tooltip.ql-editing input[type="text"] {
+    display: inline-block !important;
     background: #0f172a !important;
     border: 1px solid #334155 !important;
     color: #f8fafc !important;
@@ -3931,7 +3943,7 @@ body.dark-mode .ql-snow.ql-toolbar button.ql-active .ql-fill {
     transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 
-.ql-snow .ql-tooltip input[type="text"]:focus {
+.ql-snow .ql-tooltip.ql-editing input[type="text"]:focus {
     border-color: #8b5cf6 !important;
     box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
     background: #090d16 !important;
@@ -3966,6 +3978,20 @@ body.dark-mode .ql-snow.ql-toolbar button.ql-active .ql-fill {
     margin-left: 0 !important;
     padding-right: 0 !important;
     color: #ffffff !important;
+}
+
+.ql-snow .ql-tooltip.ql-editing a.ql-action::after {
+    content: 'Save' !important;
+}
+
+.ql-snow .ql-tooltip:not(.ql-editing) a.ql-action::after {
+    content: 'Edit' !important;
+}
+
+/* Hide remove button and link preview when editing */
+.ql-snow .ql-tooltip.ql-editing a.ql-remove,
+.ql-snow .ql-tooltip.ql-editing a.ql-preview {
+    display: none !important;
 }
 
 /* Remove button */

@@ -1677,6 +1677,11 @@ body:not(.dark-mode) .btn-kb-action-secondary {
 }
 
 /* Modernized Knowledge Base Quill Link & Media Tooltip Popover */
+/* When hidden, tooltip MUST be completely hidden */
+.kb-quill-wrapper .ql-snow .ql-tooltip.ql-hidden {
+  display: none !important;
+}
+
 .kb-quill-wrapper .ql-snow .ql-tooltip {
   background: #1e293b !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -1704,7 +1709,14 @@ body:not(.dark-mode) .btn-kb-action-secondary {
   text-transform: capitalize !important;
 }
 
-.kb-quill-wrapper .ql-snow .ql-tooltip input[type="text"] {
+/* Hide input by default when viewing link */
+.kb-quill-wrapper .ql-snow .ql-tooltip:not(.ql-editing) input[type="text"] {
+  display: none !important;
+}
+
+/* Show input only when editing */
+.kb-quill-wrapper .ql-snow .ql-tooltip.ql-editing input[type="text"] {
+  display: inline-block !important;
   background: #0f172a !important;
   border: 1px solid #334155 !important;
   color: #f8fafc !important;
@@ -1718,12 +1730,13 @@ body:not(.dark-mode) .btn-kb-action-secondary {
   transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 
-.kb-quill-wrapper .ql-snow .ql-tooltip input[type="text"]:focus {
+.kb-quill-wrapper .ql-snow .ql-tooltip.ql-editing input[type="text"]:focus {
   border-color: #8b5cf6 !important;
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
   background: #090d16 !important;
 }
 
+/* Save / Edit action button */
 .kb-quill-wrapper .ql-snow .ql-tooltip a.ql-action {
   display: inline-flex !important;
   align-items: center !important;
@@ -1754,6 +1767,21 @@ body:not(.dark-mode) .btn-kb-action-secondary {
   color: #ffffff !important;
 }
 
+.kb-quill-wrapper .ql-snow .ql-tooltip.ql-editing a.ql-action::after {
+  content: 'Save' !important;
+}
+
+.kb-quill-wrapper .ql-snow .ql-tooltip:not(.ql-editing) a.ql-action::after {
+  content: 'Edit' !important;
+}
+
+/* Hide remove button and link preview when editing */
+.kb-quill-wrapper .ql-snow .ql-tooltip.ql-editing a.ql-remove,
+.kb-quill-wrapper .ql-snow .ql-tooltip.ql-editing a.ql-preview {
+  display: none !important;
+}
+
+/* Remove button */
 .kb-quill-wrapper .ql-snow .ql-tooltip a.ql-remove {
   display: inline-flex !important;
   align-items: center !important;
@@ -1783,6 +1811,7 @@ body:not(.dark-mode) .btn-kb-action-secondary {
   color: inherit !important;
 }
 
+/* Link Preview */
 .kb-quill-wrapper .ql-snow .ql-tooltip a.ql-preview {
   color: #38bdf8 !important;
   font-size: 0.84rem !important;
