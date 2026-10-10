@@ -3875,6 +3875,168 @@ body.dark-mode .ql-snow.ql-toolbar button.ql-active .ql-fill {
     fill: var(--accent-color, #a78bfa) !important;
 }
 
+/* ============================================================
+   Modernized Quill Link & Media Tooltip Popover
+   ============================================================ */
+.ql-snow .ql-tooltip {
+    background: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+    padding: 8px 12px !important;
+    color: #f1f5f9 !important;
+    font-size: 0.84rem !important;
+    font-family: inherit !important;
+    white-space: nowrap !important;
+    z-index: 1050 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    animation: qlTooltipIn 0.15s ease-out !important;
+}
+
+@keyframes qlTooltipIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.ql-snow .ql-tooltip::before {
+    color: #94a3b8 !important;
+    font-size: 0.80rem !important;
+    font-weight: 600 !important;
+    margin-right: 4px !important;
+    line-height: 1 !important;
+    text-transform: capitalize !important;
+}
+
+.ql-snow .ql-tooltip input[type="text"] {
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    color: #f8fafc !important;
+    border-radius: 6px !important;
+    font-size: 0.84rem !important;
+    height: 30px !important;
+    padding: 0 10px !important;
+    width: 220px !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.ql-snow .ql-tooltip input[type="text"]:focus {
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
+    background: #090d16 !important;
+}
+
+/* Save / Edit action button */
+.ql-snow .ql-tooltip a.ql-action {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    font-size: 0.80rem !important;
+    height: 30px !important;
+    padding: 0 12px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 6px rgba(124, 58, 237, 0.35) !important;
+    transition: all 0.15s ease !important;
+}
+
+.ql-snow .ql-tooltip a.ql-action:hover {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+    box-shadow: 0 4px 10px rgba(124, 58, 237, 0.45) !important;
+    transform: translateY(-1px) !important;
+}
+
+.ql-snow .ql-tooltip a.ql-action::after {
+    border-right: none !important;
+    margin-left: 0 !important;
+    padding-right: 0 !important;
+    color: #ffffff !important;
+}
+
+/* Remove button */
+.ql-snow .ql-tooltip a.ql-remove {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(239, 68, 68, 0.14) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: #f87171 !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    font-size: 0.80rem !important;
+    height: 30px !important;
+    padding: 0 10px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+}
+
+.ql-snow .ql-tooltip a.ql-remove:hover {
+    background: rgba(239, 68, 68, 0.25) !important;
+    border-color: #ef4444 !important;
+    color: #fca5a5 !important;
+    transform: translateY(-1px) !important;
+}
+
+.ql-snow .ql-tooltip a.ql-remove::before {
+    margin-left: 0 !important;
+    color: inherit !important;
+}
+
+/* Link Preview */
+.ql-snow .ql-tooltip a.ql-preview {
+    color: #38bdf8 !important;
+    font-size: 0.84rem !important;
+    max-width: 220px !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+    text-decoration: underline !important;
+    text-underline-offset: 2px !important;
+    margin-right: 6px !important;
+}
+
+.ql-snow .ql-tooltip a.ql-preview:hover {
+    color: #7dd3fc !important;
+}
+
+/* Light Mode Overrides */
+body:not(.dark-mode) .ql-snow .ql-tooltip {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+    color: #1e293b !important;
+}
+
+body:not(.dark-mode) .ql-snow .ql-tooltip::before {
+    color: #64748b !important;
+}
+
+body:not(.dark-mode) .ql-snow .ql-tooltip input[type="text"] {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+body:not(.dark-mode) .ql-snow .ql-tooltip input[type="text"]:focus {
+    background: #ffffff !important;
+    border-color: #8b5cf6 !important;
+}
+
 /* Reminder Modal Specific Width */
 .reminder-modal-content {
     width: min(95vw, 920px) !important;
