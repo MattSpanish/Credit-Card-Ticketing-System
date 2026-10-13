@@ -98,10 +98,28 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-13-v2164",
+    version: "v2.16.4",
+    date: "October 13 2026",
+    isLatest: true,
+    badge: "KNOWLEDGE BASE",
+    title: "Knowledge Base: Bulletproof Tag Search Input Text & Caret",
+    summary: "Ensured tag search inputs in the Guide Creator and Category Filter explicitly render high-contrast dark text and caret in light mode across all browsers and caches.",
+    items: [
+      {
+        type: "bugfix",
+        icon: "bi-search",
+        title: "Bulletproof Tag Input Text & Caret",
+        desc: "Added direct element classes, caret-color, and dynamic theme-bound text fill to prevent any CSS cascade or caching conflicts from hiding typed letters.",
+        tag: "Knowledge Base"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-13-v2163",
     version: "v2.16.3",
     date: "October 13 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "KNOWLEDGE BASE",
     title: "Knowledge Base: Tag Search Text Visibility in Light Mode",
     summary: "Fixed an issue in the Knowledge Base guide creation and filter popovers where searched tag text was not visible in light mode due to dark-mode text fill override.",
@@ -3203,11 +3221,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.16.3">
+          <div className="logo" title="PH Portal v2.16.4">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.16.3</span>
+              <span className="logo-version">v2.16.4</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5358,7 +5376,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.16.3';
+      const currentVersion = latestAnnouncement?.version || 'v2.16.4';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5374,7 +5392,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.16.3';
+      const currentVersion = latestAnnouncement?.version || 'v2.16.4';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

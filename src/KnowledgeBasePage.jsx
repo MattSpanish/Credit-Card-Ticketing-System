@@ -1194,10 +1194,17 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                     <i className="bi bi-search"></i>
                     <input
                       type="text"
+                      className="kb-filter-menu-search-input"
+                      placeholder="Search tags..."
                       value={tagSearchQuery}
                       onChange={(e) => setTagSearchQuery(e.target.value)}
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
+                      style={{
+                        color: 'var(--text-primary, #0f172a)',
+                        WebkitTextFillColor: 'var(--text-primary, #0f172a)',
+                        caretColor: 'var(--text-primary, #0f172a)'
+                      }}
                     />
                     {tagSearchQuery && (
                       <button
@@ -1807,11 +1814,17 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                         <i className="bi bi-search"></i>
                         <input
                           type="text"
+                          className="kb-form-tag-search-input"
                           placeholder="Search tags..."
                           value={formTagSearch}
                           onChange={(e) => setFormTagSearch(e.target.value)}
                           autoFocus
                           onClick={(e) => e.stopPropagation()}
+                          style={{
+                            color: 'var(--text-primary, #0f172a)',
+                            WebkitTextFillColor: 'var(--text-primary, #0f172a)',
+                            caretColor: 'var(--text-primary, #0f172a)'
+                          }}
                         />
                         {formTagSearch && (
                           <button

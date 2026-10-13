@@ -533,7 +533,8 @@ body:not(.dark-mode) .kb-filter-add-tag-cancel-btn {
   color: #a78bfa;
 }
 
-.kb-filter-menu-search input {
+.kb-filter-menu-search input,
+.kb-filter-menu-search-input {
   background: transparent !important;
   border: none !important;
   outline: none !important;
@@ -544,28 +545,35 @@ body:not(.dark-mode) .kb-filter-add-tag-cancel-btn {
   width: 100% !important;
   min-height: unset !important;
   line-height: 1.4 !important;
-  color: #f8fafc;
-  -webkit-text-fill-color: #f8fafc;
+  color: var(--text-primary, #0f172a) !important;
+  -webkit-text-fill-color: var(--text-primary, #0f172a) !important;
+  caret-color: var(--text-primary, #0f172a) !important;
 }
 
 body.dark-mode .kb-filter-menu-search input,
-body.dark-mode .kb-filter-menu-search input:focus {
+body.dark-mode .kb-filter-menu-search input:focus,
+body.dark-mode .kb-filter-menu-search-input {
   color: #f8fafc !important;
   -webkit-text-fill-color: #f8fafc !important;
+  caret-color: #f8fafc !important;
 }
 
 body:not(.dark-mode) .kb-filter-menu-search input,
-body:not(.dark-mode) .kb-filter-menu-search input:focus {
+body:not(.dark-mode) .kb-filter-menu-search input:focus,
+body:not(.dark-mode) .kb-filter-menu-search-input {
   color: #0f172a !important;
   -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
 }
 
-body:not(.dark-mode) .kb-filter-menu-search input::placeholder {
+body:not(.dark-mode) .kb-filter-menu-search input::placeholder,
+body:not(.dark-mode) .kb-filter-menu-search-input::placeholder {
   color: #94a3b8 !important;
   -webkit-text-fill-color: #94a3b8 !important;
 }
 
-body.dark-mode .kb-filter-menu-search input::placeholder {
+body.dark-mode .kb-filter-menu-search input::placeholder,
+body.dark-mode .kb-filter-menu-search-input::placeholder {
   color: #64748b !important;
   -webkit-text-fill-color: #64748b !important;
 }
@@ -1372,7 +1380,8 @@ body:not(.dark-mode) .kb-textarea-steps::placeholder {
   color: #a78bfa;
 }
 
-.kb-form-tag-search-box input {
+.kb-form-tag-search-box input,
+.kb-form-tag-search-input {
   background: transparent !important;
   border: none !important;
   outline: none !important;
@@ -1382,28 +1391,35 @@ body:not(.dark-mode) .kb-textarea-steps::placeholder {
   padding: 2px 4px !important;
   width: 100% !important;
   min-height: unset !important;
-  color: #f8fafc;
-  -webkit-text-fill-color: #f8fafc;
+  color: var(--text-primary, #0f172a) !important;
+  -webkit-text-fill-color: var(--text-primary, #0f172a) !important;
+  caret-color: var(--text-primary, #0f172a) !important;
 }
 
 body.dark-mode .kb-form-tag-search-box input,
-body.dark-mode .kb-form-tag-search-box input:focus {
+body.dark-mode .kb-form-tag-search-box input:focus,
+body.dark-mode .kb-form-tag-search-input {
   color: #f8fafc !important;
   -webkit-text-fill-color: #f8fafc !important;
+  caret-color: #f8fafc !important;
 }
 
 body:not(.dark-mode) .kb-form-tag-search-box input,
-body:not(.dark-mode) .kb-form-tag-search-box input:focus {
+body:not(.dark-mode) .kb-form-tag-search-box input:focus,
+body:not(.dark-mode) .kb-form-tag-search-input {
   color: #0f172a !important;
   -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
 }
 
-body:not(.dark-mode) .kb-form-tag-search-box input::placeholder {
+body:not(.dark-mode) .kb-form-tag-search-box input::placeholder,
+body:not(.dark-mode) .kb-form-tag-search-input::placeholder {
   color: #94a3b8 !important;
   -webkit-text-fill-color: #94a3b8 !important;
 }
 
-body.dark-mode .kb-form-tag-search-box input::placeholder {
+body.dark-mode .kb-form-tag-search-box input::placeholder,
+body.dark-mode .kb-form-tag-search-input::placeholder {
   color: #64748b !important;
   -webkit-text-fill-color: #64748b !important;
 }
@@ -1587,9 +1603,11 @@ body:not(.dark-mode) .kb-form-tag-search-box:focus-within {
   border-color: #8b5cf6 !important;
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2) !important;
 }
-body:not(.dark-mode) .kb-form-tag-search-box input {
+body:not(.dark-mode) .kb-form-tag-search-box input,
+body:not(.dark-mode) .kb-form-tag-search-input {
   color: #0f172a !important;
   -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
 }
 body:not(.dark-mode) .kb-form-tag-search-box i {
   color: #64748b !important;
