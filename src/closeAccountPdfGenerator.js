@@ -243,34 +243,20 @@ export function buildCloseAccountPdf({
   const leftMargin = 72; // 1 inch standard margin
   const contentWidth = 612 - leftMargin * 2; // 468 pt
 
-  // Draw clean vector checkbox AND add interactive AcroForm fillable checkbox
-  function drawCheckbox(x, curY, checked, fieldId) {
+  // Draw clean vector checkbox with pure white interior and crisp black border
+  function drawCheckbox(x, curY, checked) {
     const size = 6.8;
     const boxY = curY - size;
 
-    // Vector box with crisp X when checked for print and flat renderers
+    // Fill with 100% pure white and draw 0.55 black border
+    doc.setFillColor(255, 255, 255);
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.55);
-    doc.rect(x, boxY, size, size);
+    doc.rect(x, boxY, size, size, 'FD');
 
     if (checked) {
       doc.line(x, boxY, x + size, boxY + size);
       doc.line(x + size, boxY, x, boxY + size);
-    }
-
-    // Add interactive AcroForm checkbox field for PDF viewers (Acrobat, Chrome, Edge)
-    try {
-      if (typeof doc.AcroFormCheckBox === 'function') {
-        const cb = new doc.AcroFormCheckBox();
-        cb.fieldName = fieldId || `cb_${Math.round(x)}_${Math.round(boxY)}`;
-        cb.Rect = [x, boxY, size, size];
-        cb.value = checked ? 'Yes' : 'Off';
-        cb.appearanceState = checked ? 'Yes' : 'Off';
-        cb.showWhenPrinted = true;
-        doc.addField(cb);
-      }
-    } catch (_) {
-      // Fallback if AcroForm is not available
     }
   }
 

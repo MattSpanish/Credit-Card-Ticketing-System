@@ -98,10 +98,28 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-13-v2162",
+    version: "v2.16.2",
+    date: "October 13 2026",
+    isLatest: true,
+    badge: "PDF RENDERING",
+    title: "Close Account PDF: Pure White Checkbox Fill",
+    summary: "Ensured generated PDF checkboxes are rendered with 100% clean white background fill and crisp black borders, eliminating any viewer-induced purple or colored shading.",
+    items: [
+      {
+        type: "bugfix",
+        icon: "bi-check-square",
+        title: "Pure White Checkbox Interior",
+        desc: "Removed AcroForm form-field highlighting and rendered clean vector checkboxes filled with solid white.",
+        tag: "PDF Generator"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-10-v2161",
     version: "v2.16.1",
     date: "October 10 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "UI REVERT & REFINEMENT",
     title: "Close Account PDF: Clean Original Layout Restored",
     summary: "Restored the clean original 3-step form layout without the extra checkboxes panel, maintained natural non-bold checkbox weights, and made checkboxes editable directly on the document preview sheet.",
@@ -3167,11 +3185,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.16.1">
+          <div className="logo" title="PH Portal v2.16.2">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.16.1</span>
+              <span className="logo-version">v2.16.2</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5322,7 +5340,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.16.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.16.2';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5338,7 +5356,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.16.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.16.2';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
