@@ -23,6 +23,8 @@ import {
   getCurrentUserName,
   hasSavedUserName,
   fetchAcknowledgmentsFromDb,
+  startRealtimeLikesSubscription,
+  stopRealtimeLikesSubscription,
 } from './reminderLikesStorage';
 
 // ✅ GLOBAL DATA
@@ -107,10 +109,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-14-v2190",
+    version: "v2.19.0",
+    date: "October 14 2026",
+    isLatest: true,
+    badge: "REAL-TIME SYNC",
+    title: "Instant Real-Time Likes & Acknowledgments Sync",
+    summary: "Integrated live WebSocket broadcasting and sub-second multi-user synchronization for reminder likes across team members.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-lightning-charge-fill",
+        title: "Sub-Second Real-Time WebSocket Sync",
+        desc: "When any team member likes or unlikes a reminder, all active teammates instantly see the updated like count and name badge in real time.",
+        tag: "Real-Time"
+      },
+      {
+        type: "improvement",
+        icon: "bi-arrow-repeat",
+        title: "Active Multi-User Polling & Cache Protection",
+        desc: "Added high-frequency 3-second modal synchronization, visibility change triggers, and cache-busting to guarantee 100% up-to-date acknowledgment lists.",
+        tag: "Sync Engine"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-14-v2182",
     version: "v2.18.2",
     date: "October 14 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "MODAL INPUT TWEAK",
     title: "Clean Name Input: Removed Placeholder",
     summary: "Removed the default placeholder text from the user name input modal for an uncluttered and clean typing experience.",
@@ -3375,11 +3402,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.18.2">
+          <div className="logo" title="PH Portal v2.19.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.18.2</span>
+              <span className="logo-version">v2.19.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4754,6 +4781,17 @@ function ReminderModal({
     }
   }, [initialViewingReminder]);
 
+  // Active sync for reminder acknowledgments while viewing details in modal
+  useEffect(() => {
+    if (viewingReminder) {
+      fetchAcknowledgmentsFromDb().catch(() => {});
+      const activePoll = setInterval(() => {
+        fetchAcknowledgmentsFromDb().catch(() => {});
+      }, 3000);
+      return () => clearInterval(activePoll);
+    }
+  }, [viewingReminder?.id]);
+
   const handleStartEdit = (reminder) => {
     setCurrentEditItem(reminder);
     setSubject(reminder.subject || '');
@@ -5499,19 +5537,32 @@ export default function App() {
     loadRemindersFromDb();
     fetchAcknowledgmentsFromDb();
 
-    // Sync acknowledgments periodically and when returning to window
+    // Start Realtime WebSocket subscription
+    startRealtimeLikesSubscription();
+
+    // Fast 5-second polling interval as reliable safety net alongside WebSockets
     const interval = setInterval(() => {
       fetchAcknowledgmentsFromDb();
-    }, 30000);
+    }, 5000);
 
     const onFocus = () => {
       fetchAcknowledgmentsFromDb();
     };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchAcknowledgmentsFromDb();
+      }
+    };
+
     window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      stopRealtimeLikesSubscription();
     };
   }, []);
 
@@ -5596,7 +5647,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.18.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.0';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5612,7 +5663,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.18.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.0';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

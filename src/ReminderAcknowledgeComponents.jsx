@@ -188,11 +188,19 @@ export function ReminderAcknowledgeButton({
       setAcks(getReminderAcknowledgments(reminderId));
     };
 
+    const handleStorage = (e) => {
+      if (!e.key || e.key === 'team_reminder_acknowledgments') {
+        setAcks(getReminderAcknowledgments(reminderId));
+      }
+    };
+
     window.addEventListener('reminder_acknowledgments_updated', handleAcksUpdated);
     window.addEventListener('reminder_acknowledgments_synced', handleAcksSynced);
+    window.addEventListener('storage', handleStorage);
     return () => {
       window.removeEventListener('reminder_acknowledgments_updated', handleAcksUpdated);
       window.removeEventListener('reminder_acknowledgments_synced', handleAcksSynced);
+      window.removeEventListener('storage', handleStorage);
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     };
   }, [reminderId]);
@@ -203,6 +211,7 @@ export function ReminderAcknowledgeButton({
 
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setAcks(getReminderAcknowledgments(reminderId));
     setIsHovered(true);
   };
 

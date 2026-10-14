@@ -142,6 +142,200 @@ export async function testLikesSupabaseConnection() {
 }
 
 /**
+ * Real-time Supabase WebSocket Manager for Team Reminders
+ * Ensures instant sub-second synchronization of likes/acknowledgments across all users
+ */
+let realtimeSocket = null;
+let realtimeHeartbeatInterval = null;
+let realtimeReconnectTimeout = null;
+let realtimeReconnectAttempts = 0;
+let isRealtimeStarted = false;
+let socketRefCounter = 1;
+
+export function getRealtimeWsUrl() {
+  const config = getLikesSupabaseConfig();
+  if (!config.isConfigured) return '';
+  const wsBase = config.url.replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://');
+  return `${wsBase}/realtime/v1/websocket?apikey=${encodeURIComponent(config.key)}&vsn=1.0.0`;
+}
+
+export function handleRemoteLikeBroadcast({ reminderId, userName, isLiked, timestamp }) {
+  if (!reminderId || !userName) return;
+  const map = getAllReminderAcknowledgments();
+  const currentList = Array.isArray(map[reminderId]) ? [...map[reminderId]] : [];
+  const normalizedTarget = userName.toLowerCase().trim();
+
+  const existingIndex = currentList.findIndex(
+    (item) => (item.name || '').trim().toLowerCase() === normalizedTarget
+  );
+
+  if (isLiked) {
+    if (existingIndex === -1) {
+      currentList.push({ name: userName.trim(), timestamp: timestamp || new Date().toISOString() });
+    } else {
+      currentList[existingIndex] = {
+        name: userName.trim(),
+        timestamp: timestamp || currentList[existingIndex].timestamp,
+      };
+    }
+  } else {
+    if (existingIndex >= 0) {
+      currentList.splice(existingIndex, 1);
+    }
+  }
+
+  map[reminderId] = currentList;
+  saveAllReminderAcknowledgments(map);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('reminder_acknowledgments_updated', {
+        detail: { reminderId, isAcknowledged: isLiked, acknowledgments: currentList, source: 'realtime' },
+      })
+    );
+    window.dispatchEvent(
+      new CustomEvent('reminder_acknowledgments_synced', { detail: { map, source: 'realtime' } })
+    );
+  }
+}
+
+export function broadcastRealtimeLike(reminderId, userName, isLiked) {
+  if (
+    typeof WebSocket === 'undefined' ||
+    !realtimeSocket ||
+    realtimeSocket.readyState !== WebSocket.OPEN
+  ) {
+    return false;
+  }
+
+  try {
+    const payload = {
+      topic: 'realtime:reminder_likes_channel',
+      event: 'broadcast',
+      payload: {
+        type: 'broadcast',
+        event: 'like_toggled',
+        payload: {
+          reminderId,
+          userName: (userName || '').trim(),
+          isLiked: Boolean(isLiked),
+          timestamp: new Date().toISOString(),
+        },
+      },
+      ref: String(socketRefCounter++),
+    };
+    realtimeSocket.send(JSON.stringify(payload));
+    return true;
+  } catch (err) {
+    console.warn('Failed to send realtime like broadcast:', err);
+    return false;
+  }
+}
+
+export function startRealtimeLikesSubscription() {
+  if (typeof window === 'undefined' || typeof WebSocket === 'undefined') return;
+  isRealtimeStarted = true;
+
+  if (
+    realtimeSocket &&
+    (realtimeSocket.readyState === WebSocket.OPEN || realtimeSocket.readyState === WebSocket.CONNECTING)
+  ) {
+    return;
+  }
+
+  const wsUrl = getRealtimeWsUrl();
+  if (!wsUrl) return;
+
+  try {
+    realtimeSocket = new WebSocket(wsUrl);
+
+    realtimeSocket.onopen = () => {
+      realtimeReconnectAttempts = 0;
+      // Join the shared broadcast channel
+      realtimeSocket.send(
+        JSON.stringify({
+          topic: 'realtime:reminder_likes_channel',
+          event: 'phx_join',
+          payload: {
+            config: {
+              broadcast: { ack: false, self: false },
+              postgres_changes: [{ event: '*', schema: 'public', table: 'reminder_acknowledgments' }],
+            },
+          },
+          ref: String(socketRefCounter++),
+        })
+      );
+
+      // Start keep-alive heartbeat ping every 25 seconds
+      if (realtimeHeartbeatInterval) clearInterval(realtimeHeartbeatInterval);
+      realtimeHeartbeatInterval = setInterval(() => {
+        if (realtimeSocket && realtimeSocket.readyState === WebSocket.OPEN) {
+          realtimeSocket.send(
+            JSON.stringify({
+              topic: 'phoenix',
+              event: 'heartbeat',
+              payload: {},
+              ref: 'hb_' + Date.now(),
+            })
+          );
+        }
+      }, 25000);
+
+      // Fetch fresh data from DB on connect to catch any updates while offline
+      fetchAcknowledgmentsFromDb().catch(() => {});
+    };
+
+    realtimeSocket.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.event === 'broadcast' && msg.payload?.event === 'like_toggled') {
+          handleRemoteLikeBroadcast(msg.payload.payload);
+        } else if (msg.event === 'postgres_changes') {
+          fetchAcknowledgmentsFromDb().catch(() => {});
+        }
+      } catch (err) {
+        console.warn('Realtime message parse error:', err);
+      }
+    };
+
+    realtimeSocket.onclose = () => {
+      if (realtimeHeartbeatInterval) clearInterval(realtimeHeartbeatInterval);
+      if (isRealtimeStarted) {
+        const delay = Math.min(1000 * Math.pow(2, realtimeReconnectAttempts), 10000);
+        realtimeReconnectAttempts++;
+        if (realtimeReconnectTimeout) clearTimeout(realtimeReconnectTimeout);
+        realtimeReconnectTimeout = setTimeout(() => {
+          if (isRealtimeStarted) startRealtimeLikesSubscription();
+        }, delay);
+      }
+    };
+
+    realtimeSocket.onerror = (err) => {
+      console.warn('Supabase Realtime socket notice:', err);
+    };
+  } catch (err) {
+    console.warn('Failed to start Supabase Realtime subscription:', err);
+  }
+}
+
+export function stopRealtimeLikesSubscription() {
+  isRealtimeStarted = false;
+  if (realtimeReconnectTimeout) clearTimeout(realtimeReconnectTimeout);
+  if (realtimeHeartbeatInterval) clearInterval(realtimeHeartbeatInterval);
+  if (realtimeSocket) {
+    try {
+      realtimeSocket.close();
+    } catch {}
+    realtimeSocket = null;
+  }
+}
+
+// Auto-start in browser environment
+if (typeof window !== 'undefined') {
+  startRealtimeLikesSubscription();
+}
+
+/**
  * Fetch all reminder acknowledgments from Supabase and sync with local cache
  */
 export async function fetchAcknowledgmentsFromDb() {
@@ -155,12 +349,16 @@ export async function fetchAcknowledgmentsFromDb() {
   // Probe reminder_acknowledgments then reminder_likes
   for (const table of ['reminder_acknowledgments', 'reminder_likes']) {
     try {
-      const res = await fetch(`${config.url}/rest/v1/${table}?select=*&order=created_at.asc`, {
+      const cacheBust = `&_t=${Date.now()}`;
+      const res = await fetch(`${config.url}/rest/v1/${table}?select=*&order=created_at.asc${cacheBust}`, {
         method: 'GET',
+        cache: 'no-store',
         headers: {
           apikey: config.key,
           Authorization: `Bearer ${config.key}`,
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
         },
       });
 
@@ -394,7 +592,10 @@ export function toggleReminderAcknowledgment(reminderId, userName) {
     );
   }
 
-  // Background sync to Supabase
+  // 1. Instant sub-second broadcast to all active team members via WebSocket
+  broadcastRealtimeLike(reminderId, targetName, isAcknowledged);
+
+  // 2. Background persistent sync to Supabase
   syncToggleToDb(reminderId, targetName, isAcknowledged).catch((err) => {
     console.warn('Background Supabase acknowledgment sync error:', err);
   });
@@ -437,6 +638,10 @@ export function addReminderAcknowledgment(reminderId, userName) {
       );
     }
 
+    // 1. Instant sub-second broadcast to all active team members via WebSocket
+    broadcastRealtimeLike(reminderId, targetName, true);
+
+    // 2. Background persistent sync to Supabase
     syncToggleToDb(reminderId, targetName, true).catch((err) => {
       console.warn('Background Supabase acknowledgment add error:', err);
     });
