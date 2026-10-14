@@ -159,7 +159,20 @@ export function getRealtimeWsUrl() {
   return `${wsBase}/realtime/v1/websocket?apikey=${encodeURIComponent(config.key)}&vsn=1.0.0`;
 }
 
-export function handleRemoteLikeBroadcast({ reminderId, userName, isLiked, timestamp }) {
+const localBroadcastChannel =
+  typeof window !== 'undefined' && 'BroadcastChannel' in window
+    ? new BroadcastChannel('cc_reminder_likes_channel')
+    : null;
+
+if (localBroadcastChannel) {
+  localBroadcastChannel.onmessage = (e) => {
+    if (e.data && e.data.type === 'like_toggled' && e.data.payload) {
+      handleRemoteLikeBroadcast(e.data.payload, false);
+    }
+  };
+}
+
+export function handleRemoteLikeBroadcast({ reminderId, userName, isLiked, timestamp }, shouldBroadcastLocal = true) {
   if (!reminderId || !userName) return;
   const map = getAllReminderAcknowledgments();
   const currentList = Array.isArray(map[reminderId]) ? [...map[reminderId]] : [];
@@ -187,6 +200,15 @@ export function handleRemoteLikeBroadcast({ reminderId, userName, isLiked, times
   map[reminderId] = currentList;
   saveAllReminderAcknowledgments(map);
 
+  if (shouldBroadcastLocal && localBroadcastChannel) {
+    try {
+      localBroadcastChannel.postMessage({
+        type: 'like_toggled',
+        payload: { reminderId, userName, isLiked, timestamp },
+      });
+    } catch {}
+  }
+
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
       new CustomEvent('reminder_acknowledgments_updated', {
@@ -200,6 +222,23 @@ export function handleRemoteLikeBroadcast({ reminderId, userName, isLiked, times
 }
 
 export function broadcastRealtimeLike(reminderId, userName, isLiked) {
+  const payloadData = {
+    reminderId,
+    userName: (userName || '').trim(),
+    isLiked: Boolean(isLiked),
+    timestamp: new Date().toISOString(),
+  };
+
+  // Instant local cross-tab broadcast via BroadcastChannel
+  if (localBroadcastChannel) {
+    try {
+      localBroadcastChannel.postMessage({
+        type: 'like_toggled',
+        payload: payloadData,
+      });
+    } catch {}
+  }
+
   if (
     typeof WebSocket === 'undefined' ||
     !realtimeSocket ||
@@ -215,12 +254,7 @@ export function broadcastRealtimeLike(reminderId, userName, isLiked) {
       payload: {
         type: 'broadcast',
         event: 'like_toggled',
-        payload: {
-          reminderId,
-          userName: (userName || '').trim(),
-          isLiked: Boolean(isLiked),
-          timestamp: new Date().toISOString(),
-        },
+        payload: payloadData,
       },
       ref: String(socketRefCounter++),
     };
@@ -288,8 +322,17 @@ export function startRealtimeLikesSubscription() {
     realtimeSocket.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
+        let payloadData = null;
         if (msg.event === 'broadcast' && msg.payload?.event === 'like_toggled') {
-          handleRemoteLikeBroadcast(msg.payload.payload);
+          payloadData = msg.payload.payload || msg.payload;
+        } else if (msg.event === 'like_toggled') {
+          payloadData = msg.payload || msg;
+        } else if (msg.payload?.event === 'like_toggled') {
+          payloadData = msg.payload.payload || msg.payload;
+        }
+
+        if (payloadData && payloadData.reminderId && payloadData.userName) {
+          handleRemoteLikeBroadcast(payloadData, true);
         } else if (msg.event === 'postgres_changes') {
           fetchAcknowledgmentsFromDb().catch(() => {});
         }
@@ -375,6 +418,26 @@ export async function fetchAcknowledgmentsFromDb() {
           if (!map[rId]) map[rId] = [];
           if (!map[rId].some((u) => u.name.toLowerCase() === name.toLowerCase())) {
             map[rId].push({ name, timestamp });
+          }
+        }
+
+        // Two-way synchronization:
+        // If there are existing local acknowledgments that aren't yet in Supabase (e.g. from offline or pre-DB),
+        // keep them and automatically sync them to Supabase!
+        for (const [rId, acks] of Object.entries(localMap)) {
+          if (!Array.isArray(acks)) continue;
+          for (const ack of acks) {
+            const userName = (ack.name || '').trim();
+            if (!userName) continue;
+            const alreadyInMap = (map[rId] || []).some(
+              (u) => u.name.toLowerCase() === userName.toLowerCase()
+            );
+            if (!alreadyInMap) {
+              if (!map[rId]) map[rId] = [];
+              map[rId].push(ack);
+              // Push to Supabase in background
+              syncToggleToDb(rId, userName, true).catch(() => {});
+            }
           }
         }
 

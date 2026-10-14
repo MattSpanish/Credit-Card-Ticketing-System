@@ -109,10 +109,42 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-14-v2191",
+    version: "v2.19.1",
+    date: "October 14 2026",
+    isLatest: true,
+    badge: "UI & REAL-TIME POLISH",
+    title: "Sleek Like Button Design & Popover Fix",
+    summary: "Redesigned reminder like button to a sleek horizontal badge, resolved hover popover clipping near container tops, and enabled automatic two-way cloud sync.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-hand-thumbs-up-fill",
+        title: "Sleek Horizontal Like Button",
+        desc: "Redesigned the reminder like button to a modern, balanced horizontal pill badge that perfectly matches adjacent action buttons.",
+        tag: "UI Design"
+      },
+      {
+        type: "fix",
+        icon: "bi-arrows-angle-expand",
+        title: "Popover Drop-Down Collision Detection",
+        desc: "Fixed popover clipping on the first reminder so the list of who liked the reminder is always 100% visible and opens downward.",
+        tag: "Bug Fix"
+      },
+      {
+        type: "improvement",
+        icon: "bi-cloud-arrow-up-fill",
+        title: "Two-Way Local & Cloud Reconciliation",
+        desc: "Added automatic sync of existing local acknowledgments to Supabase and native BroadcastChannel cross-tab synchronization.",
+        tag: "Real-Time"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-14-v2190",
     version: "v2.19.0",
     date: "October 14 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "REAL-TIME SYNC",
     title: "Instant Real-Time Likes & Acknowledgments Sync",
     summary: "Integrated live WebSocket broadcasting and sub-second multi-user synchronization for reminder likes across team members.",
@@ -3402,11 +3434,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.19.0">
+          <div className="logo" title="PH Portal v2.19.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.19.0</span>
+              <span className="logo-version">v2.19.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5235,7 +5267,7 @@ function ReminderModal({
                 ) : (
                   /* All Reminders List: Only display the Subject of each reminder */
                   <div className="reminder-cards-list">
-                    {filteredReminders.map((reminder) => (
+                    {filteredReminders.map((reminder, idx) => (
                       <div key={reminder.id} className="reminder-card-item">
                         <div className="reminder-card-main-info">
                           <div className="reminder-card-title-group" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -5277,6 +5309,7 @@ function ReminderModal({
                             currentUserName={currentUserName}
                             onRequireName={onRequireName}
                             variant="card"
+                            dropDown={idx < 2}
                           />
                           <button
                             type="button"
@@ -5647,7 +5680,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.1';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5663,7 +5696,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.1';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

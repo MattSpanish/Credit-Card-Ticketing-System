@@ -172,7 +172,9 @@ export function ReminderAcknowledgeButton({
 }) {
   const [acks, setAcks] = useState(() => getReminderAcknowledgments(reminderId));
   const [isHovered, setIsHovered] = useState(false);
+  const [isAutoDroppedDown, setIsAutoDroppedDown] = useState(dropDown);
   const hoverTimeoutRef = useRef(null);
+  const buttonRef = useRef(null);
 
   // Sync state whenever reminderId changes or an acknowledgment is made anywhere
   useEffect(() => {
@@ -212,6 +214,15 @@ export function ReminderAcknowledgeButton({
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     setAcks(getReminderAcknowledgments(reminderId));
+
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      // If button is in the top 280px of viewport or near container top, drop down so it never gets clipped!
+      setIsAutoDroppedDown(Boolean(dropDown || rect.top < 280));
+    } else {
+      setIsAutoDroppedDown(Boolean(dropDown));
+    }
+
     setIsHovered(true);
   };
 
@@ -234,6 +245,7 @@ export function ReminderAcknowledgeButton({
 
   return (
     <div
+      ref={buttonRef}
       className="reminder-ack-wrapper"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -257,7 +269,7 @@ export function ReminderAcknowledgeButton({
       {/* Hover Popover: View who liked */}
       {isHovered && (
         <div
-          className={`reminder-ack-popover ${align === 'left' ? 'align-left' : ''} ${dropDown ? 'drop-down' : ''}`}
+          className={`reminder-ack-popover ${align === 'left' ? 'align-left' : ''} ${isAutoDroppedDown ? 'drop-down' : ''}`}
           role="tooltip"
           onClick={(e) => e.stopPropagation()}
         >

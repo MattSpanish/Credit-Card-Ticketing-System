@@ -8972,133 +8972,148 @@ body.dark-mode .youtube-player-dock.mode-mini {
   align-items: center;
 }
 
+/* Team Reminder Like Button - Sleek Horizontal Badge */
 .btn-reminder-like {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 4px 8px;
-  min-height: 28px;
-  min-width: 28px;
-  border-radius: 6px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  border: 1px solid var(--line, #cbd5e1);
-  background: var(--bg-elevated, #ffffff);
-  color: var(--text-secondary, #475569);
-  cursor: pointer;
-  transition: all var(--t-fast, 0.15s) var(--ease, ease);
-  line-height: 1;
-  user-select: none;
-  white-space: nowrap;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 4px 10px !important;
+  min-height: 30px !important;
+  height: 30px !important;
+  min-width: 32px !important;
+  border-radius: 7px !important;
+  font-size: 0.80rem !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
+  background: rgba(139, 92, 246, 0.08) !important;
+  color: #7c3aed !important;
+  cursor: pointer !important;
+  transition: all 0.16s ease !important;
+  line-height: 1 !important;
+  user-select: none !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .btn-reminder-like:hover {
-  background: rgba(139, 92, 246, 0.08);
-  border-color: rgba(139, 92, 246, 0.45);
-  color: #7c3aed;
+  background: rgba(139, 92, 246, 0.18) !important;
+  border-color: #8b5cf6 !important;
+  color: #6d28d9 !important;
   transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(139, 92, 246, 0.25) !important;
 }
 
 .btn-reminder-like i {
-  font-size: 0.92rem;
+  font-size: 0.95rem !important;
+  display: inline-block !important;
+  line-height: 1 !important;
   transition: transform 0.15s ease;
 }
 
 .btn-reminder-like:hover i {
-  transform: scale(1.12);
+  transform: scale(1.15);
 }
 
 .btn-reminder-like.is-liked {
-  background: rgba(139, 92, 246, 0.14);
-  border-color: #8b5cf6;
-  color: #7c3aed;
+  background: rgba(139, 92, 246, 0.22) !important;
+  border-color: #8b5cf6 !important;
+  color: #7c3aed !important;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25) !important;
 }
 
 .btn-reminder-like.is-liked i {
-  color: #7c3aed;
+  color: #7c3aed !important;
 }
 
 body.dark-mode .btn-reminder-like {
-  background: rgba(15, 23, 42, 0.6);
-  border-color: rgba(148, 163, 184, 0.2);
-  color: #94a3b8;
+  background: rgba(139, 92, 246, 0.12) !important;
+  border-color: rgba(139, 92, 246, 0.35) !important;
+  color: #c4b5fd !important;
 }
 
 body.dark-mode .btn-reminder-like:hover {
-  background: rgba(139, 92, 246, 0.2);
-  border-color: rgba(139, 92, 246, 0.5);
-  color: #c4b5fd;
+  background: rgba(139, 92, 246, 0.25) !important;
+  border-color: #a78bfa !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35) !important;
 }
 
 body.dark-mode .btn-reminder-like.is-liked {
-  background: rgba(139, 92, 246, 0.25);
-  border-color: #a78bfa;
-  color: #ddd6fe;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.32), rgba(124, 58, 237, 0.45)) !important;
+  border-color: #a78bfa !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.35) !important;
 }
 
 body.dark-mode .btn-reminder-like.is-liked i {
-  color: #a78bfa;
+  color: #c4b5fd !important;
 }
 
 .btn-reminder-like.compact {
-  padding: 3px 7px;
-  min-height: 25px;
-  min-width: 26px;
-  font-size: 0.74rem;
-  border-radius: 5px;
+  padding: 3px 8px !important;
+  min-height: 26px !important;
+  height: 26px !important;
+  min-width: 28px !important;
+  font-size: 0.74rem !important;
+  border-radius: 6px !important;
 }
 
 .btn-reminder-like.compact i {
-  font-size: 0.85rem;
+  font-size: 0.88rem !important;
 }
 
 .btn-reminder-like.detail-footer {
-  padding: 5px 10px;
-  min-height: 29px;
-  min-width: 32px;
-  font-size: 0.78rem;
-  border-radius: 6px;
+  padding: 5px 12px !important;
+  min-height: 32px !important;
+  height: 32px !important;
+  min-width: 36px !important;
+  font-size: 0.80rem !important;
+  border-radius: 7px !important;
 }
 
 .btn-reminder-like.detail-footer i {
-  font-size: 0.92rem;
+  font-size: 0.96rem !important;
 }
 
 .reminder-like-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.70rem;
-  font-weight: 700;
-  line-height: 1;
-  min-width: 15px;
-  height: 15px;
-  padding: 0 4px;
-  border-radius: 8px;
-  background: rgba(139, 92, 246, 0.12);
-  color: #7c3aed;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  min-width: 17px !important;
+  height: 17px !important;
+  padding: 0 4px !important;
+  border-radius: 9px !important;
+  background: rgba(139, 92, 246, 0.16) !important;
+  color: #7c3aed !important;
+  margin-left: 1px !important;
 }
 
 body.dark-mode .reminder-like-count {
-  background: rgba(139, 92, 246, 0.3);
-  color: #c4b5fd;
+  background: rgba(139, 92, 246, 0.32) !important;
+  color: #ddd6fe !important;
 }
 
 .btn-reminder-like.is-liked .reminder-like-count {
-  background: #7c3aed;
-  color: #ffffff;
+  background: #7c3aed !important;
+  color: #ffffff !important;
 }
 
 body.dark-mode .btn-reminder-like.is-liked .reminder-like-count {
-  background: #a78bfa;
-  color: #0f172a;
+  background: #a78bfa !important;
+  color: #0f172a !important;
 }
 
 /* Hover Bridge & Popover Container */
 .reminder-ack-popover {
   position: absolute;
-  bottom: calc(100% + 7px);
+  bottom: calc(100% + 8px);
   right: 0;
   width: 260px;
   background: #ffffff;
@@ -9106,7 +9121,7 @@ body.dark-mode .btn-reminder-like.is-liked .reminder-like-count {
   border-radius: 10px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.05);
   padding: 10px 12px;
-  z-index: 1050;
+  z-index: 99999 !important;
   pointer-events: auto;
   animation: reminderFadeIn 0.18s ease-out;
   text-align: left;
@@ -9118,8 +9133,9 @@ body.dark-mode .btn-reminder-like.is-liked .reminder-like-count {
 }
 
 .reminder-ack-popover.drop-down {
-  bottom: unset;
-  top: calc(100% + 7px);
+  bottom: auto !important;
+  top: calc(100% + 8px) !important;
+  right: 0 !important;
 }
 
 /* Invisible bridge so mouse moving from button to popover doesn't trigger mouseLeave */
@@ -9132,14 +9148,15 @@ body.dark-mode .btn-reminder-like.is-liked .reminder-like-count {
   height: 12px;
 }
 .reminder-ack-popover.drop-down::after {
-  top: -12px;
-  bottom: unset;
+  top: -12px !important;
+  bottom: auto !important;
+  height: 14px !important;
 }
 
 body.dark-mode .reminder-ack-popover {
   background: #1e293b;
   border-color: #334155;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .reminder-ack-popover-header {
