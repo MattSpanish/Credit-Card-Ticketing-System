@@ -116,7 +116,6 @@ export function UserNamePromptModal({
             ref={inputRef}
             type="text"
             className="user-name-modal-input"
-            placeholder="Enter your name (e.g. John Doe)"
             value={inputVal}
             onChange={(e) => {
               setInputVal(e.target.value);
