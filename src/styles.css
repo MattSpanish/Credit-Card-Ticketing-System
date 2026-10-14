@@ -817,29 +817,13 @@ body.dark-mode .reminder-view-details-btn:hover {
     color: #d97706;
 }
 
-/* Right Actions (Buttons & Navigation) - Stretches vertically to support top buttons and bottom Acknowledge button */
+/* Right Actions (Buttons & Navigation) */
 .reminder-actions-right {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: space-between;
+    align-items: center;
     gap: 8px;
     flex-shrink: 0;
-    align-self: stretch;
-}
-
-.reminder-actions-top-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 32px;
-}
-
-.reminder-actions-bottom-row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    margin-top: auto;
+    align-self: flex-start;
 }
 
 .reminder-nav-group {
@@ -1709,6 +1693,12 @@ body.dark-mode .reminder-modal-nav-group {
 
 .reminder-status-text.off-slideshow {
     color: var(--text-muted);
+}
+
+.reminder-detail-footer-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .btn-remove-slideshow {
@@ -8976,12 +8966,12 @@ body.dark-mode .youtube-player-dock.mode-mini {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  min-height: 34px;
-  min-width: 38px;
-  border-radius: 8px;
-  font-size: 0.85rem;
+  gap: 5px;
+  padding: 4px 8px;
+  min-height: 28px;
+  min-width: 28px;
+  border-radius: 6px;
+  font-size: 0.78rem;
   font-weight: 600;
   border: 1px solid var(--line, #cbd5e1);
   background: var(--bg-elevated, #ffffff);
@@ -9001,12 +8991,12 @@ body.dark-mode .youtube-player-dock.mode-mini {
 }
 
 .btn-reminder-like i {
-  font-size: 1.05rem;
+  font-size: 0.92rem;
   transition: transform 0.15s ease;
 }
 
 .btn-reminder-like:hover i {
-  transform: scale(1.15);
+  transform: scale(1.12);
 }
 
 .btn-reminder-like.is-liked {
@@ -9042,53 +9032,40 @@ body.dark-mode .btn-reminder-like.is-liked i {
 }
 
 .btn-reminder-like.compact {
-  padding: 5px 9px;
-  min-height: 30px;
-  min-width: 32px;
-  font-size: 0.8rem;
-  border-radius: 7px;
+  padding: 3px 7px;
+  min-height: 25px;
+  min-width: 26px;
+  font-size: 0.74rem;
+  border-radius: 5px;
 }
 
 .btn-reminder-like.compact i {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
-.btn-reminder-like.bar {
-  padding: 7px 14px;
-  min-height: 34px;
-  min-width: 40px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+.btn-reminder-like.detail-footer {
+  padding: 5px 10px;
+  min-height: 29px;
+  min-width: 32px;
+  font-size: 0.78rem;
+  border-radius: 6px;
 }
 
-.btn-reminder-like.bar i {
-  font-size: 1.15rem;
-}
-
-.btn-reminder-like.detail {
-  padding: 7px 14px;
-  min-height: 34px;
-  min-width: 40px;
-  border-radius: 8px;
-}
-
-.btn-reminder-like.detail i {
-  font-size: 1.15rem;
+.btn-reminder-like.detail-footer i {
+  font-size: 0.92rem;
 }
 
 .reminder-like-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.78rem;
+  font-size: 0.70rem;
   font-weight: 700;
   line-height: 1;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 9px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
   background: rgba(139, 92, 246, 0.12);
   color: #7c3aed;
 }

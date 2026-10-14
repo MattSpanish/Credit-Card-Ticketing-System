@@ -106,26 +106,26 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-14-v2171",
-    version: "v2.17.1",
+    id: "rel-2026-10-14-v2172",
+    version: "v2.17.2",
     date: "October 14 2026",
     isLatest: true,
     badge: "REMINDER LIKE BUTTON",
-    title: "Team Reminders: Icon-Only Like Button & Refined Layout",
-    summary: "Streamlined the reminder like button to a sleek, icon-only button with interactive count badge and expanded click area without text labels.",
+    title: "Team Reminders: Repositioned Like Button Inside Reminder View",
+    summary: "Removed the like button from the dashboard reminder bar and placed a compact, icon-only Like button inside the reminder modal footer alongside Remove from Slideshow.",
     items: [
       {
         type: "ui",
         icon: "bi-hand-thumbs-up-fill",
-        title: "Icon-Only Like Button",
-        desc: "Removed text labels for a clean, minimalist thumbs-up button with active state highlighting and count badge.",
-        tag: "Team Reminders"
+        title: "Clean Dashboard Reminder Bar",
+        desc: "Removed the like button from the dashboard bar for an uncluttered banner view.",
+        tag: "Dashboard"
       },
       {
         type: "feature",
-        icon: "bi-people-fill",
-        title: "Hover Acknowledgment Tooltip",
-        desc: "Hovering over the Like icon continues to show the clean list of team members who acknowledged the reminder.",
+        icon: "bi-check2-circle",
+        title: "Repositioned Inside Reminder Footer",
+        desc: "Moved the like button to the bottom footer of the reminder detail view on the left side of 'Remove from Slideshow' with scaled compact button dimensions.",
         tag: "Team Reminders"
       }
     ]
@@ -3286,11 +3286,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.17.1">
+          <div className="logo" title="PH Portal v2.17.2">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.17.1</span>
+              <span className="logo-version">v2.17.2</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4413,51 +4413,37 @@ function ReminderBar({ reminders = [], onOpenModal, currentUserName, onRequireNa
       </div>
 
       <div className="reminder-actions-right">
-        <div className="reminder-actions-top-row">
-          {activeReminders.length > 1 && (
-            <div className="reminder-nav-group">
-              <button
-                type="button"
-                className="reminder-nav-btn"
-                onClick={handlePrev}
-                title="Previous reminder"
-                aria-label="Previous reminder"
-              >
-                <i className="bi bi-chevron-left" aria-hidden="true"></i>
-              </button>
-              <button
-                type="button"
-                className="reminder-nav-btn"
-                onClick={handleNext}
-                title="Next reminder"
-                aria-label="Next reminder"
-              >
-                <i className="bi bi-chevron-right" aria-hidden="true"></i>
-              </button>
-            </div>
-          )}
-          <button
-            type="button"
-            className="btn-add-reminder btn-view-reminders"
-            onClick={() => onOpenModal('all', null, null, 'view_reminders')}
-            title="View all team reminders"
-          >
-            <i className="bi bi-eye" aria-hidden="true"></i>
-            <span>View Reminders</span>
-          </button>
-        </div>
-
-        {currentReminder && (
-          <div className="reminder-actions-bottom-row">
-            <ReminderAcknowledgeButton
-              reminderId={currentReminder.id}
-              currentUserName={currentUserName}
-              onRequireName={onRequireName}
-              variant="bar"
-              dropDown={false}
-            />
+        {activeReminders.length > 1 && (
+          <div className="reminder-nav-group">
+            <button
+              type="button"
+              className="reminder-nav-btn"
+              onClick={handlePrev}
+              title="Previous reminder"
+              aria-label="Previous reminder"
+            >
+              <i className="bi bi-chevron-left" aria-hidden="true"></i>
+            </button>
+            <button
+              type="button"
+              className="reminder-nav-btn"
+              onClick={handleNext}
+              title="Next reminder"
+              aria-label="Next reminder"
+            >
+              <i className="bi bi-chevron-right" aria-hidden="true"></i>
+            </button>
           </div>
         )}
+        <button
+          type="button"
+          className="btn-add-reminder btn-view-reminders"
+          onClick={() => onOpenModal('all', null, null, 'view_reminders')}
+          title="View all team reminders"
+        >
+          <i className="bi bi-eye" aria-hidden="true"></i>
+          <span>View Reminders</span>
+        </button>
       </div>
     </div>
   );
@@ -4960,13 +4946,6 @@ function ReminderModal({
                   </div>
 
                   <div className="reminder-detail-quick-actions" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    <ReminderAcknowledgeButton
-                      reminderId={viewingReminder.id}
-                      currentUserName={currentUserName}
-                      onRequireName={onRequireName}
-                      variant="detail"
-                      dropDown={true}
-                    />
                     <button
                       type="button"
                       className="btn-reminder-action"
@@ -5056,6 +5035,13 @@ function ReminderModal({
                   </div>
 
                   <div className="reminder-detail-footer-actions">
+                    <ReminderAcknowledgeButton
+                      reminderId={viewingReminder.id}
+                      currentUserName={currentUserName}
+                      onRequireName={onRequireName}
+                      variant="detail-footer"
+                      dropDown={false}
+                    />
                     {isReminderInSlideshow(viewingReminder) ? (
                       <button
                         type="button"
@@ -5494,7 +5480,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.17.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.17.2';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5510,7 +5496,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.17.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.17.2';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
