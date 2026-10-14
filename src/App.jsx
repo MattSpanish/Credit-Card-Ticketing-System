@@ -107,10 +107,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-14-v2181",
+    version: "v2.18.1",
+    date: "October 14 2026",
+    isLatest: true,
+    badge: "USER PROFILE SYNC",
+    title: "Sidebar User Profile Sync: Dynamic Logged-in Name",
+    summary: "Connected user name from the prompt modal directly to the sidebar footer. 'Logged in as Support' now dynamically shows the user's saved name with 1-click edit.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-person-check-fill",
+        title: "Dynamic Sidebar 'Logged in as' Name",
+        desc: "The sidebar footer now displays the team member's saved name instead of static 'Support', updating instantly across all views.",
+        tag: "User Profile"
+      },
+      {
+        type: "ui",
+        icon: "bi-pencil-square",
+        title: "Click-to-Edit Name",
+        desc: "Clicking the 'Logged in as' name in the sidebar opens the name modal to quickly update or switch names anytime.",
+        tag: "User Profile"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-14-v2180",
     version: "v2.18.0",
     date: "October 14 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "SUPABASE CLOUD SYNC",
     title: "Team Reminders: Live Cloud Database Integration",
     summary: "Integrated a dedicated Supabase cloud database for real-time team-wide reminder acknowledgment and like synchronization across all workstations.",
@@ -3263,8 +3288,28 @@ function Sidebar({
   onOpenBreakSchedule,
   currentView = 'dashboard',
   onSelectView,
-  isYouTubePlaying = false
+  isYouTubePlaying = false,
+  currentUserName = '',
+  onEditName
 }) {
+  const [userName, setUserName] = useState(() => currentUserName || getCurrentUserName() || '');
+
+  useEffect(() => {
+    if (currentUserName) {
+      setUserName(currentUserName);
+    }
+  }, [currentUserName]);
+
+  useEffect(() => {
+    const handleNameChanged = (e) => {
+      if (e.detail?.name) {
+        setUserName(e.detail.name);
+      }
+    };
+    window.addEventListener('reminder_user_name_changed', handleNameChanged);
+    return () => window.removeEventListener('reminder_user_name_changed', handleNameChanged);
+  }, []);
+
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
 
@@ -3312,11 +3357,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.18.0">
+          <div className="logo" title="PH Portal v2.18.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.18.0</span>
+              <span className="logo-version">v2.18.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3453,9 +3498,20 @@ function Sidebar({
           {/* ☕ DAYOFF / 1 HR Break Card positioned at bottom of left panel */}
           <SidebarBreakCard />
 
-          <div className="sidebar-foot">
-            <span className="sidebar-foot-full">Logged in as <strong>Support</strong></span>
-            <span className="sidebar-foot-compact" title="Logged in as Support"><i className="bi bi-person-circle" aria-hidden="true"></i></span>
+          <div
+            className={`sidebar-foot ${onEditName ? 'clickable' : ''}`}
+            onClick={onEditName}
+            title={userName ? `Logged in as ${userName} (Click to change name)` : 'Click to enter your name'}
+          >
+            <span className="sidebar-foot-full">
+              Logged in as <strong>{userName || 'Support'}</strong>
+              {onEditName && (
+                <i className="bi bi-pencil-square ms-1" style={{ fontSize: '0.72rem', opacity: 0.6 }} aria-hidden="true"></i>
+              )}
+            </span>
+            <span className="sidebar-foot-compact" title={`Logged in as ${userName || 'Support'}`}>
+              <i className="bi bi-person-circle" aria-hidden="true"></i>
+            </span>
           </div>
           <div className="sidebar-key">
             <button id="saveGeminiKeyBtn" className="btn btn-sm btn-primary sidebar-key-btn" title="Set Gemini API Key" style={{marginTop:8, width:'100%'}}>
@@ -5522,7 +5578,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.18.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.18.1';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5538,7 +5594,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.18.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.18.1';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -5756,6 +5812,8 @@ export default function App() {
           currentView={currentView}
           onSelectView={setCurrentView}
           isYouTubePlaying={isYtPlaying}
+          currentUserName={currentUserName}
+          onEditName={() => setShowUserNameModal(true)}
         />
         <main className="main-area">
           {/* ✅ TICKETING DASHBOARD VIEW (Preserved in DOM to retain Quill, form drafts & event listeners) */}

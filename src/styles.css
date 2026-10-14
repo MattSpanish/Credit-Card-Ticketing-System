@@ -2063,6 +2063,16 @@ body.dark-mode .sidebar-break-card .stat-value-break {
     color: var(--text-muted);
     padding: 10px 8px 4px;
     border-top: 1px solid var(--line);
+    transition: all 0.2s ease;
+}
+.sidebar-foot.clickable {
+    cursor: pointer;
+}
+.sidebar-foot.clickable:hover {
+    color: var(--text-primary);
+}
+.sidebar-foot.clickable:hover strong {
+    color: #8b5cf6;
 }
 .sidebar-foot-compact { display: none; }
 .sidebar-key .btn {
