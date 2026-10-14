@@ -4358,20 +4358,11 @@ function ReminderBar({ reminders = [], onOpenModal, currentUserName, onRequireNa
                       </span>
                     )}
                   </div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginLeft: 'auto', flexShrink: 0 }}>
-                    <ReminderAcknowledgeButton
-                      reminderId={currentReminder.id}
-                      currentUserName={currentUserName}
-                      onRequireName={onRequireName}
-                      variant="compact"
-                      dropDown={true}
-                    />
-                    {activeReminders.length > 1 && (
-                      <span className="reminder-counter-tag">
-                        {currentIndex + 1} of {activeReminders.length}
-                      </span>
-                    )}
-                  </div>
+                  {activeReminders.length > 1 && (
+                    <span className="reminder-counter-tag" style={{ marginLeft: 'auto' }}>
+                      {currentIndex + 1} of {activeReminders.length}
+                    </span>
+                  )}
                 </div>
                 <div className="reminder-desc-preview-wrap">
                   <p className="reminder-desc-text">{cleanPreviewText}</p>
@@ -4397,37 +4388,51 @@ function ReminderBar({ reminders = [], onOpenModal, currentUserName, onRequireNa
       </div>
 
       <div className="reminder-actions-right">
-        {activeReminders.length > 1 && (
-          <div className="reminder-nav-group">
-            <button
-              type="button"
-              className="reminder-nav-btn"
-              onClick={handlePrev}
-              title="Previous reminder"
-              aria-label="Previous reminder"
-            >
-              <i className="bi bi-chevron-left" aria-hidden="true"></i>
-            </button>
-            <button
-              type="button"
-              className="reminder-nav-btn"
-              onClick={handleNext}
-              title="Next reminder"
-              aria-label="Next reminder"
-            >
-              <i className="bi bi-chevron-right" aria-hidden="true"></i>
-            </button>
+        <div className="reminder-actions-top-row">
+          {activeReminders.length > 1 && (
+            <div className="reminder-nav-group">
+              <button
+                type="button"
+                className="reminder-nav-btn"
+                onClick={handlePrev}
+                title="Previous reminder"
+                aria-label="Previous reminder"
+              >
+                <i className="bi bi-chevron-left" aria-hidden="true"></i>
+              </button>
+              <button
+                type="button"
+                className="reminder-nav-btn"
+                onClick={handleNext}
+                title="Next reminder"
+                aria-label="Next reminder"
+              >
+                <i className="bi bi-chevron-right" aria-hidden="true"></i>
+              </button>
+            </div>
+          )}
+          <button
+            type="button"
+            className="btn-add-reminder btn-view-reminders"
+            onClick={() => onOpenModal('all', null, null, 'view_reminders')}
+            title="View all team reminders"
+          >
+            <i className="bi bi-eye" aria-hidden="true"></i>
+            <span>View Reminders</span>
+          </button>
+        </div>
+
+        {currentReminder && (
+          <div className="reminder-actions-bottom-row">
+            <ReminderAcknowledgeButton
+              reminderId={currentReminder.id}
+              currentUserName={currentUserName}
+              onRequireName={onRequireName}
+              variant="compact"
+              dropDown={false}
+            />
           </div>
         )}
-        <button
-          type="button"
-          className="btn-add-reminder btn-view-reminders"
-          onClick={() => onOpenModal('all', null, null, 'view_reminders')}
-          title="View all team reminders"
-        >
-          <i className="bi bi-eye" aria-hidden="true"></i>
-          <span>View Reminders</span>
-        </button>
       </div>
     </div>
   );

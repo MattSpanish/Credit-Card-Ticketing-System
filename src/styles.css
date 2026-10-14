@@ -817,14 +817,29 @@ body.dark-mode .reminder-view-details-btn:hover {
     color: #d97706;
 }
 
-/* Right Actions (Buttons & Navigation) - Locked to 32px matching header row */
+/* Right Actions (Buttons & Navigation) - Stretches vertically to support top buttons and bottom Acknowledge button */
 .reminder-actions-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+    align-self: stretch;
+}
+
+.reminder-actions-top-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-shrink: 0;
-    align-self: flex-start;
     height: 32px;
+}
+
+.reminder-actions-bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: auto;
 }
 
 .reminder-nav-group {
