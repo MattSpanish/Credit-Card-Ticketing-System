@@ -107,7 +107,7 @@ export function UserNamePromptModal({
           {currentName ? 'Update Your Name' : 'Welcome to Team Reminders'}
         </h3>
         <p className="user-name-modal-desc">
-          Enter your name so team members can see who has acknowledged each reminder.
+          Enter your name so team members can see who has liked each reminder.
           Your name will be saved permanently in your browser.
         </p>
 
@@ -230,19 +230,17 @@ export function ReminderAcknowledgeButton({
         onClick={handleClick}
         title={
           isLiked
-            ? `Acknowledged by you (${count} total). Click to remove acknowledgment.`
-            : `Click to acknowledge as ${effectiveUserName || 'team member'}`
+            ? `Liked by you${count > 0 ? ` (${count} total)` : ''}. Click to remove like.`
+            : `Like${count > 0 ? ` (${count})` : ''}`
         }
-        aria-label={`Acknowledge reminder. ${count} team members acknowledged.`}
+        aria-label={`Like reminder${count > 0 ? `, ${count} likes` : ''}`}
         aria-pressed={isLiked}
       >
         <i className={`bi ${isLiked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'}`} aria-hidden="true"></i>
-        <span>
-          {`${isLiked ? 'Acknowledged' : 'Acknowledge'}${count > 0 ? ` (${count})` : ''}`}
-        </span>
+        {count > 0 && <span className="reminder-like-count">{count}</span>}
       </button>
 
-      {/* Hover Popover: View who acknowledged */}
+      {/* Hover Popover: View who liked */}
       {isHovered && (
         <div
           className={`reminder-ack-popover ${align === 'left' ? 'align-left' : ''} ${dropDown ? 'drop-down' : ''}`}
@@ -252,7 +250,7 @@ export function ReminderAcknowledgeButton({
           <div className="reminder-ack-popover-header">
             <h5 className="reminder-ack-popover-title">
               <i className="bi bi-people-fill" style={{ color: '#8b5cf6' }}></i>
-              Acknowledged by
+              Liked by
             </h5>
             <span className="reminder-ack-popover-badge">
               {count} {count === 1 ? 'person' : 'people'}
@@ -262,7 +260,7 @@ export function ReminderAcknowledgeButton({
           {count === 0 ? (
             <div className="reminder-ack-empty">
               <i className="bi bi-info-circle me-1" style={{ color: '#8b5cf6' }}></i>
-              No acknowledgments yet. Click the button to acknowledge!
+              No likes yet. Click the button to like this reminder!
             </div>
           ) : (
             <ul className="reminder-ack-list">

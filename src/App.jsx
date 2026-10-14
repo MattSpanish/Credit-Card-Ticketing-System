@@ -106,10 +106,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-14-v2171",
+    version: "v2.17.1",
+    date: "October 14 2026",
+    isLatest: true,
+    badge: "REMINDER LIKE BUTTON",
+    title: "Team Reminders: Icon-Only Like Button & Refined Layout",
+    summary: "Streamlined the reminder like button to a sleek, icon-only button with interactive count badge and expanded click area without text labels.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-hand-thumbs-up-fill",
+        title: "Icon-Only Like Button",
+        desc: "Removed text labels for a clean, minimalist thumbs-up button with active state highlighting and count badge.",
+        tag: "Team Reminders"
+      },
+      {
+        type: "feature",
+        icon: "bi-people-fill",
+        title: "Hover Acknowledgment Tooltip",
+        desc: "Hovering over the Like icon continues to show the clean list of team members who acknowledged the reminder.",
+        tag: "Team Reminders"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-14-v2170",
     version: "v2.17.0",
     date: "October 14 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "REMINDER ACKNOWLEDGMENTS",
     title: "Team Reminders: Like & Acknowledgment Tracking",
     summary: "Added a persistent user name prompt and an interactive Like button for reminders. Users can acknowledge notices with their name and hover to view the clean list of team members who confirmed reading.",
@@ -3261,11 +3286,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.17.0">
+          <div className="logo" title="PH Portal v2.17.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.17.0</span>
+              <span className="logo-version">v2.17.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5469,7 +5494,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.17.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.17.1';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5485,7 +5510,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.17.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.17.1';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
