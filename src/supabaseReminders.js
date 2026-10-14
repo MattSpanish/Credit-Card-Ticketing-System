@@ -1,14 +1,21 @@
 // src/supabaseReminders.js
 // Dedicated cloud storage & real-time sync manager for Team Reminders ONLY
 
-export const DEFAULT_REMINDERS_URL = 'https://dmszogifeeydgefbocqm.supabase.co';
+export const DEFAULT_REMINDERS_URL = 'https://orfbmclzaprgiywkkiup.supabase.co';
 export const DEFAULT_REMINDERS_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yZmJtY2x6YXByZ2l5d2traXVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5NzQ1NDQsImV4cCI6MjEwNzU1MDU0NH0.qioq9jHRRsM2FiT2Mhim6vtQ-_Abafq18yc2WoMzqmM';
+
+export const FALLBACK_REMINDERS_URL = 'https://dmszogifeeydgefbocqm.supabase.co';
+export const FALLBACK_REMINDERS_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtc3pvZ2lmZWV5ZGdlZmJvY3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NDA1NjIsImV4cCI6MjEwNjExNjU2Mn0.zhfSjDDHrbLOIjwgxVIilUy_r8U7xQwxj6MYLCe3e3E';
 
 export const REMINDERS_STORAGE_KEY = 'team_reminders_creditcard';
 
 // SQL definition for user setup in Supabase SQL editor
-export const REMINDERS_TABLE_SQL = `-- Run this in Supabase SQL Editor for Nashville CC Reminders:
+export const REMINDERS_TABLE_SQL = `-- Run this in your Supabase SQL Editor:
+-- https://supabase.com/dashboard/project/orfbmclzaprgiywkkiup/sql/new
+
+-- 1. Table for Reminders
 CREATE TABLE IF NOT EXISTS public.reminders (
     id TEXT PRIMARY KEY,
     subject TEXT NOT NULL,
@@ -19,14 +26,63 @@ CREATE TABLE IF NOT EXISTS public.reminders (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Enable Row Level Security (RLS)
-ALTER TABLE public.reminders ENABLE ROW LEVEL SECURITY;
+-- 2. Table for Reminder Acknowledgments (Likes)
+CREATE TABLE IF NOT EXISTS public.reminder_acknowledgments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    reminder_id TEXT NOT NULL,
+    user_name TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    CONSTRAINT unique_reminder_user_ack UNIQUE (reminder_id, user_name)
+);
 
--- Allow public read/write access for team members with anon key
+-- 3. Alias table for reminder_likes (for maximum compatibility)
+CREATE TABLE IF NOT EXISTS public.reminder_likes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    reminder_id TEXT NOT NULL,
+    user_name TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    CONSTRAINT unique_reminder_user_like UNIQUE (reminder_id, user_name)
+);
+
+-- 4. Enable Row Level Security (RLS)
+ALTER TABLE public.reminders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reminder_acknowledgments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reminder_likes ENABLE ROW LEVEL SECURITY;
+
+-- 5. Policies for Anon Access
+DROP POLICY IF EXISTS "Allow public select on reminders" ON public.reminders;
 CREATE POLICY "Allow public select on reminders" ON public.reminders FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert on reminders" ON public.reminders FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public insert on reminders" ON public.reminders FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update on reminders" ON public.reminders FOR UPDATE USING (true);
 CREATE POLICY "Allow public update on reminders" ON public.reminders FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow public delete on reminders" ON public.reminders FOR DELETE USING (true);
 CREATE POLICY "Allow public delete on reminders" ON public.reminders FOR DELETE USING (true);
+
+DROP POLICY IF EXISTS "Allow public select on reminder_acknowledgments" ON public.reminder_acknowledgments;
+CREATE POLICY "Allow public select on reminder_acknowledgments" ON public.reminder_acknowledgments FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert on reminder_acknowledgments" ON public.reminder_acknowledgments;
+CREATE POLICY "Allow public insert on reminder_acknowledgments" ON public.reminder_acknowledgments FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public delete on reminder_acknowledgments" ON public.reminder_acknowledgments;
+CREATE POLICY "Allow public delete on reminder_acknowledgments" ON public.reminder_acknowledgments FOR DELETE USING (true);
+
+DROP POLICY IF EXISTS "Allow public select on reminder_likes" ON public.reminder_likes;
+CREATE POLICY "Allow public select on reminder_likes" ON public.reminder_likes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert on reminder_likes" ON public.reminder_likes;
+CREATE POLICY "Allow public insert on reminder_likes" ON public.reminder_likes FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public delete on reminder_likes" ON public.reminder_likes;
+CREATE POLICY "Allow public delete on reminder_likes" ON public.reminder_likes FOR DELETE USING (true);
+
+-- 6. Preload Nashville Support Reminders
+INSERT INTO public.reminders (id, subject, description, is_important, removed_from_slideshow, created_at, updated_at)
+VALUES 
+('rem_1791551981437_491gb', 'UPDATE: EBT FOR NEXGO + RAPID CONNECT', 'Please be advised that EBT card transactions are not working with Nexgo + Rapid Connect when integrated with Retailz POS . However, EBT transactions are working with Nexgo Transit . Thank you for your attention!', true, false, '2026-10-09T13:19:41.437Z', '2026-10-09T13:19:54.641Z'),
+('rem_1790690379957_nyzqc', 'Shift Workload, Task Assignments, and Update Requirements', 'Good morning, everyone! Please ensure you manage your assigned tasks effectively throughout your shift. Prioritize critical issues, update tickets promptly, and collaborate with your teammates as needed. Let''s keep communication clear and maintain our high standards of support. Have a productive shift!', true, false, '2026-09-29T14:00:00.000Z', '2026-09-29T14:00:00.000Z'),
+('rem_1790960405193_939l1', 'Partial Approval for Nexgo-Fiserv Resolved (OCTOBER 02, 2026)', '<p><strong>The Partial Payment issue has been resolved in NEXGO Rapid Connect (RC).</strong><br>Please ensure that the following configurations and version updates are completed:</p><ol><li>NEXGO Rapid Connect (RC): <strong>Update to Version 552</strong></li><li>P98 Application: Update to <strong>Version 1.0.9</strong></li><li>Ensure the required Partial Payment settings are properly configured in <strong>TAP/TMS Portal.</strong></li></ol>', true, false, '2026-10-02T17:00:05.193Z', '2026-10-05T15:54:07.419Z'),
+('rem_1791477658506_tkglz', 'NEW UPDATE: P98 VERSION - PAX TERMINAL (APPROVED OCTOBER 08,2026)', '<h3>Please push the latest <strong>P98 version 1.0.9</strong> in BROADPOS for PAX A35 terminals with P98 programming.</h3><br><h2>Kindly ensure the latest version is deployed accordingly.</h2><br><h2>Thank you.</h2>', true, false, '2026-10-08T16:40:58.506Z', '2026-10-08T16:41:27.736Z'),
+('rem_1791476926683_e4epg', 'New: P98 Application Version – PAX Terminal', '<p>When programming a PAX terminal with P98, you can use Version 1.0.9.</p><p>If you encounter any issues with Version 1.0.9, please take note of the issue and try downgrading to Version of 1.0.8 or 1.0.6.</p>', true, true, '2026-10-08T16:28:46.683Z', '2026-10-12T05:36:15.619Z'),
+('rem_1790718866173_reqok', 'Partial Approval for Nexgo-Fiserv', 'The Auto-Decline feature for Nexgo-Fiserv terminals was not previously available in the TMS Portal, even though it was available for Nexgo-TSYS terminals.\n\nThis feature was recently added to the Fiserv setup last month. However, we discovered that it is causing issues in production at live stores. We have already communicated this issue to the team, and they are still working to identify the root cause and provide a permanent solution. The resolution is taking longer than expected.\n\nFor now, the only solution for this issue on Nexgo-Fiserv terminals is to replace the terminal with a PAX + P98 terminal.', true, true, '2026-09-29T21:54:26.173Z', '2026-10-12T05:36:25.233Z')
+ON CONFLICT (id) DO NOTHING;
 `;
 
 export function getRemindersSupabaseConfig() {
@@ -157,6 +213,31 @@ export async function fetchReminders() {
         success: true,
         reminders: normalized,
         source: 'supabase',
+      };
+    } else if (FALLBACK_REMINDERS_URL && config.url !== FALLBACK_REMINDERS_URL) {
+      try {
+        const fbRes = await fetch(`${FALLBACK_REMINDERS_URL}/rest/v1/reminders?select=*&order=created_at.desc`, {
+          method: 'GET',
+          headers: {
+            apikey: FALLBACK_REMINDERS_KEY,
+            Authorization: `Bearer ${FALLBACK_REMINDERS_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (fbRes.ok) {
+          const fbRows = await fbRes.json();
+          const fbNorm = fbRows.map(normalizeReminderFromDb).filter(Boolean);
+          saveLocalReminders(fbNorm);
+          return { success: true, reminders: fbNorm, source: 'supabase-secondary' };
+        }
+      } catch (fbErr) {
+        console.warn('Secondary fallback reminders error:', fbErr);
+      }
+      return {
+        success: false,
+        reminders: localList,
+        source: 'local-fallback',
+        status: res.status,
       };
     } else {
       console.warn(`Supabase fetch reminders failed (${res.status}), using local cache`);

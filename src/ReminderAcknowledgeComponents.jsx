@@ -185,9 +185,15 @@ export function ReminderAcknowledgeButton({
       }
     };
 
+    const handleAcksSynced = () => {
+      setAcks(getReminderAcknowledgments(reminderId));
+    };
+
     window.addEventListener('reminder_acknowledgments_updated', handleAcksUpdated);
+    window.addEventListener('reminder_acknowledgments_synced', handleAcksSynced);
     return () => {
       window.removeEventListener('reminder_acknowledgments_updated', handleAcksUpdated);
+      window.removeEventListener('reminder_acknowledgments_synced', handleAcksSynced);
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     };
   }, [reminderId]);

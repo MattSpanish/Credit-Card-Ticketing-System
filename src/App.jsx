@@ -22,6 +22,7 @@ import {
 import {
   getCurrentUserName,
   hasSavedUserName,
+  fetchAcknowledgmentsFromDb,
 } from './reminderLikesStorage';
 
 // ✅ GLOBAL DATA
@@ -106,10 +107,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-14-v2180",
+    version: "v2.18.0",
+    date: "October 14 2026",
+    isLatest: true,
+    badge: "SUPABASE CLOUD SYNC",
+    title: "Team Reminders: Live Cloud Database Integration",
+    summary: "Integrated a dedicated Supabase cloud database for real-time team-wide reminder acknowledgment and like synchronization across all workstations.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-cloud-check-fill",
+        title: "Real-Time Cloud Synchronization",
+        desc: "Connected to Supabase (orfbmclzaprgiywkkiup.supabase.co) to automatically persist and broadcast acknowledgments across team members.",
+        tag: "Supabase"
+      },
+      {
+        type: "improvement",
+        icon: "bi-shield-check",
+        title: "Offline-First Fallback",
+        desc: "Retained instant local cache so reminder likes remain fast and accessible even if offline or before database tables are created.",
+        tag: "Reliability"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-14-v2172",
     version: "v2.17.2",
     date: "October 14 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "REMINDER LIKE BUTTON",
     title: "Team Reminders: Repositioned Like Button Inside Reminder View",
     summary: "Removed the like button from the dashboard reminder bar and placed a compact, icon-only Like button inside the reminder modal footer alongside Remove from Slideshow.",
@@ -3286,11 +3312,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.17.2">
+          <div className="logo" title="PH Portal v2.18.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.17.2</span>
+              <span className="logo-version">v2.18.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5397,6 +5423,22 @@ export default function App() {
       checkForNewReminderNotification(cached);
     }
     loadRemindersFromDb();
+    fetchAcknowledgmentsFromDb();
+
+    // Sync acknowledgments periodically and when returning to window
+    const interval = setInterval(() => {
+      fetchAcknowledgmentsFromDb();
+    }, 30000);
+
+    const onFocus = () => {
+      fetchAcknowledgmentsFromDb();
+    };
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   const handleOpenReminderModal = (tab = 'all', itemToEdit = null, itemToView = null, source = 'view_reminders') => {
@@ -5480,7 +5522,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.17.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.18.0';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5496,7 +5538,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.17.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.18.0';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
