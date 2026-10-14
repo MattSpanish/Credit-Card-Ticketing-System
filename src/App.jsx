@@ -15,6 +15,14 @@ import {
   deleteReminder,
   getLocalReminders,
 } from './supabaseReminders';
+import {
+  UserNamePromptModal,
+  ReminderAcknowledgeButton,
+} from './ReminderAcknowledgeComponents';
+import {
+  getCurrentUserName,
+  hasSavedUserName,
+} from './reminderLikesStorage';
 
 // ✅ GLOBAL DATA
 const BREAK_SCHEDULE = {
@@ -98,10 +106,42 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-14-v2170",
+    version: "v2.17.0",
+    date: "October 14 2026",
+    isLatest: true,
+    badge: "REMINDER ACKNOWLEDGMENTS",
+    title: "Team Reminders: Like & Acknowledgment Tracking",
+    summary: "Added a persistent user name prompt and an interactive Like button for reminders. Users can acknowledge notices with their name and hover to view the clean list of team members who confirmed reading.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-person-check-fill",
+        title: "Persistent User Name Prompt",
+        desc: "New team members are prompted once to enter their name, permanently stored in their browser for seamless reminder acknowledgments.",
+        tag: "Team Reminders"
+      },
+      {
+        type: "feature",
+        icon: "bi-hand-thumbs-up-fill",
+        title: "Reminder Like & Acknowledgment Button",
+        desc: "Each reminder features an interactive Like button with duplicate prevention so team members can acknowledge they've read it.",
+        tag: "Team Reminders"
+      },
+      {
+        type: "feature",
+        icon: "bi-people-fill",
+        title: "Hover-to-View Acknowledged Team Members",
+        desc: "Hovering over the Like button reveals a clean list of everyone who has acknowledged the notice with timestamps.",
+        tag: "Team Reminders"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-13-v2164",
     version: "v2.16.4",
     date: "October 13 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "KNOWLEDGE BASE",
     title: "Knowledge Base: Bulletproof Tag Search Input Text & Caret",
     summary: "Ensured tag search inputs in the Guide Creator and Category Filter explicitly render high-contrast dark text and caret in light mode across all browsers and caches.",
@@ -3221,11 +3261,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.16.4">
+          <div className="logo" title="PH Portal v2.17.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.16.4</span>
+              <span className="logo-version">v2.17.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4228,7 +4268,7 @@ const isReminderInSlideshow = (reminder) => {
   return Date.now() - createdTime <= SEVEN_DAYS_MS;
 };
 
-function ReminderBar({ reminders = [], onOpenModal }) {
+function ReminderBar({ reminders = [], onOpenModal, currentUserName, onRequireName }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -4318,11 +4358,20 @@ function ReminderBar({ reminders = [], onOpenModal }) {
                       </span>
                     )}
                   </div>
-                  {activeReminders.length > 1 && (
-                    <span className="reminder-counter-tag">
-                      {currentIndex + 1} of {activeReminders.length}
-                    </span>
-                  )}
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginLeft: 'auto', flexShrink: 0 }}>
+                    <ReminderAcknowledgeButton
+                      reminderId={currentReminder.id}
+                      currentUserName={currentUserName}
+                      onRequireName={onRequireName}
+                      variant="compact"
+                      dropDown={true}
+                    />
+                    {activeReminders.length > 1 && (
+                      <span className="reminder-counter-tag">
+                        {currentIndex + 1} of {activeReminders.length}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="reminder-desc-preview-wrap">
                   <p className="reminder-desc-text">{cleanPreviewText}</p>
@@ -4504,7 +4553,9 @@ function ReminderModal({
   editingReminder = null,
   initialViewingReminder = null,
   modalSource = 'view_reminders',
-  onClearEditing
+  onClearEditing,
+  currentUserName,
+  onRequireName
 }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [currentEditItem, setCurrentEditItem] = useState(editingReminder);
@@ -4703,6 +4754,16 @@ function ReminderModal({
               <p className="modal-subtitle">Share important notices and announcements with the entire team in real time</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                type="button"
+                className="reminder-user-badge"
+                onClick={onRequireName}
+                title="Click to change your saved name"
+              >
+                <i className="bi bi-person-fill" style={{ color: '#8b5cf6' }}></i>
+                <span>{currentUserName || 'Set Your Name'}</span>
+                <i className="bi bi-pencil-square" style={{ fontSize: '0.72rem', opacity: 0.7 }}></i>
+              </button>
               {onRefreshReminders && (
                 <button
                   type="button"
@@ -4869,6 +4930,13 @@ function ReminderModal({
                   </div>
 
                   <div className="reminder-detail-quick-actions" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <ReminderAcknowledgeButton
+                      reminderId={viewingReminder.id}
+                      currentUserName={currentUserName}
+                      onRequireName={onRequireName}
+                      variant="detail"
+                      dropDown={true}
+                    />
                     <button
                       type="button"
                       className="btn-reminder-action"
@@ -5050,6 +5118,12 @@ function ReminderModal({
                         </div>
 
                         <div className="reminder-card-actions">
+                          <ReminderAcknowledgeButton
+                            reminderId={reminder.id}
+                            currentUserName={currentUserName}
+                            onRequireName={onRequireName}
+                            variant="card"
+                          />
                           <button
                             type="button"
                             className="btn-reminder-action primary-view"
@@ -5249,6 +5323,20 @@ export default function App() {
 
   const [newReminderNotification, setNewReminderNotification] = useState(null);
 
+  // User Name Profile state for Reminder Acknowledgments (Permanent local storage)
+  const [currentUserName, setCurrentUserNameState] = useState(() => getCurrentUserName());
+  const [showUserNameModal, setShowUserNameModal] = useState(() => !hasSavedUserName());
+
+  useEffect(() => {
+    const handleNameChanged = (e) => {
+      if (e.detail?.name) {
+        setCurrentUserNameState(e.detail.name);
+      }
+    };
+    window.addEventListener('reminder_user_name_changed', handleNameChanged);
+    return () => window.removeEventListener('reminder_user_name_changed', handleNameChanged);
+  }, []);
+
   const checkForNewReminderNotification = (reminderList) => {
     if (!reminderList || reminderList.length === 0) return;
     try {
@@ -5376,7 +5464,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.16.4';
+      const currentVersion = latestAnnouncement?.version || 'v2.17.0';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5392,7 +5480,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.16.4';
+      const currentVersion = latestAnnouncement?.version || 'v2.17.0';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -5619,6 +5707,8 @@ export default function App() {
             <ReminderBar
               reminders={reminders}
               onOpenModal={handleOpenReminderModal}
+              currentUserName={currentUserName}
+              onRequireName={() => setShowUserNameModal(true)}
             />
             <DashboardGrid />
             <Tabs currentView={currentView} onSelectView={setCurrentView} />
@@ -5725,8 +5815,22 @@ export default function App() {
           initialViewingReminder={viewingReminder}
           modalSource={reminderModalSource}
           onClearEditing={() => setEditingReminder(null)}
+          currentUserName={currentUserName}
+          onRequireName={() => setShowUserNameModal(true)}
         />
       )}
+      <UserNamePromptModal
+        isOpen={showUserNameModal}
+        currentName={currentUserName}
+        onSave={(name) => {
+          setCurrentUserNameState(name);
+          setShowUserNameModal(false);
+        }}
+        onClose={() => {
+          if (currentUserName) setShowUserNameModal(false);
+        }}
+        isMandatory={!currentUserName}
+      />
     </>
   );
 }
