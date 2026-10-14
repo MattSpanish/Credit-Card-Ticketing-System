@@ -238,11 +238,7 @@ export function ReminderAcknowledgeButton({
       >
         <i className={`bi ${isLiked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'}`} aria-hidden="true"></i>
         <span>
-          {variant === 'compact'
-            ? count > 0 ? count : 'Acknowledge'
-            : variant === 'detail'
-              ? `${isLiked ? 'Acknowledged' : 'Acknowledge'}${count > 0 ? ` (${count})` : ''}`
-              : `${isLiked ? 'Acknowledged' : 'Acknowledge'}${count > 0 ? ` (${count})` : ''}`}
+          {`${isLiked ? 'Acknowledged' : 'Acknowledge'}${count > 0 ? ` (${count})` : ''}`}
         </span>
       </button>
 

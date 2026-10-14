@@ -4428,7 +4428,7 @@ function ReminderBar({ reminders = [], onOpenModal, currentUserName, onRequireNa
               reminderId={currentReminder.id}
               currentUserName={currentUserName}
               onRequireName={onRequireName}
-              variant="compact"
+              variant="bar"
               dropDown={false}
             />
           </div>

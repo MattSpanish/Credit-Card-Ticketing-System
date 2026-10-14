@@ -9039,9 +9039,23 @@ body.dark-mode .btn-reminder-like.is-liked i {
 }
 
 .btn-reminder-like.compact {
-  padding: 2px 7px;
-  font-size: 0.72rem;
-  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  border-radius: 6px;
+}
+
+.btn-reminder-like.bar {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 7px;
+  min-height: 31px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  letter-spacing: 0.01em;
+}
+
+.btn-reminder-like.bar i {
+  font-size: 0.92rem;
 }
 
 .btn-reminder-like.detail {
