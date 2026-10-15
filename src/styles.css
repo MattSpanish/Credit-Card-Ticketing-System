@@ -1221,7 +1221,7 @@ body.dark-mode .btn-clear-reminder-search:hover {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-height: 540px;
+    max-height: 560px;
     overflow-y: auto;
     padding-right: 4px;
 }
@@ -4079,9 +4079,10 @@ body:not(.dark-mode) .ql-snow .ql-tooltip input[type="text"]:focus {
 }
 
 /* Reminder Modal Specific Width */
-.reminder-modal-content {
-    width: min(94vw, 1240px) !important;
-    max-width: 1240px !important;
+.reminder-modal-content,
+.break-modal-content.reminder-modal-content {
+    width: min(95vw, 1340px) !important;
+    max-width: 1340px !important;
 }
 
 /* Reminder Modal Rich Editor */
