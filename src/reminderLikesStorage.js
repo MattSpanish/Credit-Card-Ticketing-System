@@ -426,27 +426,7 @@ export async function fetchAcknowledgmentsFromDb() {
           }
         }
 
-        // Two-way synchronization:
-        // If there are existing local acknowledgments that aren't yet in Supabase (e.g. from offline or pre-DB),
-        // keep them and automatically sync them to Supabase!
-        for (const [rId, acks] of Object.entries(localMap)) {
-          if (!Array.isArray(acks)) continue;
-          for (const ack of acks) {
-            const userName = (ack.name || '').trim();
-            if (!userName) continue;
-            const alreadyInMap = (map[rId] || []).some(
-              (u) => u.name.toLowerCase() === userName.toLowerCase()
-            );
-            if (!alreadyInMap) {
-              if (!map[rId]) map[rId] = [];
-              map[rId].push(ack);
-              // Push to Supabase in background
-              syncToggleToDb(rId, userName, true).catch(() => {});
-            }
-          }
-        }
-
-        // Cache synced data locally
+        // Cache authoritative synced data from Supabase locally
         saveAllReminderAcknowledgments(map);
 
         if (typeof window !== 'undefined') {
