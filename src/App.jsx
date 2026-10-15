@@ -109,10 +109,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-15-v2203",
+    version: "v2.20.3",
+    date: "October 15 2026",
+    isLatest: true,
+    badge: "WORKFLOW FIX",
+    title: "Close Account PDF: Enhanced Folder Picker & System File Protection Handling",
+    summary: "Configured folder selector to open safely inside Documents, and added helpful guidance on Chromium browser system-file restrictions when saving PDFs.",
+    items: [
+      {
+        type: "fix",
+        icon: "bi-folder2-open",
+        title: "Safe Directory Selection",
+        desc: "Preset directory picker to start inside Documents, preventing accidental drive-root selections that trigger Chromium system-file blocking.",
+        tag: "Close Account"
+      },
+      {
+        type: "ui",
+        icon: "bi-shield-check",
+        title: "Security Guidance Banner",
+        desc: "Added clear advisory banner in Save Folder Settings explaining how to choose dedicated non-system folders.",
+        tag: "UI Enhancement"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-15-v2202",
     version: "v2.20.2",
     date: "October 15 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "UI REFINEMENT",
     title: "Knowledge Base: Streamlined Form Layout with Bottom 'Created By' Field",
     summary: "Moved the Created By field to the bottom of the guide creation form right below Description, matching the layout of the Team Reminders form.",
@@ -3735,11 +3760,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.20.2">
+          <div className="logo" title="PH Portal v2.20.3">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.20.2</span>
+              <span className="logo-version">v2.20.3</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -6020,7 +6045,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.20.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.20.3';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6036,7 +6061,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.20.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.20.3';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

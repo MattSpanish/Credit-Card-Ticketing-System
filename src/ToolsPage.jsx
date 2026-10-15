@@ -88,14 +88,22 @@ export default function ToolsPage({ onBackToDashboard }) {
   const handleChooseFolder = async () => {
     if (typeof window.showDirectoryPicker === 'function') {
       try {
-        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        const handle = await window.showDirectoryPicker({
+          mode: 'readwrite',
+          startIn: 'documents'
+        });
         setDirectoryHandle(handle);
         const name = handle.name || 'Selected Folder';
         setSavedFolderName(name);
         localStorage.setItem('close_account_save_folder_name', name);
         showToast(`Save folder set to "${name}"`, 'success');
       } catch (err) {
-        if (err.name !== 'AbortError') {
+        if (err.name === 'SecurityError') {
+          showToast(
+            'The browser blocked that folder because it contains Windows system files. Please choose or create a regular folder (e.g. in Documents, Desktop, or C:\\CloseAccounts).',
+            'error'
+          );
+        } else if (err.name !== 'AbortError') {
           console.error(err);
           showToast('Could not access folder: ' + err.message, 'error');
         }
@@ -659,6 +667,28 @@ export default function ToolsPage({ onBackToDashboard }) {
               <p className="folder-settings-info">
                 By default, PDFs automatically save to your computer's <strong>Downloads</strong> folder. You can optionally select a custom folder below.
               </p>
+              <div
+                className="folder-system-warning-banner"
+                style={{
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  marginBottom: '16px',
+                  fontSize: '0.82rem',
+                  color: 'var(--text-secondary, #cbd5e1)',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px'
+                }}
+              >
+                <i className="bi bi-shield-exclamation" style={{ color: '#f87171', fontSize: '1.15rem', flexShrink: 0, marginTop: '2px' }}></i>
+                <div>
+                  <strong style={{ color: '#fca5a5', display: 'block', marginBottom: '3px' }}>Avoid System Folders & Drive Roots</strong>
+                  Chromium browsers (Chrome / Edge) enforce a security sandbox that blocks access to drive roots (like <code>C:\</code>) or folders containing system files.
+                  Please select or create a dedicated subfolder (such as inside <strong>Documents</strong>, <strong>Desktop</strong>, or <code>C:\CloseAccounts</code>) to allow direct writing without browser warnings.
+                </div>
+              </div>
               <div className="folder-config-card">
                 <div className="folder-icon-wrap">
                   <i className="bi bi-folder2-open"></i>
