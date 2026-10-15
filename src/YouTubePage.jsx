@@ -272,9 +272,21 @@ export default function YouTubePage({
   isPlaying,
   setIsPlaying,
   isMiniMinimized,
-  setIsMiniMinimized
+  setIsMiniMinimized,
+  isHideVideo,
+  setIsHideVideo
 }) {
-  const isFullView = currentView === 'youtube';
+  const [internalHideVideo, setInternalHideVideo] = useState(() => {
+    const saved = localStorage.getItem('yt_hide_video');
+    return saved !== null ? saved === 'true' : true;
+  });
+  const hideVideo = isHideVideo !== undefined ? isHideVideo : internalHideVideo;
+  const setHideVideo = setIsHideVideo || setInternalHideVideo;
+
+  // Local Picture-in-Picture mode (float player to corner even on YouTube tab)
+  const [isFullViewPiP, setIsFullViewPiP] = useState(false);
+
+  const isFullView = currentView === 'youtube' && !isFullViewPiP;
 
   // Search input state
   const [searchInput, setSearchInput] = useState('');
@@ -482,13 +494,33 @@ export default function YouTubePage({
       <div className="youtube-page-grid">
         {/* LEFT COLUMN: Persistent Video Player & Now Playing Dock */}
         <div className="youtube-player-column">
+          {/* PIP ACTIVE PLACEHOLDER (when floating PiP is activated on YouTube page) */}
+          {isFullViewPiP && isPlaying && activeVideo && (
+            <div className="youtube-pip-active-placeholder">
+              <div className="youtube-pip-active-icon">
+                <i className="bi bi-pip"></i>
+              </div>
+              <h4 className="m-0">Picture-in-Picture Active</h4>
+              <p className="text-muted m-0" style={{ fontSize: '0.85rem' }}>
+                Your music is playing in the floating audio pill in the corner with video hidden.
+              </p>
+              <button
+                type="button"
+                className="btn-audio-toolbar mt-2"
+                onClick={() => setIsFullViewPiP(false)}
+              >
+                <i className="bi bi-arrows-angle-contract me-1"></i> Dock Player Back to Page
+              </button>
+            </div>
+          )}
+
           {/* PERSISTENT PLAYER DOCK (Never has display:none ancestor!) */}
           <div
             className={`youtube-player-dock ${isFullView ? 'mode-full' : 'mode-mini'} ${
               isMiniMinimized ? 'is-minimized' : ''
             } ${!isPlaying || !activeVideo ? 'is-idle' : ''}`}
           >
-            {/* FLOATING HEADER (Visible in Mini-Player mode on other tabs) */}
+            {/* FLOATING HEADER (Visible in Mini-Player mode on other tabs or when PiP active) */}
             {!isFullView && isPlaying && activeVideo && (
               <div className="youtube-mini-header">
                 <div className="youtube-mini-title-wrap" title={activeVideo.title || 'YouTube Music Player'}>
@@ -500,8 +532,8 @@ export default function YouTubePage({
                     type="button"
                     className="btn-mini-control"
                     onClick={() => setIsMiniMinimized((prev) => !prev)}
-                    title={isMiniMinimized ? 'Expand Video' : 'Minimize to Audio Pill'}
-                    aria-label={isMiniMinimized ? 'Expand Video' : 'Minimize to Audio Pill'}
+                    title={isMiniMinimized ? 'Expand Video' : 'Minimize to Audio Pill (Video Hidden)'}
+                    aria-label={isMiniMinimized ? 'Expand Video' : 'Minimize to Audio Pill (Video Hidden)'}
                   >
                     <i className={`bi ${isMiniMinimized ? 'bi-chevron-up' : 'bi-dash-lg'}`}></i>
                   </button>
@@ -509,6 +541,7 @@ export default function YouTubePage({
                     type="button"
                     className="btn-mini-control"
                     onClick={() => {
+                      setIsFullViewPiP(false);
                       onSelectView && onSelectView('youtube');
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
@@ -541,11 +574,14 @@ export default function YouTubePage({
                 <span className="youtube-pill-title" title={activeVideo.title || 'Playing Video'}>
                   {activeVideo.title || 'Playing YouTube Music'}
                 </span>
+                <span className="badge-stealth-pill ms-auto" title="Video hidden (audio only)">
+                  <i className="bi bi-eye-slash-fill me-1"></i> Audio
+                </span>
               </div>
             )}
 
-            {/* IFRAME CONTAINER (Kept alive in the DOM for uninterrupted playback) */}
-            <div className="youtube-iframe-container">
+            {/* IFRAME CONTAINER (Kept alive in the DOM for uninterrupted playback, hidden if hideVideo is true) */}
+            <div className={`youtube-iframe-container ${hideVideo ? 'is-video-hidden' : ''}`}>
               {isPlaying && activeVideo && embedUrl ? (
                 <iframe
                   key={activeVideo.id || activeVideo.playlistId}
@@ -573,6 +609,76 @@ export default function YouTubePage({
                 </div>
               ) : null}
             </div>
+
+            {/* AUDIO-ONLY MUSIC STAGE (Rendered on full view when playing and video is hidden) */}
+            {isFullView && isPlaying && activeVideo && hideVideo && (
+              <div className="youtube-audio-only-stage">
+                <div className="audio-stage-visualizer">
+                  <div className="audio-vinyl-wrap">
+                    <img
+                      src={activeVideo.thumbnail || `https://i.ytimg.com/vi/${activeVideo.id}/hqdefault.jpg`}
+                      alt={activeVideo.title}
+                      className="audio-vinyl-img spinning-album"
+                      onError={(e) => {
+                        e.target.src = `https://i.ytimg.com/vi/${activeVideo.id}/hqdefault.jpg`;
+                      }}
+                    />
+                    <div className="audio-vinyl-hole"></div>
+                  </div>
+                  <div className="audio-stage-meta">
+                    <div className="audio-stage-pill">
+                      <i className="bi bi-eye-slash-fill me-1"></i>
+                      <span>Audio Only • Video Hidden</span>
+                    </div>
+                    <h3 className="audio-stage-title" title={activeVideo.title}>{activeVideo.title}</h3>
+                    <p className="audio-stage-artist">
+                      <i className="bi bi-person-circle me-1"></i>
+                      {activeVideo.uploader || 'YouTube Artist'}
+                    </p>
+                    <div className="audio-stage-soundwave">
+                      <span className="stage-wave wave-1"></span>
+                      <span className="stage-wave wave-2"></span>
+                      <span className="stage-wave wave-3"></span>
+                      <span className="stage-wave wave-4"></span>
+                      <span className="stage-wave wave-5"></span>
+                      <span className="stage-wave wave-6"></span>
+                      <span className="stage-wave wave-7"></span>
+                      <span className="stage-wave wave-8"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="audio-stage-toolbar">
+                  <button
+                    type="button"
+                    className="btn-audio-toolbar"
+                    onClick={() => setHideVideo(false)}
+                    title="Show video player"
+                  >
+                    <i className="bi bi-eye me-1 text-primary"></i> Show Video
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-audio-toolbar"
+                    onClick={() => {
+                      setIsMiniMinimized(true);
+                      setIsFullViewPiP(true);
+                    }}
+                    title="Pop out to floating Picture-in-Picture audio pill"
+                  >
+                    <i className="bi bi-pip me-1 text-info"></i> Picture-in-Picture
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-audio-toolbar ms-auto"
+                    onClick={handleStopPlayback}
+                    title="Stop playback"
+                  >
+                    <i className="bi bi-stop-circle me-1 text-danger"></i> Stop
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* NOW PLAYING BAR (Visible only in Full View) */}
@@ -604,6 +710,26 @@ export default function YouTubePage({
                   </div>
                 </div>
                 <div className="now-playing-right">
+                  <button
+                    type="button"
+                    className="btn-yt-action"
+                    onClick={() => setHideVideo((prev) => !prev)}
+                    title={hideVideo ? "Show video player" : "Hide video so it cannot be seen"}
+                  >
+                    <i className={`bi ${hideVideo ? 'bi-eye' : 'bi-eye-slash'} me-1`}></i>
+                    {hideVideo ? 'Show Video' : 'Hide Video'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-yt-action"
+                    onClick={() => {
+                      setIsMiniMinimized(true);
+                      setIsFullViewPiP(true);
+                    }}
+                    title="Pop out to floating Picture-in-Picture audio pill"
+                  >
+                    <i className="bi bi-pip me-1"></i> PiP
+                  </button>
                   <button
                     type="button"
                     className={`btn-yt-action ${isCurrentInFavorites ? 'btn-yt-fav-active' : ''}`}

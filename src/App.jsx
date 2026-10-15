@@ -111,10 +111,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-15-v2219",
+    version: "v2.21.9",
+    date: "October 15 2026",
+    isLatest: true,
+    badge: "MEDIA & STEALTH",
+    title: "YouTube Music: Picture-in-Picture Stealth & Audio-Only Mode",
+    summary: "Added Picture-in-Picture mode with hidden video playback so music streams discreetly in a compact audio pill or audio visualizer without displaying video.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-pip",
+        title: "Picture-in-Picture Audio Pill",
+        desc: "Minimized floating PiP audio pill keeps video hidden while music streams seamlessly across tabs.",
+        tag: "Picture-in-Picture"
+      },
+      {
+        type: "feature",
+        icon: "bi-eye-slash",
+        title: "Hide Video (Audio Only)",
+        desc: "Toggle video visibility on/off anytime. When hidden, the video is completely invisible while audio continues.",
+        tag: "Audio Only"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-15-v2218",
     version: "v2.21.8",
     date: "October 15 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "BRANDING & MUSIC",
     title: "YouTube Music: Complete Interface & Sidebar Branding",
     summary: "Renamed and aligned all media dashboard elements, search cards, and sidebar navigation to 'YouTube Music' with uninterrupted background streaming.",
@@ -4024,11 +4049,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.21.8">
+          <div className="logo" title="PH Portal v2.21.9">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.21.8</span>
+              <span className="logo-version">v2.21.9</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -6125,7 +6150,12 @@ export default function App() {
   });
   const [isYtPlaying, setIsYtPlaying] = useState(false);
   const [isYtMiniMinimized, setIsYtMiniMinimized] = useState(() => {
-    return localStorage.getItem('yt_mini_minimized') === 'true';
+    const saved = localStorage.getItem('yt_mini_minimized');
+    return saved !== null ? saved === 'true' : true;
+  });
+  const [isYtHideVideo, setIsYtHideVideo] = useState(() => {
+    const saved = localStorage.getItem('yt_hide_video');
+    return saved !== null ? saved === 'true' : true;
   });
 
   useEffect(() => {
@@ -6143,6 +6173,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('yt_mini_minimized', isYtMiniMinimized ? 'true' : 'false');
   }, [isYtMiniMinimized]);
+
+  useEffect(() => {
+    localStorage.setItem('yt_hide_video', isYtHideVideo ? 'true' : 'false');
+  }, [isYtHideVideo]);
 
   // Team Reminders state (cached in localStorage, synced in real-time to Supabase)
   const [reminders, setReminders] = useState(() => {
@@ -6329,7 +6363,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.21.8';
+      const currentVersion = latestAnnouncement?.version || 'v2.21.9';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6345,7 +6379,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.21.8';
+      const currentVersion = latestAnnouncement?.version || 'v2.21.9';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -6663,6 +6697,8 @@ export default function App() {
               setIsPlaying={setIsYtPlaying}
               isMiniMinimized={isYtMiniMinimized}
               setIsMiniMinimized={setIsYtMiniMinimized}
+              isHideVideo={isYtHideVideo}
+              setIsHideVideo={setIsYtHideVideo}
             />
           </div>
 
