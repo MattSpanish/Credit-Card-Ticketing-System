@@ -9,6 +9,12 @@ export const DEFAULT_LIKES_SUPABASE_KEY =
 export const USER_NAME_STORAGE_KEY = 'team_reminder_user_name';
 export const REMINDER_LIKES_STORAGE_KEY = 'team_reminder_acknowledgments';
 
+export function isTestUserName(name) {
+  if (!name || typeof name !== 'string') return true;
+  const n = name.trim().toLowerCase();
+  return n === 'aa' || n === 'test' || n === 'asdf' || n === 'testing';
+}
+
 export const REMINDER_LIKES_TABLE_SQL = `-- Run this in your Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/orfbmclzaprgiywkkiup/sql/new
 
@@ -179,7 +185,7 @@ if (localBroadcastChannel) {
 }
 
 export function handleRemoteLikeBroadcast({ reminderId, userName, isLiked, timestamp }, shouldBroadcastLocal = true) {
-  if (!reminderId || !userName) return;
+  if (!reminderId || !userName || isTestUserName(userName)) return;
   const map = getAllReminderAcknowledgments();
   const currentList = Array.isArray(map[reminderId]) ? [...map[reminderId]] : [];
   const normalizedTarget = userName.toLowerCase().trim();
@@ -418,7 +424,7 @@ export async function fetchAcknowledgmentsFromDb() {
           const rId = String(row.reminder_id || row.reminderId || '');
           const name = String(row.user_name || row.userName || '').trim();
           const timestamp = row.created_at || row.timestamp || new Date().toISOString();
-          if (!rId || !name) continue;
+          if (!rId || !name || isTestUserName(name)) continue;
 
           if (!map[rId]) map[rId] = [];
           if (!map[rId].some((u) => u.name.toLowerCase() === name.toLowerCase())) {
@@ -450,6 +456,7 @@ export async function fetchAcknowledgmentsFromDb() {
  * Sync like/unlike toggle to Supabase in the background
  */
 async function syncToggleToDb(reminderId, userName, shouldLike) {
+  if (isTestUserName(userName)) return;
   const config = getLikesSupabaseConfig();
   if (!config.isConfigured) return;
 
@@ -547,7 +554,14 @@ export function getAllReminderAcknowledgments() {
     const raw = localStorage.getItem(REMINDER_LIKES_STORAGE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    return typeof parsed === 'object' && parsed !== null ? parsed : {};
+    if (typeof parsed !== 'object' || parsed === null) return {};
+    const cleaned = {};
+    for (const [rId, list] of Object.entries(parsed)) {
+      if (Array.isArray(list)) {
+        cleaned[rId] = list.filter((item) => item && item.name && !isTestUserName(item.name));
+      }
+    }
+    return cleaned;
   } catch (e) {
     console.error('Failed to parse reminder acknowledgments from localStorage', e);
     return {};
