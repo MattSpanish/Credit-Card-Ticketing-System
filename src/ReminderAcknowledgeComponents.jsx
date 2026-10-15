@@ -173,9 +173,7 @@ export function ReminderAcknowledgeButton({
 }) {
   const [acks, setAcks] = useState(() => getReminderAcknowledgments(reminderId));
   const [isHovered, setIsHovered] = useState(false);
-  const [coords, setCoords] = useState(null);
   const hoverTimeoutRef = useRef(null);
-  const buttonRef = useRef(null);
 
   // Sync state whenever reminderId changes or an acknowledgment is made anywhere
   useEffect(() => {
@@ -204,22 +202,15 @@ export function ReminderAcknowledgeButton({
       }
     };
 
-    const handleScroll = () => {
-      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-      setIsHovered(false);
-    };
-
     window.addEventListener('reminder_acknowledgments_updated', handleAcksUpdated);
     window.addEventListener('reminder_acknowledgments_synced', handleAcksSynced);
     window.addEventListener('storage', handleStorage);
     window.addEventListener('reminder_ack_popover_opened', handleOtherPopoverOpened);
-    window.addEventListener('scroll', handleScroll, true);
     return () => {
       window.removeEventListener('reminder_acknowledgments_updated', handleAcksUpdated);
       window.removeEventListener('reminder_acknowledgments_synced', handleAcksSynced);
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('reminder_ack_popover_opened', handleOtherPopoverOpened);
-      window.removeEventListener('scroll', handleScroll, true);
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     };
   }, [reminderId]);
@@ -228,22 +219,9 @@ export function ReminderAcknowledgeButton({
   const isLiked = hasUserAcknowledged(reminderId, effectiveUserName);
   const count = acks.length;
 
-  const updateCoords = () => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      const isDown = Boolean(dropDown || rect.top < 210);
-      setCoords({
-        left: Math.max(12, rect.right - 260),
-        top: isDown ? rect.bottom + 6 : rect.top - 6,
-        isDropDown: isDown
-      });
-    }
-  };
-
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     setAcks(getReminderAcknowledgments(reminderId));
-    updateCoords();
 
     // Dismiss any other currently open popover immediately
     window.dispatchEvent(
@@ -257,19 +235,7 @@ export function ReminderAcknowledgeButton({
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(false);
-    }, 120);
-  };
-
-  const handlePopoverMouseEnter = () => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    setIsHovered(true);
-  };
-
-  const handlePopoverMouseLeave = () => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    hoverTimeoutRef.current = setTimeout(() => {
-      setIsHovered(false);
-    }, 100);
+    }, 150);
   };
 
   const handleClick = (e) => {
@@ -284,7 +250,6 @@ export function ReminderAcknowledgeButton({
 
   return (
     <div
-      ref={buttonRef}
       className="reminder-ack-wrapper"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -305,23 +270,12 @@ export function ReminderAcknowledgeButton({
         {count > 0 && <span className="reminder-like-count">{count}</span>}
       </button>
 
-      {/* Hover Popover: Rendered via Portal into document.body so it NEVER gets clipped by overflow containers */}
-      {isHovered && coords && createPortal(
+      {/* Hover Popover: View who liked */}
+      {isHovered && (
         <div
-          className={`reminder-ack-popover portal-popover ${align === 'left' ? 'align-left' : ''} ${coords.isDropDown ? 'drop-down' : ''}`}
+          className={`reminder-ack-popover ${align === 'left' ? 'align-left' : ''} ${dropDown ? 'drop-down' : ''}`}
           role="tooltip"
           onClick={(e) => e.stopPropagation()}
-          onMouseEnter={handlePopoverMouseEnter}
-          onMouseLeave={handlePopoverMouseLeave}
-          style={{
-            position: 'fixed',
-            left: coords.left,
-            top: coords.top,
-            bottom: 'auto',
-            right: 'auto',
-            transform: coords.isDropDown ? 'none' : 'translateY(-100%)',
-            zIndex: 9999999
-          }}
         >
           <div className="reminder-ack-popover-header">
             <h5 className="reminder-ack-popover-title">
@@ -363,8 +317,7 @@ export function ReminderAcknowledgeButton({
               })}
             </ul>
           )}
-        </div>,
-        document.body
+        </div>
       )}
     </div>
   );

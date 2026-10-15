@@ -1221,8 +1221,7 @@ body.dark-mode .btn-clear-reminder-search:hover {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    max-height: min(72vh, 620px);
-    overflow-y: auto;
+    overflow: visible !important;
     padding-right: 6px;
     padding-bottom: 12px;
     flex: 1;
@@ -9148,7 +9147,7 @@ body.dark-mode .btn-reminder-like.is-liked .reminder-like-count {
 
 .reminder-ack-popover.drop-down {
   bottom: auto !important;
-  top: calc(100% + 6px) !important;
+  top: calc(100% + 8px) !important;
   right: 0 !important;
 }
 
@@ -9159,12 +9158,12 @@ body.dark-mode .btn-reminder-like.is-liked .reminder-like-count {
   top: 100%;
   left: 0;
   right: 0;
-  height: 12px;
+  height: 14px;
 }
 .reminder-ack-popover.drop-down::after {
-  top: -8px !important;
+  top: -12px !important;
   bottom: auto !important;
-  height: 10px !important;
+  height: 14px !important;
 }
 
 body.dark-mode .reminder-ack-popover {
