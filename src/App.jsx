@@ -111,10 +111,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-15-v2218",
+    version: "v2.21.8",
+    date: "October 15 2026",
+    isLatest: true,
+    badge: "BRANDING & MUSIC",
+    title: "YouTube Music: Complete Interface & Sidebar Branding",
+    summary: "Renamed and aligned all media dashboard elements, search cards, and sidebar navigation to 'YouTube Music' with uninterrupted background streaming.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-youtube",
+        title: "YouTube Music Dashboard & Sidebar",
+        desc: "Renamed the sidebar navigation tab, page header, search cards, and floating player to YouTube Music.",
+        tag: "Branding"
+      },
+      {
+        type: "feature",
+        icon: "bi-music-note-beamed",
+        title: "Direct Song & Artist Search",
+        desc: "Search and play any song or artist on YouTube Music directly without pasting links, with seamless background playback.",
+        tag: "YouTube Music"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-15-v2217",
     version: "v2.21.7",
     date: "October 15 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "UI REFINEMENT",
     title: "Pending Tasks: Clean Minimal Header",
     summary: "Streamlined the Pending Tasks header by removing visible cloud status pills and sync buttons for a clean, distraction-free interface while maintaining silent background real-time sync.",
@@ -3999,11 +4024,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.21.7">
+          <div className="logo" title="PH Portal v2.21.8">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.21.7</span>
+              <span className="logo-version">v2.21.8</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4134,7 +4159,7 @@ function Sidebar({
               <span className="nav-item-badge">BETA</span>
             </button>
 
-            {/* Dedicated YouTube & Music Tab */}
+            {/* Dedicated YouTube Music Tab */}
             <button 
               id="nav-youtube"
               className={`nav-item ${currentView === 'youtube' ? 'active' : ''}`}
@@ -4143,10 +4168,10 @@ function Sidebar({
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               })}
               aria-current={currentView === 'youtube' ? 'page' : undefined}
-              title={isYouTubePlaying ? "YouTube & Music (Playing)" : "YouTube & Music"}
+              title={isYouTubePlaying ? "YouTube Music (Playing)" : "YouTube Music"}
             >
               <i className="bi bi-youtube me-1 nav-youtube-icon" aria-hidden="true"></i>
-              <span className="nav-text">YouTube</span>
+              <span className="nav-text">YouTube Music</span>
               {isYouTubePlaying && (
                 <span className="nav-youtube-pulse" title="Playing">
                   <span className="pulse-bar bar-1"></span>
@@ -6304,7 +6329,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.21.7';
+      const currentVersion = latestAnnouncement?.version || 'v2.21.8';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6320,7 +6345,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.21.7';
+      const currentVersion = latestAnnouncement?.version || 'v2.21.8';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
