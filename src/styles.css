@@ -4080,8 +4080,8 @@ body:not(.dark-mode) .ql-snow .ql-tooltip input[type="text"]:focus {
 
 /* Reminder Modal Specific Width */
 .reminder-modal-content {
-    width: min(95vw, 920px) !important;
-    max-width: 920px !important;
+    width: min(94vw, 1240px) !important;
+    max-width: 1240px !important;
 }
 
 /* Reminder Modal Rich Editor */
