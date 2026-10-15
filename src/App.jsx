@@ -109,10 +109,28 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-15-v21912",
+    version: "v2.19.12",
+    date: "October 15 2026",
+    isLatest: true,
+    badge: "UI REFINEMENT",
+    title: "Team Reminders: Streamlined Navigation Arrows in Detail View",
+    summary: "Streamlined the prev/next reminder controls to clean chevron buttons for a compact, modern navigation pill.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-chevron-compact-right",
+        title: "Clean Chevron Navigation Buttons",
+        desc: "Removed 'Prev' and 'Next' text labels to present clean, icon-only arrow buttons with the counter.",
+        tag: "UI Enhancement"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-15-v21911",
     version: "v2.19.11",
     date: "October 15 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "UI FIX",
     title: "Team Reminders: Restored Hover Popovers with Zero Clipping",
     summary: "Cleanly resolved the hover popover display by enabling overflow visibility on the cards container, ensuring popovers appear reliably on hover without clipping.",
@@ -3642,11 +3660,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.19.11">
+          <div className="logo" title="PH Portal v2.19.12">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.19.11</span>
+              <span className="logo-version">v2.19.12</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5309,7 +5327,6 @@ function ReminderModal({
                           aria-label="Previous reminder"
                         >
                           <i className="bi bi-chevron-left" aria-hidden="true"></i>
-                          <span>Prev</span>
                         </button>
                         <span className="reminder-modal-nav-counter">
                           {currentNavIndex >= 0 ? currentNavIndex + 1 : 1} of {listToNavigate.length}
@@ -5321,7 +5338,6 @@ function ReminderModal({
                           title="Next reminder (Right arrow key)"
                           aria-label="Next reminder"
                         >
-                          <span>Next</span>
                           <i className="bi bi-chevron-right" aria-hidden="true"></i>
                         </button>
                       </div>
@@ -5893,7 +5909,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.11';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.12';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5909,7 +5925,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.11';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.12';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
