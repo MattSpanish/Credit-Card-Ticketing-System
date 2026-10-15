@@ -109,10 +109,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-15-v2199",
+    version: "v2.19.9",
+    date: "October 15 2026",
+    isLatest: true,
+    badge: "UI OPTIMIZATION",
+    title: "Team Reminders: Height Expansion & Hover Stabilization",
+    summary: "Adjusted Team Reminders modal to a taller, spacious vertical proportion and eliminated the hover collision glitch on the top reminder cards.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-expand",
+        title: "Taller Modal & Generous Card Spacing",
+        desc: "Added min-height: 700px and expanded card list to 620px with 14px padding so reminders fill the wide modal with balanced proportions.",
+        tag: "UI Enhancement"
+      },
+      {
+        type: "fix",
+        icon: "bi-shield-check",
+        title: "Hover Glitch & Popover Overlap Fix",
+        desc: "Stabilized card hover stacking, restricted downward drop to top card only, and added mutual popover dismissal to eliminate flicker.",
+        tag: "Bug Fix"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-15-v2198",
     version: "v2.19.8",
     date: "October 15 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "MODAL EXPANSION",
     title: "Spacious Team Reminders Modal (1340px)",
     summary: "Significantly broadened the Team Reminders modal width to 1340px with multi-layer CSS enforcement, ensuring even the longest reminder subjects never wrap.",
@@ -3581,11 +3606,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.19.8">
+          <div className="logo" title="PH Portal v2.19.9">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.19.8</span>
+              <span className="logo-version">v2.19.9</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5080,7 +5105,7 @@ function ReminderModal({
       <div
         className="break-modal-content reminder-modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ width: 'min(95vw, 1340px)', maxWidth: 1340, padding: '24px 32px', cursor: 'default' }}
+        style={{ width: 'min(95vw, 1340px)', maxWidth: 1340, minHeight: 'min(84vh, 700px)', padding: '24px 32px', cursor: 'default' }}
       >
         {/* Top Header Section */}
         {showTopHeader && (
@@ -5461,7 +5486,7 @@ function ReminderModal({
                             currentUserName={currentUserName}
                             onRequireName={onRequireName}
                             variant="card"
-                            dropDown={idx < 2}
+                            dropDown={idx === 0}
                           />
                           <button
                             type="button"
@@ -5832,7 +5857,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.8';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.9';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5848,7 +5873,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.8';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.9';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -6024,6 +6049,10 @@ export default function App() {
           .break-modal-content.reminder-modal-content {
             width: min(95vw, 1340px) !important;
             max-width: 1340px !important;
+            min-height: min(84vh, 700px) !important;
+            max-height: 92vh !important;
+            display: flex !important;
+            flex-direction: column !important;
           }
           .break-modal-header {
             position: sticky; top: 0; background-color: var(--panel-bg, #ffffff);

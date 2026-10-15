@@ -196,13 +196,22 @@ export function ReminderAcknowledgeButton({
       }
     };
 
+    const handleOtherPopoverOpened = (e) => {
+      if (e.detail?.reminderId !== reminderId) {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        setIsHovered(false);
+      }
+    };
+
     window.addEventListener('reminder_acknowledgments_updated', handleAcksUpdated);
     window.addEventListener('reminder_acknowledgments_synced', handleAcksSynced);
     window.addEventListener('storage', handleStorage);
+    window.addEventListener('reminder_ack_popover_opened', handleOtherPopoverOpened);
     return () => {
       window.removeEventListener('reminder_acknowledgments_updated', handleAcksUpdated);
       window.removeEventListener('reminder_acknowledgments_synced', handleAcksSynced);
       window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('reminder_ack_popover_opened', handleOtherPopoverOpened);
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     };
   }, [reminderId]);
@@ -217,20 +226,26 @@ export function ReminderAcknowledgeButton({
 
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      // If button is in the top 280px of viewport or near container top, drop down so it never gets clipped!
-      setIsAutoDroppedDown(Boolean(dropDown || rect.top < 280));
+      // Drop down only if forced (e.g. index 0) or button is at the extreme top (< 180px)
+      setIsAutoDroppedDown(Boolean(dropDown || rect.top < 180));
     } else {
       setIsAutoDroppedDown(Boolean(dropDown));
     }
+
+    // Dismiss any other currently open popover immediately
+    window.dispatchEvent(
+      new CustomEvent('reminder_ack_popover_opened', { detail: { reminderId } })
+    );
 
     setIsHovered(true);
   };
 
   const handleMouseLeave = () => {
-    // Small delay to allow moving onto popover
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    // Rapid dismissal (80ms) so moving cursor between cards never overlaps popovers
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(false);
-    }, 150);
+    }, 80);
   };
 
   const handleClick = (e) => {
