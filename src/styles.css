@@ -1221,7 +1221,7 @@ body.dark-mode .btn-clear-reminder-search:hover {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-height: 480px;
+    max-height: 540px;
     overflow-y: auto;
     padding-right: 4px;
 }
