@@ -109,10 +109,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-15-v2193",
+    version: "v2.19.3",
+    date: "October 15 2026",
+    isLatest: true,
+    badge: "POSTGREST QUERY FIX",
+    title: "Database Retrieval Fix & Instant Likes Loading",
+    summary: "Fixed PostgREST query filter syntax error on Supabase GET requests, ensuring all existing team likes load and display immediately across all browsers and Incognito windows.",
+    items: [
+      {
+        type: "fix",
+        icon: "bi-check2-all",
+        title: "PostgREST Filter Syntax Fix",
+        desc: "Removed incompatible query parameter that caused Supabase PostgREST to return HTTP 400 Bad Request on GET requests, restoring full retrieval of saved likes.",
+        tag: "Database"
+      },
+      {
+        type: "improvement",
+        icon: "bi-arrow-repeat",
+        title: "Immediate Modal Load Retrieval",
+        desc: "Added automated acknowledgment sync when opening the Team Reminders modal and during manual refresh so existing likes are always up-to-date.",
+        tag: "Sync"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-15-v2192",
     version: "v2.19.2",
     date: "October 15 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "DATABASE & INCOGNITO FIX",
     title: "Supabase Cloud Database Sync Fix & Incognito Support",
     summary: "Fixed Supabase project URL routing in production environment config so reminder likes sync seamlessly across regular browsers, incognito windows, and all team members.",
@@ -3466,11 +3491,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.19.2">
+          <div className="logo" title="PH Portal v2.19.3">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.19.2</span>
+              <span className="logo-version">v2.19.3</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4774,6 +4799,11 @@ function ReminderModal({
   const [errorMessage, setErrorMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // On modal open, immediately fetch all saved acknowledgments from cloud DB
+  useEffect(() => {
+    fetchAcknowledgmentsFromDb().catch(() => {});
+  }, []);
+
   const filteredReminders = useMemo(() => {
     if (!searchQuery.trim()) return reminders;
     const q = searchQuery.toLowerCase().trim();
@@ -5712,7 +5742,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.3';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5728,7 +5758,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.3';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -6058,7 +6088,10 @@ export default function App() {
           onSave={handleSaveReminder}
           onDelete={handleDeleteReminder}
           onToggleSlideshow={handleToggleSlideshow}
-          onRefreshReminders={loadRemindersFromDb}
+          onRefreshReminders={() => {
+            loadRemindersFromDb();
+            fetchAcknowledgmentsFromDb().catch(() => {});
+          }}
           isSyncing={isSyncingReminders}
           initialTab={reminderModalTab}
           editingReminder={editingReminder}

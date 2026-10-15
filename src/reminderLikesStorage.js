@@ -398,8 +398,7 @@ export async function fetchAcknowledgmentsFromDb() {
   // Probe reminder_acknowledgments then reminder_likes
   for (const table of ['reminder_acknowledgments', 'reminder_likes']) {
     try {
-      const cacheBust = `&_t=${Date.now()}`;
-      const res = await fetch(`${config.url}/rest/v1/${table}?select=*&order=created_at.asc${cacheBust}`, {
+      const res = await fetch(`${config.url}/rest/v1/${table}?select=*&order=created_at.asc`, {
         method: 'GET',
         cache: 'no-store',
         headers: {
