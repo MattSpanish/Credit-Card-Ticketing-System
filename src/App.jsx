@@ -109,10 +109,42 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-15-v2192",
+    version: "v2.19.2",
+    date: "October 15 2026",
+    isLatest: true,
+    badge: "DATABASE & INCOGNITO FIX",
+    title: "Supabase Cloud Database Sync Fix & Incognito Support",
+    summary: "Fixed Supabase project URL routing in production environment config so reminder likes sync seamlessly across regular browsers, incognito windows, and all team members.",
+    items: [
+      {
+        type: "fix",
+        icon: "bi-database-check",
+        title: "Cloud Database Routing Fix",
+        desc: "Updated production environment config to use the active Supabase project (orfbmclzaprgiywkkiup.supabase.co), resolving 404 schema errors.",
+        tag: "Supabase"
+      },
+      {
+        type: "fix",
+        icon: "bi-incognito",
+        title: "Incognito & Multi-Device Sync",
+        desc: "Incognito mode and newly connected devices now instantly fetch and display all existing team likes directly from the cloud database.",
+        tag: "Real-Time"
+      },
+      {
+        type: "improvement",
+        icon: "bi-shield-fill-check",
+        title: "Stale Cache URL Sanitization",
+        desc: "Added automatic sanitization to prevent obsolete database URLs stored in browser cache from interfering with live sync.",
+        tag: "Reliability"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-14-v2191",
     version: "v2.19.1",
     date: "October 14 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "UI & REAL-TIME POLISH",
     title: "Sleek Like Button Design & Popover Fix",
     summary: "Redesigned reminder like button to a sleek horizontal badge, resolved hover popover clipping near container tops, and enabled automatic two-way cloud sync.",
@@ -3434,11 +3466,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.19.1">
+          <div className="logo" title="PH Portal v2.19.2">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.19.1</span>
+              <span className="logo-version">v2.19.2</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5680,7 +5712,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.2';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5696,7 +5728,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.19.2';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

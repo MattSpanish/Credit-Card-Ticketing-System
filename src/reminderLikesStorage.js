@@ -95,8 +95,14 @@ export function getLikesSupabaseConfig() {
   const localKey =
     (typeof localStorage !== 'undefined' && localStorage.getItem('cc_reminders_supabase_key')) || '';
 
-  const url = (envUrl || DEFAULT_LIKES_SUPABASE_URL || localUrl).trim().replace(/\/+$/, '');
-  const key = (envKey || DEFAULT_LIKES_SUPABASE_KEY || localKey).trim();
+  // Filter out any stale/obsolete Supabase URL
+  const cleanEnvUrl = envUrl && !envUrl.includes('dmszogifeeydgefbocqm') ? envUrl : '';
+  const cleanEnvKey = cleanEnvUrl ? envKey : '';
+  const cleanLocalUrl = localUrl && !localUrl.includes('dmszogifeeydgefbocqm') ? localUrl : '';
+  const cleanLocalKey = cleanLocalUrl ? localKey : '';
+
+  const url = (cleanEnvUrl || DEFAULT_LIKES_SUPABASE_URL || cleanLocalUrl).trim().replace(/\/+$/, '');
+  const key = (cleanEnvKey || DEFAULT_LIKES_SUPABASE_KEY || cleanLocalKey).trim();
 
   return {
     url,
