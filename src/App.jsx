@@ -8,6 +8,8 @@ import ShiftReportPage from './ShiftReportPage';
 import ToolsPage from './ToolsPage';
 import KnowledgeBasePage from './KnowledgeBasePage';
 import YouTubePage from './YouTubePage';
+import PendingTasksPage from './PendingTasksPage';
+import { getPendingTasksSummary } from './pendingTasksStorage';
 import {
   fetchReminders,
   addReminder,
@@ -109,10 +111,228 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-15-v2217",
+    version: "v2.21.7",
+    date: "October 15 2026",
+    isLatest: true,
+    badge: "UI REFINEMENT",
+    title: "Pending Tasks: Clean Minimal Header",
+    summary: "Streamlined the Pending Tasks header by removing visible cloud status pills and sync buttons for a clean, distraction-free interface while maintaining silent background real-time sync.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layout-text-window-reverse",
+        title: "Clean Minimalist Header",
+        desc: "Removed the 'Cloud Synced' badge and 'Sync' button from the header toolbar.",
+        tag: "UI Clean"
+      },
+      {
+        type: "feature",
+        icon: "bi-arrow-repeat",
+        title: "Silent Real-Time Sync",
+        desc: "All Supabase database operations continue to sync automatically and silently in the background.",
+        tag: "Background Sync"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-15-v2216",
+    version: "v2.21.6",
+    date: "October 15 2026",
+    isLatest: false,
+    badge: "DATABASE INTEGRATION",
+    title: "Pending Tasks: Supabase Cloud Database Integration & Live Sync",
+    summary: "Connected Pending Shift Handover tasks to Supabase cloud database with automatic offline cache fallback, real-time background sync, and an automated table setup assistant.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-database-fill-check",
+        title: "Supabase Cloud Database",
+        desc: "Integrated Supabase project credentials for shared live handover tracking across all shifts and devices.",
+        tag: "Cloud Sync"
+      },
+      {
+        type: "ui",
+        icon: "bi-arrow-repeat",
+        title: "Live Background Polling & Sync Status",
+        desc: "Added live cloud sync indicator pills, manual sync button, and background updates every 8 seconds.",
+        tag: "Real-Time"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-15-v2215",
+    version: "v2.21.5",
+    date: "October 15 2026",
+    isLatest: false,
+    badge: "WORKFLOW FIX",
+    title: "Pending Tasks: Deletion Safety Guard & Clean Resolution Prompt",
+    summary: "Enforced protection ensuring only resolved tasks can be deleted, preventing accidental deletion of pending tasks, and cleaned up the resolution prompt dialog.",
+    items: [
+      {
+        type: "fix",
+        icon: "bi-shield-check",
+        title: "Deletion Protection",
+        desc: "Pending tasks cannot be deleted while unresolved. The delete action is strictly reserved for completed/resolved tasks.",
+        tag: "Data Integrity"
+      },
+      {
+        type: "ui",
+        icon: "bi-check2-circle",
+        title: "Clean Resolution Modal",
+        desc: "Removed redundant audit hint text below the explanation field in the resolution dialog.",
+        tag: "UI Refinement"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-15-v2214",
+    version: "v2.21.4",
+    date: "October 15 2026",
+    isLatest: false,
+    badge: "UI REFINEMENT",
+    title: "Pending Tasks: Compact Plus (+) Button in Toolbar",
+    summary: "Replaced the text button in the filter toolbar with a sleek, compact plus (+) icon button.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-plus-lg",
+        title: "Compact Plus (+) Button",
+        desc: "Streamlined the toolbar action into an icon-only plus button matching the search and sort controls.",
+        tag: "UI Refinement"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-15-v2213",
+    version: "v2.21.3",
+    date: "October 15 2026",
+    isLatest: false,
+    badge: "UI REFINEMENT",
+    title: "Pending Tasks: Upper-Left Status & Bottom-Right Resolve Button",
+    summary: "Moved the status pill and title cleanly to the upper-left corner of the task card, placed the Resolve button on the bottom right, and removed the date icon.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layout-text-window",
+        title: "Upper-Left Title & Status",
+        desc: "Fixed status pill positioning to cleanly anchor at the upper left alongside the task title.",
+        tag: "Layout"
+      },
+      {
+        type: "ui",
+        icon: "bi-check2-circle",
+        title: "Bottom-Right Action Placement",
+        desc: "Relocated the Resolve button to the bottom-right corner for a natural reading and completion flow.",
+        tag: "UX"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-15-v2212",
+    version: "v2.21.2",
+    date: "October 15 2026",
+    isLatest: false,
+    badge: "UI REFINEMENT",
+    title: "Pending Tasks: Relocated Post Task Button to Control Bar",
+    summary: "Removed the upper-right header button and placed a clean, compact Post Task action directly inside the search & filters toolbar.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layout-sidebar",
+        title: "Clean Header Bar",
+        desc: "Removed the redundant upper-right button from the top banner to declutter the interface.",
+        tag: "Header"
+      },
+      {
+        type: "ui",
+        icon: "bi-plus-lg",
+        title: "Toolbar Integration",
+        desc: "Integrated the Post Task button neatly into the filter & search controls bar for immediate access.",
+        tag: "Controls"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-15-v2211",
+    version: "v2.21.1",
+    date: "October 15 2026",
+    isLatest: false,
+    badge: "UI REFINEMENT",
+    title: "Pending Tasks: Compact Metrics & Expanded Posting Workspace",
+    summary: "Streamlined the metric stat cards to compact dimensions, enlarged the task creation and details fields, and removed the search placeholder.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-expand",
+        title: "Expanded Posting Field",
+        desc: "Significantly enlarged the description and details field when posting pending tasks.",
+        tag: "Pending Tasks"
+      },
+      {
+        type: "ui",
+        icon: "bi-card-checklist",
+        title: "Compact Metric Stats",
+        desc: "Redesigned Active Pending, Resolved, and All Handover stats cards into compact, space-efficient chips.",
+        tag: "UI Refinement"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-15-v2210",
+    version: "v2.21.0",
+    date: "October 15 2026",
+    isLatest: false,
+    badge: "MAJOR FEATURE",
+    title: "Pending Tasks: Shift Handover & Unfinished Task Tracking",
+    summary: "Introduced a dedicated Pending tab in the sidebar to post, track, resolve, and hand over unfinished tasks between shifts with automatic 14-day data retention.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-hourglass-split",
+        title: "Shift Handover Tracking",
+        desc: "A centralized board to post pending tasks for upcoming shifts, replacing lost WhatsApp messages.",
+        tag: "New Feature"
+      },
+      {
+        type: "feature",
+        icon: "bi-check2-circle",
+        title: "Resolution Prompt & Audit Trail",
+        desc: "Resolving a task requires recording how the issue was fixed and by whom, preserving clear shift documentation.",
+        tag: "Workflow"
+      },
+      {
+        type: "feature",
+        icon: "bi-calendar-check",
+        title: "14-Day Automatic Retention",
+        desc: "Old records are automatically pruned after 14 days to keep storage fast and lightweight.",
+        tag: "Data Policy"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-15-v2204",
+    version: "v2.20.4",
+    date: "October 15 2026",
+    isLatest: false,
+    badge: "UI ENHANCEMENT",
+    title: "Reminders: Dynamic Box Height & Content Auto-Fitting",
+    summary: "Fixed excessive empty space at the bottom of reminder detail views by dynamically adjusting box height to the content.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-contract",
+        title: "Dynamic Reminder Height",
+        desc: "Each reminder box now automatically sizes to fit its content cleanly without excessive bottom whitespace, supporting natural expansion and scrolling for longer notices.",
+        tag: "Reminders"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-15-v2203",
     version: "v2.20.3",
     date: "October 15 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "WORKFLOW FIX",
     title: "Close Account PDF: Enhanced Folder Picker & System File Protection Handling",
     summary: "Configured folder selector to open safely inside Documents, and added helpful guidance on Chromium browser system-file restrictions when saving PDFs.",
@@ -3696,6 +3916,25 @@ function Sidebar({
   onEditName
 }) {
   const [userName, setUserName] = useState(() => currentUserName || getCurrentUserName() || '');
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    const updatePendingCount = () => {
+      try {
+        const summary = getPendingTasksSummary();
+        setPendingCount(summary.pending);
+      } catch (e) {}
+    };
+    updatePendingCount();
+    window.addEventListener('storage', updatePendingCount);
+    window.addEventListener('pending_tasks_changed', updatePendingCount);
+    const interval = setInterval(updatePendingCount, 3000);
+    return () => {
+      window.removeEventListener('storage', updatePendingCount);
+      window.removeEventListener('pending_tasks_changed', updatePendingCount);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     if (currentUserName) {
@@ -3760,11 +3999,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.20.3">
+          <div className="logo" title="PH Portal v2.21.7">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.20.3</span>
+              <span className="logo-version">v2.21.7</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -3828,6 +4067,26 @@ function Sidebar({
             >
               <i className="bi bi-megaphone me-2" aria-hidden="true"></i>
               <span className="nav-text">Announcement</span>
+            </button>
+
+            {/* Dedicated Pending Tasks Tab */}
+            <button 
+              id="nav-pending-tasks"
+              className={`nav-item ${currentView === 'pending' ? 'active' : ''}`}
+              onClick={() => handleNavAction(() => {
+                onSelectView && onSelectView('pending');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              })}
+              aria-current={currentView === 'pending' ? 'page' : undefined}
+              title="Pending Tasks & Handover"
+            >
+              <i className="bi bi-hourglass-split me-2" aria-hidden="true" style={{ color: '#f59e0b' }}></i>
+              <span className="nav-text">Pending</span>
+              {pendingCount > 0 && (
+                <span className="nav-item-badge-pending" title={`${pendingCount} active pending task(s)`}>
+                  {pendingCount}
+                </span>
+              )}
             </button>
 
             {/* Dedicated Shift Report Tab */}
@@ -5265,7 +5524,7 @@ function ReminderModal({
       <div
         className="break-modal-content reminder-modal-content"
         onClick={(e) => e.stopPropagation()}
-        style={{ width: 'min(95vw, 1340px)', maxWidth: 1340, minHeight: 'min(84vh, 700px)', padding: '24px 32px', cursor: 'default' }}
+        style={{ width: 'min(95vw, 1340px)', maxWidth: 1340, height: 'auto', maxHeight: '90vh', overflowY: 'auto', padding: '24px 32px', cursor: 'default' }}
       >
         {/* Top Header Section */}
         {showTopHeader && (
@@ -6045,7 +6304,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.20.3';
+      const currentVersion = latestAnnouncement?.version || 'v2.21.7';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6061,7 +6320,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.20.3';
+      const currentVersion = latestAnnouncement?.version || 'v2.21.7';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -6237,8 +6496,10 @@ export default function App() {
           .break-modal-content.reminder-modal-content {
             width: min(95vw, 1340px) !important;
             max-width: 1340px !important;
-            min-height: min(84vh, 700px) !important;
-            max-height: 92vh !important;
+            min-height: auto !important;
+            height: auto !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
             display: flex !important;
             flex-direction: column !important;
           }
@@ -6352,6 +6613,14 @@ export default function App() {
           {/* ✅ INDEPENDENT KNOWLEDGE BASE PAGE (Troubleshooting Guides & Procedures) */}
           <div style={{ display: currentView === 'knowledge-base' ? 'block' : 'none' }}>
             <KnowledgeBasePage
+              onBackToDashboard={() => setCurrentView('dashboard')}
+              currentUserName={currentUserName}
+            />
+          </div>
+
+          {/* ✅ INDEPENDENT PENDING TASKS PAGE (Shift Handover & Tracking) */}
+          <div style={{ display: currentView === 'pending' ? 'block' : 'none' }}>
+            <PendingTasksPage
               onBackToDashboard={() => setCurrentView('dashboard')}
               currentUserName={currentUserName}
             />

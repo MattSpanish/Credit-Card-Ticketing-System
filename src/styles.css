@@ -4093,8 +4093,10 @@ body:not(.dark-mode) .ql-snow .ql-tooltip input[type="text"]:focus {
 .break-modal-content.reminder-modal-content {
     width: min(95vw, 1340px) !important;
     max-width: 1340px !important;
-    min-height: min(84vh, 700px) !important;
-    max-height: 92vh !important;
+    min-height: auto !important;
+    height: auto !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
     display: flex !important;
     flex-direction: column !important;
 }
