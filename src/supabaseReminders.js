@@ -111,15 +111,48 @@ export function getRemindersSupabaseConfig() {
   };
 }
 
-// Normalize row from Supabase (handles snake_case vs camelCase)
+// Helper to embed createdBy inside HTML metadata invisibly
+export function embedCreatedByInHtml(html, createdBy) {
+  if (!createdBy) return html || '';
+  const cleanHtml = (html || '').replace(/<div[^>]*data-reminder-creator="[^"]*"[^>]*><\/div>/gi, '');
+  return `${cleanHtml}<div data-reminder-creator="${encodeURIComponent(createdBy)}" style="display:none"></div>`;
+}
+
+// Helper to extract createdBy from HTML metadata
+export function extractCreatedByFromHtml(html) {
+  if (!html) return '';
+  const match = html.match(/data-reminder-creator="([^"]*)"/i);
+  if (match && match[1]) {
+    try {
+      return decodeURIComponent(match[1]);
+    } catch {
+      return match[1];
+    }
+  }
+  return '';
+}
+
+// Helper to clean invisible metadata tags from HTML for editor display
+export function stripCreatorFromHtml(html) {
+  if (!html) return '';
+  return html.replace(/<div[^>]*data-reminder-creator="[^"]*"[^>]*><\/div>/gi, '');
+}
+
+// Normalize row from Supabase (handles snake_case vs camelCase and createdBy)
 export function normalizeReminderFromDb(row) {
   if (!row) return null;
+  const rawDesc = row.description || '';
+  const creatorFromHtml = extractCreatedByFromHtml(rawDesc);
+  const createdBy = (row.created_by || row.createdBy || creatorFromHtml || '').trim();
+  const cleanDesc = stripCreatorFromHtml(rawDesc);
+
   return {
     id: String(row.id),
     subject: row.subject || '',
-    description: row.description || '',
+    description: cleanDesc,
     isImportant: Boolean(row.is_important ?? row.isImportant ?? false),
     removedFromSlideshow: Boolean(row.removed_from_slideshow ?? row.removedFromSlideshow ?? false),
+    createdBy,
     createdAt: row.created_at || row.createdAt || new Date().toISOString(),
     updatedAt: row.updated_at || row.updatedAt || new Date().toISOString(),
   };
@@ -266,14 +299,19 @@ export async function fetchReminders() {
 }
 
 // Add a reminder (persists to Supabase & localStorage)
-export async function addReminder({ subject, description, isImportant }) {
+export async function addReminder({ subject, description, isImportant, createdBy }) {
   const now = new Date().toISOString();
+  const cleanCreator = (createdBy || '').trim();
+  const cleanDesc = stripCreatorFromHtml(description || '').trim();
+  const storageDesc = embedCreatedByInHtml(cleanDesc, cleanCreator);
+
   const newReminder = {
     id: 'rem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
     subject: (subject || '').trim(),
-    description: (description || '').trim(),
+    description: cleanDesc,
     isImportant: Boolean(isImportant),
     removedFromSlideshow: false,
+    createdBy: cleanCreator,
     createdAt: now,
     updatedAt: now,
   };
@@ -286,7 +324,7 @@ export async function addReminder({ subject, description, isImportant }) {
   const config = getRemindersSupabaseConfig();
   if (config.isConfigured) {
     try {
-      // Primary payload (standard snake_case)
+      // Primary payload (standard snake_case, storing creator in description metadata for universal sync)
       let res = await fetch(`${config.url}/rest/v1/reminders`, {
         method: 'POST',
         headers: {
@@ -298,7 +336,7 @@ export async function addReminder({ subject, description, isImportant }) {
         body: JSON.stringify({
           id: newReminder.id,
           subject: newReminder.subject,
-          description: newReminder.description,
+          description: storageDesc,
           is_important: newReminder.isImportant,
           removed_from_slideshow: false,
           created_at: newReminder.createdAt,
@@ -351,9 +389,21 @@ export async function updateReminder(id, updates) {
   const current = getLocalReminders();
   const existing = current.find((r) => r.id === id);
 
+  const effectiveCreator = updates.createdBy !== undefined
+    ? (updates.createdBy || '').trim()
+    : (existing?.createdBy || '').trim();
+
+  const cleanDesc = updates.description !== undefined
+    ? stripCreatorFromHtml(updates.description || '').trim()
+    : stripCreatorFromHtml(existing?.description || '').trim();
+
+  const storageDesc = embedCreatedByInHtml(cleanDesc, effectiveCreator);
+
   const updatedReminder = {
     ...(existing || { id }),
     ...updates,
+    description: cleanDesc,
+    createdBy: effectiveCreator,
     updatedAt: now,
   };
 
@@ -368,7 +418,7 @@ export async function updateReminder(id, updates) {
         updated_at: now,
       };
       if (updates.subject !== undefined) payloadSnake.subject = updates.subject;
-      if (updates.description !== undefined) payloadSnake.description = updates.description;
+      payloadSnake.description = storageDesc;
       if (updates.isImportant !== undefined) payloadSnake.is_important = Boolean(updates.isImportant);
       if (updates.removedFromSlideshow !== undefined) {
         payloadSnake.removed_from_slideshow = Boolean(updates.removedFromSlideshow);

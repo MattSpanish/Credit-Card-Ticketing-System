@@ -109,10 +109,42 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-15-v2200",
+    version: "v2.20.0",
+    date: "October 15 2026",
+    isLatest: true,
+    badge: "FEATURE UPDATE",
+    title: "Team Reminders: Created By Field & Expanded Description Editor",
+    summary: "Introduced a Created By identification field for reminders, enlarged the description editor to maximize usable form space, and removed input placeholders for a clean creation workflow.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-person-fill-add",
+        title: "New 'Created By' Field",
+        desc: "Added a dedicated Created By field pre-filled with the active user's name and synced across all devices and team views.",
+        tag: "Team Reminders"
+      },
+      {
+        type: "ui",
+        icon: "bi-textarea-resize",
+        title: "Expanded Description Editor",
+        desc: "Enlarged the rich text description editor to 230px+ and eliminated dead bottom spacing for a spacious composition experience.",
+        tag: "UI Enhancement"
+      },
+      {
+        type: "ui",
+        icon: "bi-input-cursor",
+        title: "Clean Placeholder-Free Inputs",
+        desc: "Removed placeholder prompt text from Subject and Description fields for an uncluttered, modern appearance.",
+        tag: "Form Design"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-15-v21912",
     version: "v2.19.12",
     date: "October 15 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "UI REFINEMENT",
     title: "Team Reminders: Streamlined Navigation Arrows in Detail View",
     summary: "Streamlined the prev/next reminder controls to clean chevron buttons for a compact, modern navigation pill.",
@@ -3660,11 +3692,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.19.12">
+          <div className="logo" title="PH Portal v2.20.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.19.12</span>
+              <span className="logo-version">v2.20.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4853,7 +4885,7 @@ function renderReminderBodyHtml(desc) {
   });
 }
 
-function ReminderRichEditor({ value, onChange, placeholder = "Enter details, instructions, or notes for the team..." }) {
+function ReminderRichEditor({ value, onChange, placeholder = "" }) {
   const containerRef = useRef(null);
   const quillRef = useRef(null);
 
@@ -4964,6 +4996,7 @@ function ReminderModal({
   const [currentModalSource, setCurrentModalSource] = useState(modalSource);
   const [subject, setSubject] = useState(editingReminder?.subject || '');
   const [description, setDescription] = useState(editingReminder?.description || '');
+  const [createdBy, setCreatedBy] = useState(editingReminder?.createdBy || currentUserName || '');
   const [isImportant, setIsImportant] = useState(editingReminder?.isImportant || false);
   const [errorMessage, setErrorMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -5032,6 +5065,7 @@ function ReminderModal({
       setSubject(editingReminder.subject || '');
       setDescription(editingReminder.description || '');
       setIsImportant(Boolean(editingReminder.isImportant));
+      setCreatedBy(editingReminder.createdBy || currentUserName || '');
       setViewingReminder(null);
       setActiveTab('add');
     }
@@ -5060,6 +5094,7 @@ function ReminderModal({
     setSubject(reminder.subject || '');
     setDescription(reminder.description || '');
     setIsImportant(Boolean(reminder.isImportant));
+    setCreatedBy(reminder.createdBy || currentUserName || '');
     setErrorMessage('');
     setViewingReminder(null);
     setActiveTab('add');
@@ -5070,6 +5105,7 @@ function ReminderModal({
     setSubject('');
     setDescription('');
     setIsImportant(false);
+    setCreatedBy(currentUserName || '');
     setErrorMessage('');
     if (onClearEditing) onClearEditing();
     setActiveTab('all');
@@ -5101,7 +5137,8 @@ function ReminderModal({
       {
         subject: subject.trim(),
         description: description.trim(),
-        isImportant: Boolean(isImportant)
+        isImportant: Boolean(isImportant),
+        createdBy: createdBy.trim()
       },
       currentEditItem ? currentEditItem.id : null
     );
@@ -5110,6 +5147,7 @@ function ReminderModal({
     setSubject('');
     setDescription('');
     setIsImportant(false);
+    setCreatedBy(currentUserName || '');
     setErrorMessage('');
     if (onClearEditing) onClearEditing();
     setViewingReminder(null);
@@ -5397,12 +5435,20 @@ function ReminderModal({
                         </span>
                       )}
                     </div>
-                    {viewingReminder.createdAt && (
-                      <span className="reminder-detail-date">
-                        <i className="bi bi-clock me-1" aria-hidden="true"></i>
-                        {formatDate(viewingReminder.createdAt)}
-                      </span>
-                    )}
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                      {viewingReminder.createdBy && (
+                        <span className="reminder-detail-author" style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          <i className="bi bi-person-fill" style={{ color: '#8b5cf6' }}></i>
+                          <span>Created by <strong>{viewingReminder.createdBy}</strong></span>
+                        </span>
+                      )}
+                      {viewingReminder.createdAt && (
+                        <span className="reminder-detail-date">
+                          <i className="bi bi-clock me-1" aria-hidden="true"></i>
+                          {formatDate(viewingReminder.createdAt)}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="reminder-detail-divider"></div>
@@ -5527,9 +5573,17 @@ function ReminderModal({
                               </span>
                             ) : null}
                           </div>
-                          {reminder.createdAt && (
-                            <span className="reminder-card-date">{formatDate(reminder.createdAt)}</span>
-                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            {reminder.createdBy && (
+                              <span className="reminder-card-author" style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <i className="bi bi-person-fill" style={{ color: '#8b5cf6', fontSize: '0.76rem' }}></i>
+                                <span>{reminder.createdBy}</span>
+                              </span>
+                            )}
+                            {reminder.createdAt && (
+                              <span className="reminder-card-date">{formatDate(reminder.createdAt)}</span>
+                            )}
+                          </div>
                         </div>
 
                         <div className="reminder-card-actions">
@@ -5596,7 +5650,6 @@ function ReminderModal({
                 id="reminder-subject-input"
                 type="text"
                 className="reminder-form-input"
-                placeholder="e.g., Scheduled Maintenance, Break Schedule Changes, Support Notice"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 maxLength={120}
@@ -5611,7 +5664,20 @@ function ReminderModal({
               <ReminderRichEditor
                 value={description}
                 onChange={setDescription}
-                placeholder="Enter details, instructions, or notes for the team..."
+                placeholder=""
+              />
+            </div>
+            <div className="reminder-form-group">
+              <label className="reminder-form-label" htmlFor="reminder-created-by-input">
+                Created By
+              </label>
+              <input
+                id="reminder-created-by-input"
+                type="text"
+                className="reminder-form-input"
+                value={createdBy}
+                onChange={(e) => setCreatedBy(e.target.value)}
+                maxLength={60}
               />
             </div>
             <div className="reminder-form-group">
@@ -5865,6 +5931,7 @@ export default function App() {
                 subject: data.subject,
                 description: data.description,
                 isImportant: Boolean(data.isImportant),
+                createdBy: data.createdBy !== undefined ? data.createdBy : rem.createdBy,
                 updatedAt: now,
               }
             : rem
@@ -5874,6 +5941,7 @@ export default function App() {
         subject: data.subject,
         description: data.description,
         isImportant: Boolean(data.isImportant),
+        createdBy: data.createdBy,
       });
     } else {
       const res = await addReminder(data);
@@ -5909,7 +5977,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.12';
+      const currentVersion = latestAnnouncement?.version || 'v2.20.0';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5925,7 +5993,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.19.12';
+      const currentVersion = latestAnnouncement?.version || 'v2.20.0';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
