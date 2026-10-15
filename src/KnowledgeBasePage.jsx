@@ -1787,20 +1787,6 @@ export default function KnowledgeBasePage({ onBackToDashboard, currentUserName }
                 />
               </div>
 
-              {/* Created By input */}
-              <div className="form-group mb-3">
-                <label className="form-label fw-bold">
-                  Created By
-                </label>
-                <input
-                  type="text"
-                  className="kb-form-input"
-                  value={formCreatedBy}
-                  onChange={(e) => setFormCreatedBy(e.target.value)}
-                  maxLength={60}
-                />
-              </div>
-
               {/* Tags Selection (Modern Multi-Select Tag Input) */}
               <div className="form-group mb-3 kb-form-tag-group" ref={formTagDropdownRef}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
@@ -1952,7 +1938,7 @@ export default function KnowledgeBasePage({ onBackToDashboard, currentUserName }
               </div>
 
               {/* Description */}
-              <div className="form-group mb-4">
+              <div className="form-group mb-3">
                 <label className="form-label fw-bold mb-2">
                   Description <span className="text-danger">*</span>
                 </label>
@@ -1963,6 +1949,20 @@ export default function KnowledgeBasePage({ onBackToDashboard, currentUserName }
                     if (formError) setFormError('');
                   }}
                   placeholder=""
+                />
+              </div>
+
+              {/* Created By input */}
+              <div className="form-group mb-4">
+                <label className="form-label fw-bold">
+                  Created By
+                </label>
+                <input
+                  type="text"
+                  className="kb-form-input"
+                  value={formCreatedBy}
+                  onChange={(e) => setFormCreatedBy(e.target.value)}
+                  maxLength={60}
                 />
               </div>
 
