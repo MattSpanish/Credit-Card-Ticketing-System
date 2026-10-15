@@ -65,7 +65,34 @@ export function saveKbSupabaseConfig(url, key) {
   }
 }
 
-// Normalize row from Supabase (handles snake_case vs camelCase)
+// Helper to embed createdBy inside HTML metadata invisibly
+export function embedKbCreatedByInHtml(html, createdBy) {
+  if (!createdBy) return html || '';
+  const cleanHtml = (html || '').replace(/<div[^>]*data-kb-creator="[^"]*"[^>]*><\/div>/gi, '');
+  return `${cleanHtml}<div data-kb-creator="${encodeURIComponent(createdBy)}" style="display:none"></div>`;
+}
+
+// Helper to extract createdBy from HTML metadata
+export function extractKbCreatedByFromHtml(html) {
+  if (!html) return '';
+  const match = html.match(/data-kb-creator="([^"]*)"/i);
+  if (match && match[1]) {
+    try {
+      return decodeURIComponent(match[1]);
+    } catch {
+      return match[1];
+    }
+  }
+  return '';
+}
+
+// Helper to clean invisible metadata tags from HTML for editor display
+export function stripKbCreatorFromHtml(html) {
+  if (!html) return '';
+  return html.replace(/<div[^>]*data-kb-creator="[^"]*"[^>]*><\/div>/gi, '');
+}
+
+// Normalize row from Supabase (handles snake_case vs camelCase and createdBy)
 export function normalizeKbItemFromDb(row) {
   if (!row) return null;
 
@@ -84,12 +111,18 @@ export function normalizeKbItemFromDb(row) {
   const category =
     row.category || (tags.length > 0 ? tags.join(', ') : 'General');
 
+  const rawDesc = row.description || '';
+  const creatorFromHtml = extractKbCreatedByFromHtml(rawDesc);
+  const createdBy = (row.created_by || row.createdBy || creatorFromHtml || '').trim();
+  const cleanDesc = stripKbCreatorFromHtml(rawDesc);
+
   return {
     id: String(row.id),
     title: row.title || '',
-    description: row.description || '',
+    description: cleanDesc,
     tags,
     category,
+    createdBy,
     createdAt: row.created_at || row.createdAt || new Date().toISOString(),
     updatedAt: row.updated_at || row.updatedAt || new Date().toISOString(),
   };
@@ -248,12 +281,17 @@ export async function fetchKnowledgeBase() {
 // Add a guide (persists to Supabase & localStorage)
 export async function addKnowledgeBaseGuide(item) {
   const now = new Date().toISOString();
+  const cleanCreator = (item.createdBy || '').trim();
+  const cleanDesc = stripKbCreatorFromHtml(item.description || '').trim();
+  const storageDesc = embedKbCreatedByInHtml(cleanDesc, cleanCreator);
+
   const newGuide = {
     id: item.id || `kb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     title: (item.title || '').trim(),
-    description: (item.description || '').trim(),
+    description: cleanDesc,
     tags: Array.isArray(item.tags) ? item.tags : [],
     category: item.category || (Array.isArray(item.tags) ? item.tags.join(', ') : 'General'),
+    createdBy: cleanCreator,
     createdAt: item.createdAt || now,
     updatedAt: now,
   };
@@ -269,7 +307,7 @@ export async function addKnowledgeBaseGuide(item) {
       const payload = {
         id: newGuide.id,
         title: newGuide.title,
-        description: newGuide.description,
+        description: storageDesc,
         tags: newGuide.tags,
         category: newGuide.category,
         created_at: newGuide.createdAt,
@@ -310,9 +348,21 @@ export async function updateKnowledgeBaseGuide(id, updates) {
   const current = getLocalKbGuides();
   const existing = current.find((g) => g.id === id);
 
+  const effectiveCreator = updates.createdBy !== undefined
+    ? (updates.createdBy || '').trim()
+    : (existing?.createdBy || '').trim();
+
+  const cleanDesc = updates.description !== undefined
+    ? stripKbCreatorFromHtml(updates.description || '').trim()
+    : stripKbCreatorFromHtml(existing?.description || '').trim();
+
+  const storageDesc = embedKbCreatedByInHtml(cleanDesc, effectiveCreator);
+
   const updatedGuide = {
     ...(existing || { id }),
     ...updates,
+    description: cleanDesc,
+    createdBy: effectiveCreator,
     updatedAt: now,
   };
 
@@ -326,7 +376,7 @@ export async function updateKnowledgeBaseGuide(id, updates) {
         updated_at: now,
       };
       if (updates.title !== undefined) payload.title = updates.title;
-      if (updates.description !== undefined) payload.description = updates.description;
+      payload.description = storageDesc;
       if (updates.tags !== undefined) payload.tags = updates.tags;
       if (updates.category !== undefined) payload.category = updates.category;
 

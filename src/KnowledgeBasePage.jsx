@@ -19,6 +19,7 @@ import {
   deleteKnowledgeBaseGuide,
   purgeExampleGuides,
 } from './supabaseKnowledgeBase';
+import { getCurrentUserName } from './reminderLikesStorage';
 
 function isHtmlContent(str) {
   if (!str) return false;
@@ -598,7 +599,7 @@ function formatKbDate(isoString) {
   }
 }
 
-export default function KnowledgeBasePage({ onBackToDashboard }) {
+export default function KnowledgeBasePage({ onBackToDashboard, currentUserName }) {
   const [items, setItems] = useState(() => {
     return sortKnowledgeBaseItemsAZ(purgeExampleGuides());
   });
@@ -680,12 +681,19 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
 
   // Form states for Add/Edit
   const [formTitle, setFormTitle] = useState('');
+  const [formCreatedBy, setFormCreatedBy] = useState(() => currentUserName || getCurrentUserName() || '');
   const [formTags, setFormTags] = useState([]);
   const [formDescription, setFormDescription] = useState('');
   const [formError, setFormError] = useState('');
   const [isFormTagDropdownOpen, setIsFormTagDropdownOpen] = useState(false);
   const [formTagSearch, setFormTagSearch] = useState('');
   const formTagDropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (currentUserName) {
+      setFormCreatedBy((prev) => prev || currentUserName);
+    }
+  }, [currentUserName]);
 
   // Close form tag dropdown on outside click or Esc
   useEffect(() => {
@@ -921,6 +929,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   const handleOpenAdd = () => {
     setEditingItem(null);
     setFormTitle('');
+    setFormCreatedBy(currentUserName || getCurrentUserName() || '');
     setFormTags(selectedTags.length > 0 ? [...selectedTags] : []);
     setFormDescription('');
     setFormError('');
@@ -933,6 +942,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   const handleOpenEdit = (item) => {
     setEditingItem(item);
     setFormTitle(item.title || '');
+    setFormCreatedBy(item.createdBy || currentUserName || getCurrentUserName() || '');
     setFormTags(getItemTags(item));
     setFormDescription(item.description || '');
     setFormError('');
@@ -953,6 +963,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
   const handleSaveGuide = async (e) => {
     e.preventDefault();
     const cleanTitle = formTitle.trim();
+    const cleanCreator = formCreatedBy.trim();
     const cleanDesc = formDescription.trim();
     const textOnly = cleanDesc.replace(/<[^>]*>/g, '').trim();
 
@@ -976,6 +987,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
         tags: formTags,
         category: formTags.join(', ') || 'General',
         description: cleanDesc,
+        createdBy: cleanCreator,
       };
       const res = await updateKnowledgeBaseGuide(editingItem.id, updates);
       const updatedItem = res.item || { ...editingItem, ...updates, updatedAt: new Date().toISOString() };
@@ -994,6 +1006,7 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
         tags: formTags,
         category: formTags.join(', ') || 'General',
         description: cleanDesc,
+        createdBy: cleanCreator,
       };
       const res = await addKnowledgeBaseGuide(newItem);
       const savedItem = res.item || {
@@ -1456,11 +1469,19 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                       {item.title}
                     </h4>
                   </div>
-                  {(item.updatedAt || item.createdAt) && (
-                    <span className="reminder-card-date kb-card-date">
-                      {formatKbDate(item.updatedAt || item.createdAt)}
-                    </span>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {item.createdBy && (
+                      <span className="reminder-card-author kb-card-author" style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <i className="bi bi-person-fill" style={{ color: '#8b5cf6', fontSize: '0.76rem' }}></i>
+                        <span>{item.createdBy}</span>
+                      </span>
+                    )}
+                    {(item.updatedAt || item.createdAt) && (
+                      <span className="reminder-card-date kb-card-date">
+                        {formatKbDate(item.updatedAt || item.createdAt)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -1552,21 +1573,41 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                 ))}
               </div>
 
-              {(viewingItem.createdAt || viewingItem.updatedAt) && (
-                <div
-                  className="kb-detail-created-badge"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    fontSize: '0.80rem',
-                    color: 'var(--text-muted, #94a3b8)',
-                    fontWeight: 500,
-                  }}
-                  title={`Created on ${formatKbDate(viewingItem.createdAt || viewingItem.updatedAt)}`}
-                >
-                  <i className="bi bi-calendar3" style={{ fontSize: '0.80rem', color: '#64748b' }}></i>
-                  <span>Created {formatKbDate(viewingItem.createdAt || viewingItem.updatedAt)}</span>
+              {(viewingItem.createdBy || viewingItem.createdAt || viewingItem.updatedAt) && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  {viewingItem.createdBy && (
+                    <div
+                      className="kb-detail-author-badge"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontSize: '0.80rem',
+                        color: 'var(--text-muted, #94a3b8)',
+                        fontWeight: 500,
+                      }}
+                    >
+                      <i className="bi bi-person-fill" style={{ color: '#8b5cf6' }}></i>
+                      <span>Created by <strong style={{ color: 'var(--text-primary, #f8fafc)' }}>{viewingItem.createdBy}</strong></span>
+                    </div>
+                  )}
+                  {(viewingItem.createdAt || viewingItem.updatedAt) && (
+                    <div
+                      className="kb-detail-created-badge"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        fontSize: '0.80rem',
+                        color: 'var(--text-muted, #94a3b8)',
+                        fontWeight: 500,
+                      }}
+                      title={`Created on ${formatKbDate(viewingItem.createdAt || viewingItem.updatedAt)}`}
+                    >
+                      <i className="bi bi-calendar3" style={{ fontSize: '0.80rem', color: '#64748b' }}></i>
+                      <span>Created {formatKbDate(viewingItem.createdAt || viewingItem.updatedAt)}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1743,6 +1784,20 @@ export default function KnowledgeBasePage({ onBackToDashboard }) {
                   }}
                   autoFocus
                   required
+                />
+              </div>
+
+              {/* Created By input */}
+              <div className="form-group mb-3">
+                <label className="form-label fw-bold">
+                  Created By
+                </label>
+                <input
+                  type="text"
+                  className="kb-form-input"
+                  value={formCreatedBy}
+                  onChange={(e) => setFormCreatedBy(e.target.value)}
+                  maxLength={60}
                 />
               </div>
 

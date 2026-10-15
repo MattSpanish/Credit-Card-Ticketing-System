@@ -109,10 +109,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-15-v2201",
+    version: "v2.20.1",
+    date: "October 15 2026",
+    isLatest: true,
+    badge: "FEATURE UPDATE",
+    title: "Knowledge Base: Created By Field & Author Tracking",
+    summary: "Added a dedicated Created By field to the Add Knowledge Base Guide form, enabling seamless author tracking and cloud synchronization across all devices.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-person-fill-add",
+        title: "Knowledge Base 'Created By' Field",
+        desc: "Added a Created By field in the guide creation and edit modals pre-filled with the active team member's name.",
+        tag: "Knowledge Base"
+      },
+      {
+        type: "ui",
+        icon: "bi-person-badge",
+        title: "Author Badges in Details & List",
+        desc: "Displaying the guide author clearly on knowledge base cards and inside the full guide detail header.",
+        tag: "UI Enhancement"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-15-v2200",
     version: "v2.20.0",
     date: "October 15 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "FEATURE UPDATE",
     title: "Team Reminders: Created By Field & Expanded Description Editor",
     summary: "Introduced a Created By identification field for reminders, enlarged the description editor to maximize usable form space, and removed input placeholders for a clean creation workflow.",
@@ -3692,11 +3717,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.20.0">
+          <div className="logo" title="PH Portal v2.20.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.20.0</span>
+              <span className="logo-version">v2.20.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5977,7 +6002,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.20.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.20.1';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -5993,7 +6018,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.20.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.20.1';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -6283,7 +6308,10 @@ export default function App() {
 
           {/* ✅ INDEPENDENT KNOWLEDGE BASE PAGE (Troubleshooting Guides & Procedures) */}
           <div style={{ display: currentView === 'knowledge-base' ? 'block' : 'none' }}>
-            <KnowledgeBasePage onBackToDashboard={() => setCurrentView('dashboard')} />
+            <KnowledgeBasePage
+              onBackToDashboard={() => setCurrentView('dashboard')}
+              currentUserName={currentUserName}
+            />
           </div>
 
           {/* ▶️ INDEPENDENT YOUTUBE PAGE & PERSISTENT MEDIA PLAYER */}
