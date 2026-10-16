@@ -274,7 +274,9 @@ export default function YouTubePage({
   isMiniMinimized,
   setIsMiniMinimized,
   isHideVideo,
-  setIsHideVideo
+  setIsHideVideo,
+  isPaused: externalIsPaused,
+  setIsPaused: externalSetIsPaused
 }) {
   const [internalHideVideo, setInternalHideVideo] = useState(() => {
     const saved = localStorage.getItem('yt_hide_video');
@@ -282,6 +284,28 @@ export default function YouTubePage({
   });
   const hideVideo = isHideVideo !== undefined ? isHideVideo : internalHideVideo;
   const setHideVideo = setIsHideVideo || setInternalHideVideo;
+
+  const [internalIsPaused, setInternalIsPaused] = useState(false);
+  const isPaused = externalIsPaused !== undefined ? externalIsPaused : internalIsPaused;
+  const setIsPaused = externalSetIsPaused || setInternalIsPaused;
+
+  // Music volume state (0 - 100), persists in localStorage
+  const [volume, setVolume] = useState(() => {
+    try {
+      const saved = localStorage.getItem('yt_volume');
+      return saved !== null ? Math.max(0, Math.min(100, Number(saved))) : 80;
+    } catch {
+      return 80;
+    }
+  });
+
+  const [isMuted, setIsMuted] = useState(() => {
+    try {
+      return localStorage.getItem('yt_is_muted') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Local Picture-in-Picture mode (float player to corner even on YouTube tab)
   const [isFullViewPiP, setIsFullViewPiP] = useState(false);
@@ -361,6 +385,7 @@ export default function YouTubePage({
         thumbnail: `https://i.ytimg.com/vi/${parsedDirectLink.id}/hqdefault.jpg`
       });
       setIsPlaying(true);
+      setIsPaused(false);
       return;
     }
 
@@ -402,6 +427,7 @@ export default function YouTubePage({
       rawUrl: item.rawUrl || `https://www.youtube.com/watch?v=${item.id}`
     });
     setIsPlaying(true);
+    setIsPaused(false);
   };
 
   // Play a curated preset
@@ -416,6 +442,7 @@ export default function YouTubePage({
       rawUrl: `https://www.youtube.com/watch?v=${preset.id}`
     });
     setIsPlaying(true);
+    setIsPaused(false);
   };
 
   // Search on YouTube Music in new tab
@@ -443,11 +470,98 @@ export default function YouTubePage({
     setFavorites((prev) => prev.filter((f) => (f.id || f.playlistId) !== key));
   };
 
-  // Stop / Clear playback
+  // Ref to the YouTube iframe so we can send postMessage commands (pause, play, setVolume)
+  const iframeRef = useRef(null);
+
+  // Send a command to the YouTube iframe player via postMessage
+  const sendYTCommand = (func, args = []) => {
+    try {
+      const iframe = iframeRef.current;
+      if (!iframe || !iframe.contentWindow) return;
+      const message = JSON.stringify({
+        event: 'command',
+        func: func,
+        args: Array.isArray(args) ? args : [args]
+      });
+      iframe.contentWindow.postMessage(message, '*');
+    } catch (e) {
+      console.warn('YT postMessage error:', e);
+    }
+  };
+
+  // Adjust volume (0 - 100)
+  const handleVolumeChange = (newVol) => {
+    const vol = Math.max(0, Math.min(100, Number(newVol)));
+    setVolume(vol);
+    try {
+      localStorage.setItem('yt_volume', String(vol));
+    } catch {}
+
+    if (isMuted && vol > 0) {
+      setIsMuted(false);
+      try {
+        localStorage.setItem('yt_is_muted', 'false');
+      } catch {}
+      sendYTCommand('unMute');
+    }
+    sendYTCommand('setVolume', [vol]);
+  };
+
+  // Mute / Unmute toggle
+  const handleToggleMute = () => {
+    setIsMuted((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('yt_is_muted', next ? 'true' : 'false');
+      } catch {}
+      if (next) {
+        sendYTCommand('mute');
+      } else {
+        sendYTCommand('unMute');
+        sendYTCommand('setVolume', [volume]);
+      }
+      return next;
+    });
+  };
+
+  // Pause / Resume without destroying the iframe or unmounting the track
+  const handlePauseResume = () => {
+    if (!activeVideo) return;
+    if (isPlaying) {
+      // Pause
+      setIsPlaying(false);
+      setIsPaused(true);
+      sendYTCommand('pauseVideo');
+    } else {
+      // Resume
+      setIsPlaying(true);
+      setIsPaused(false);
+      sendYTCommand('playVideo');
+    }
+  };
+
+  // Stop / Clear playback completely
   const handleStopPlayback = () => {
+    sendYTCommand('stopVideo');
     setIsPlaying(false);
+    setIsPaused(false);
     setActiveVideo(null);
   };
+
+  // When active track changes, apply current volume to the new player
+  useEffect(() => {
+    if (activeVideo) {
+      const timer = setTimeout(() => {
+        if (isMuted) {
+          sendYTCommand('mute');
+        } else {
+          sendYTCommand('unMute');
+          sendYTCommand('setVolume', [volume]);
+        }
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, [activeVideo?.id, activeVideo?.playlistId]);
 
   const isCurrentInFavorites = useMemo(() => {
     if (!activeVideo) return false;
@@ -458,6 +572,8 @@ export default function YouTubePage({
   const embedUrl = useMemo(() => {
     return activeVideo ? buildEmbedUrl(activeVideo) : '';
   }, [activeVideo]);
+
+  const hasTrack = Boolean(activeVideo);
 
   return (
     <div className="youtube-page-container">
@@ -495,7 +611,7 @@ export default function YouTubePage({
         {/* LEFT COLUMN: Persistent Video Player & Now Playing Dock */}
         <div className="youtube-player-column">
           {/* PIP ACTIVE PLACEHOLDER (when floating PiP is activated on YouTube page) */}
-          {isFullViewPiP && isPlaying && activeVideo && (
+          {isFullViewPiP && hasTrack && (
             <div className="youtube-pip-active-placeholder">
               <div className="youtube-pip-active-icon">
                 <i className="bi bi-pip"></i>
@@ -518,16 +634,34 @@ export default function YouTubePage({
           <div
             className={`youtube-player-dock ${isFullView ? 'mode-full' : 'mode-mini'} ${
               isMiniMinimized ? 'is-minimized' : ''
-            } ${!isPlaying || !activeVideo ? 'is-idle' : ''}`}
+            } ${!hasTrack ? 'is-idle' : ''}`}
           >
             {/* FLOATING HEADER (Visible in Mini-Player mode on other tabs or when PiP active) */}
-            {!isFullView && isPlaying && activeVideo && (
+            {!isFullView && hasTrack && (
               <div className="youtube-mini-header">
                 <div className="youtube-mini-title-wrap" title={activeVideo.title || 'Music Player'}>
-                  <i className="bi bi-music-note-beamed me-1"></i>
+                  <i className={`bi ${isPlaying ? 'bi-music-note-beamed text-danger' : 'bi-pause-circle text-warning'} me-1`}></i>
                   <span className="youtube-mini-title-text">{activeVideo.title || 'Playing Video'}</span>
                 </div>
                 <div className="youtube-mini-actions">
+                  <button
+                    type="button"
+                    className="btn-mini-control"
+                    onClick={handlePauseResume}
+                    title={isPlaying ? 'Pause' : 'Resume'}
+                    aria-label={isPlaying ? 'Pause' : 'Resume'}
+                  >
+                    <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'}`}></i>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-mini-control"
+                    onClick={handleToggleMute}
+                    title={isMuted ? 'Unmute' : 'Mute'}
+                    aria-label={isMuted ? 'Unmute' : 'Mute'}
+                  >
+                    <i className={`bi ${isMuted || volume === 0 ? 'bi-volume-mute-fill' : 'bi-volume-up-fill'}`}></i>
+                  </button>
                   <button
                     type="button"
                     className="btn-mini-control"
@@ -564,29 +698,42 @@ export default function YouTubePage({
             )}
 
             {/* MINIMIZED AUDIO PILL BODY (Visible only when mini & minimized) */}
-            {!isFullView && isPlaying && activeVideo && isMiniMinimized && (
-              <div className="youtube-pill-body">
-                <div className="youtube-sound-indicator">
-                  <span className="sound-bar bar-1"></span>
-                  <span className="sound-bar bar-2"></span>
-                  <span className="sound-bar bar-3"></span>
-                </div>
+            {!isFullView && hasTrack && isMiniMinimized && (
+              <div
+                className="youtube-pill-body"
+                onClick={handlePauseResume}
+                style={{ cursor: 'pointer' }}
+                title={isPlaying ? "Click to Pause" : "Click to Resume"}
+              >
+                {isPlaying ? (
+                  <div className="youtube-sound-indicator">
+                    <span className="sound-bar bar-1"></span>
+                    <span className="sound-bar bar-2"></span>
+                    <span className="sound-bar bar-3"></span>
+                  </div>
+                ) : (
+                  <div className="youtube-sound-indicator is-paused">
+                    <i className="bi bi-pause-fill text-warning" style={{ fontSize: '13px' }}></i>
+                  </div>
+                )}
                 <span className="youtube-pill-title" title={activeVideo.title || 'Playing Video'}>
                   {activeVideo.title || 'Playing Music'}
                 </span>
-                <span className="badge-stealth-pill ms-auto" title="Video hidden (audio only)">
-                  <i className="bi bi-eye-slash-fill me-1"></i> Audio
+                <span className={`badge-stealth-pill ms-auto ${!isPlaying ? 'bg-warning-subtle text-warning' : ''}`} title={isPlaying ? "Video hidden (audio only)" : "Music paused"}>
+                  <i className={`bi ${isPlaying ? 'bi-eye-slash-fill' : 'bi-pause-circle-fill'} me-1`}></i>
+                  {isPlaying ? 'Audio' : 'Paused'}
                 </span>
               </div>
             )}
 
             {/* IFRAME CONTAINER (Kept alive in the DOM for uninterrupted playback, hidden if hideVideo is true) */}
             <div className={`youtube-iframe-container ${hideVideo ? 'is-video-hidden' : ''}`}>
-              {isPlaying && activeVideo && embedUrl ? (
+              {hasTrack && embedUrl ? (
                 <iframe
+                  ref={iframeRef}
                   key={activeVideo.id || activeVideo.playlistId}
                   src={embedUrl}
-                  title={activeVideo.title || 'YouTube Music player'}
+                  title={activeVideo.title || 'Music player'}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
@@ -610,15 +757,15 @@ export default function YouTubePage({
               ) : null}
             </div>
 
-            {/* AUDIO-ONLY MUSIC STAGE (Rendered on full view when playing and video is hidden) */}
-            {isFullView && isPlaying && activeVideo && hideVideo && (
+            {/* AUDIO-ONLY MUSIC STAGE (Rendered on full view when video is hidden) */}
+            {isFullView && hasTrack && hideVideo && (
               <div className="youtube-audio-only-stage">
                 <div className="audio-stage-visualizer">
                   <div className="audio-vinyl-wrap">
                     <img
                       src={activeVideo.thumbnail || `https://i.ytimg.com/vi/${activeVideo.id}/hqdefault.jpg`}
                       alt={activeVideo.title}
-                      className="audio-vinyl-img spinning-album"
+                      className={`audio-vinyl-img ${isPlaying ? 'spinning-album' : 'spinning-album paused'}`}
                       onError={(e) => {
                         e.target.src = `https://i.ytimg.com/vi/${activeVideo.id}/hqdefault.jpg`;
                       }}
@@ -626,16 +773,16 @@ export default function YouTubePage({
                     <div className="audio-vinyl-hole"></div>
                   </div>
                   <div className="audio-stage-meta">
-                    <div className="audio-stage-pill">
-                      <i className="bi bi-eye-slash-fill me-1"></i>
-                      <span>Audio Only • Video Hidden</span>
+                    <div className={`audio-stage-pill ${!isPlaying ? 'pill-paused' : ''}`}>
+                      <i className={`bi ${isPlaying ? 'bi-eye-slash-fill' : 'bi-pause-circle-fill'} me-1`}></i>
+                      <span>{isPlaying ? 'Audio Only • Video Hidden' : 'Audio Paused • Video Hidden'}</span>
                     </div>
                     <h3 className="audio-stage-title" title={activeVideo.title}>{activeVideo.title}</h3>
                     <p className="audio-stage-artist">
                       <i className="bi bi-person-circle me-1"></i>
                       {activeVideo.uploader || 'Artist'}
                     </p>
-                    <div className="audio-stage-soundwave">
+                    <div className={`audio-stage-soundwave ${!isPlaying ? 'is-paused' : ''}`}>
                       <span className="stage-wave wave-1"></span>
                       <span className="stage-wave wave-2"></span>
                       <span className="stage-wave wave-3"></span>
@@ -652,12 +799,36 @@ export default function YouTubePage({
                   <button
                     type="button"
                     className="btn-audio-toolbar"
-                    onClick={() => setIsPlaying((prev) => !prev)}
+                    onClick={handlePauseResume}
                     title={isPlaying ? 'Pause music' : 'Resume music'}
                   >
                     <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} me-1 ${isPlaying ? 'text-warning' : 'text-success'}`}></i>
                     {isPlaying ? 'Pause' : 'Resume'}
                   </button>
+
+                  {/* Volume Adjust on Stage */}
+                  <div className="now-playing-volume-wrap" title={`Volume: ${isMuted ? 'Muted' : `${volume}%`}`}>
+                    <button
+                      type="button"
+                      className="btn-volume-mute"
+                      onClick={handleToggleMute}
+                      title={isMuted ? "Unmute" : "Mute"}
+                      aria-label={isMuted ? "Unmute" : "Mute"}
+                    >
+                      <i className={`bi ${isMuted || volume === 0 ? 'bi-volume-mute-fill' : volume < 50 ? 'bi-volume-down-fill' : 'bi-volume-up-fill'}`}></i>
+                    </button>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={isMuted ? 0 : volume}
+                      onChange={(e) => handleVolumeChange(Number(e.target.value))}
+                      className="yt-volume-slider"
+                      aria-label="Volume slider"
+                    />
+                    <span className="yt-volume-percent">{isMuted ? '0%' : `${volume}%`}</span>
+                  </div>
+
                   <button
                     type="button"
                     className="btn-audio-toolbar"
@@ -692,12 +863,18 @@ export default function YouTubePage({
 
           {/* NOW PLAYING BAR (Visible only in Full View) */}
           <div className={`youtube-hide-in-background ${isFullView ? '' : 'is-hidden-bg'}`}>
-            {isPlaying && activeVideo && (
+            {hasTrack && (
               <div className="youtube-now-playing-card">
                 <div className="now-playing-left">
-                  <span className="now-playing-tag">
-                    <span className="pulse-dot"></span> NOW PLAYING
-                  </span>
+                  {isPlaying ? (
+                    <span className="now-playing-tag">
+                      <span className="pulse-dot"></span> NOW PLAYING
+                    </span>
+                  ) : (
+                    <span className="now-playing-tag is-paused">
+                      <i className="bi bi-pause-circle-fill me-1"></i> PAUSED
+                    </span>
+                  )}
                   <h3 className="now-playing-title">{activeVideo.title || 'Music Stream'}</h3>
                   <div className="now-playing-meta">
                     {activeVideo.uploader && (
@@ -719,13 +896,36 @@ export default function YouTubePage({
                   </div>
                 </div>
                 <div className="now-playing-right">
+                  {/* Volume Adjust on Now Playing Bar */}
+                  <div className="now-playing-volume-wrap" title={`Volume: ${isMuted ? 'Muted' : `${volume}%`}`}>
+                    <button
+                      type="button"
+                      className="btn-volume-mute"
+                      onClick={handleToggleMute}
+                      title={isMuted ? "Unmute" : "Mute"}
+                      aria-label={isMuted ? "Unmute" : "Mute"}
+                    >
+                      <i className={`bi ${isMuted || volume === 0 ? 'bi-volume-mute-fill' : volume < 50 ? 'bi-volume-down-fill' : 'bi-volume-up-fill'}`}></i>
+                    </button>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={isMuted ? 0 : volume}
+                      onChange={(e) => handleVolumeChange(Number(e.target.value))}
+                      className="yt-volume-slider"
+                      aria-label="Volume slider"
+                    />
+                    <span className="yt-volume-percent">{isMuted ? '0%' : `${volume}%`}</span>
+                  </div>
+
                   <button
                     type="button"
                     className="btn-yt-action"
-                    onClick={() => setIsPlaying((prev) => !prev)}
+                    onClick={handlePauseResume}
                     title={isPlaying ? 'Pause music' : 'Resume music'}
                   >
-                    <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} me-1`}></i>
+                    <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} me-1 ${isPlaying ? 'text-warning' : 'text-success'}`}></i>
                     {isPlaying ? 'Pause' : 'Resume'}
                   </button>
                   <button
@@ -788,19 +988,26 @@ export default function YouTubePage({
               <div className="youtube-card-body">
                 <div className="preset-stations-grid">
                   {PRESET_STATIONS.map((preset) => {
-                    const isCurrent = activeVideo?.id === preset.id && isPlaying;
+                    const isCurrent = activeVideo?.id === preset.id;
+                    const isCurrentPlaying = isCurrent && isPlaying;
                     return (
                       <div
                         key={preset.id}
                         className={`preset-station-card ${isCurrent ? 'is-active-station' : ''}`}
-                        onClick={() => handlePlayPreset(preset)}
-                        title={`Play ${preset.title}`}
+                        onClick={() => {
+                          if (isCurrent) {
+                            handlePauseResume();
+                          } else {
+                            handlePlayPreset(preset);
+                          }
+                        }}
+                        title={isCurrent ? (isPlaying ? `Pause ${preset.title}` : `Resume ${preset.title}`) : `Play ${preset.title}`}
                       >
                         <div
                           className="preset-icon-wrap"
                           style={{ backgroundColor: `${preset.badgeColor}22`, color: preset.badgeColor }}
                         >
-                          <i className={`bi ${isCurrent ? 'bi-soundwave' : preset.icon}`}></i>
+                          <i className={`bi ${isCurrentPlaying ? 'bi-soundwave' : isCurrent ? 'bi-pause-circle' : preset.icon}`}></i>
                         </div>
                         <div className="preset-info">
                           <div className="preset-title-row">
@@ -817,10 +1024,10 @@ export default function YouTubePage({
                         <button
                           type="button"
                           className="btn-preset-play"
-                          aria-label={`Play ${preset.title}`}
+                          aria-label={isCurrent ? (isPlaying ? `Pause ${preset.title}` : `Resume ${preset.title}`) : `Play ${preset.title}`}
                           tabIndex="-1"
                         >
-                          <i className={`bi ${isCurrent ? 'bi-pause-fill' : 'bi-play-fill'}`}></i>
+                          <i className={`bi ${isCurrentPlaying ? 'bi-pause-fill' : 'bi-play-fill'}`}></i>
                         </button>
                       </div>
                     );
@@ -937,7 +1144,8 @@ export default function YouTubePage({
               ) : (
                 <div className="youtube-results-scrollable">
                   {searchResults.map((item) => {
-                    const isCurrent = activeVideo?.id === item.id && isPlaying;
+                    const isCurrent = activeVideo?.id === item.id;
+                    const isCurrentPlaying = isCurrent && isPlaying;
                     const isFav = favorites.some((f) => (f.id || f.playlistId) === item.id);
                     return (
                       <div
@@ -947,8 +1155,14 @@ export default function YouTubePage({
                         {/* Thumbnail with duration badge */}
                         <div
                           className="yt-result-thumb-box"
-                          onClick={() => handlePlaySearchResult(item)}
-                          title={`Play ${item.title}`}
+                          onClick={() => {
+                            if (isCurrent) {
+                              handlePauseResume();
+                            } else {
+                              handlePlaySearchResult(item);
+                            }
+                          }}
+                          title={isCurrent ? (isPlaying ? `Pause ${item.title}` : `Resume ${item.title}`) : `Play ${item.title}`}
                         >
                           <img
                             src={item.thumbnail}
@@ -963,15 +1177,21 @@ export default function YouTubePage({
                             {item.duration}
                           </span>
                           <div className="yt-thumb-play-overlay">
-                            <i className={`bi ${isCurrent ? 'bi-soundwave' : 'bi-play-fill'}`}></i>
+                            <i className={`bi ${isCurrentPlaying ? 'bi-soundwave' : isCurrent ? 'bi-pause-circle' : 'bi-play-fill'}`}></i>
                           </div>
                         </div>
 
                         {/* Title, Artist, Views */}
                         <div
                           className="yt-result-info-box"
-                          onClick={() => handlePlaySearchResult(item)}
-                          title={`Play ${item.title}`}
+                          onClick={() => {
+                            if (isCurrent) {
+                              handlePauseResume();
+                            } else {
+                              handlePlaySearchResult(item);
+                            }
+                          }}
+                          title={isCurrent ? (isPlaying ? `Pause ${item.title}` : `Resume ${item.title}`) : `Play ${item.title}`}
                         >
                           <h5 className="yt-result-title">{item.title}</h5>
                           <div className="yt-result-meta-row">
@@ -992,11 +1212,17 @@ export default function YouTubePage({
                           <button
                             type="button"
                             className={`btn-yt-row-play ${isCurrent ? 'is-active-btn' : ''}`}
-                            onClick={() => handlePlaySearchResult(item)}
-                            title={isCurrent ? 'Currently Playing' : 'Play this song'}
+                            onClick={() => {
+                              if (isCurrent) {
+                                handlePauseResume();
+                              } else {
+                                handlePlaySearchResult(item);
+                              }
+                            }}
+                            title={isCurrent ? (isPlaying ? 'Pause this song' : 'Resume this song') : 'Play this song'}
                           >
-                            <i className={`bi ${isCurrent ? 'bi-pause-fill' : 'bi-play-fill'}`}></i>
-                            <span>{isCurrent ? 'Playing' : 'Play'}</span>
+                            <i className={`bi ${isCurrentPlaying ? 'bi-pause-fill' : 'bi-play-fill'}`}></i>
+                            <span>{isCurrentPlaying ? 'Pause' : isCurrent ? 'Resume' : 'Play'}</span>
                           </button>
                           <button
                             type="button"
@@ -1036,7 +1262,8 @@ export default function YouTubePage({
                 <div className="favorites-list">
                   {favorites.map((fav) => {
                     const key = fav.id || fav.playlistId;
-                    const isCurrent = (activeVideo?.id || activeVideo?.playlistId) === key && isPlaying;
+                    const isCurrent = (activeVideo?.id || activeVideo?.playlistId) === key;
+                    const isCurrentPlaying = isCurrent && isPlaying;
                     return (
                       <div
                         key={key}
@@ -1045,12 +1272,17 @@ export default function YouTubePage({
                         <div
                           className="favorite-info"
                           onClick={() => {
-                            setActiveVideo(fav);
-                            setIsPlaying(true);
+                            if (isCurrent) {
+                              handlePauseResume();
+                            } else {
+                              setActiveVideo(fav);
+                              setIsPlaying(true);
+                              setIsPaused(false);
+                            }
                           }}
-                          title="Play this track"
+                          title={isCurrent ? (isPlaying ? "Click to Pause" : "Click to Resume") : "Play this track"}
                         >
-                          <i className={`bi ${isCurrent ? 'bi-soundwave text-danger' : 'bi-music-note-beamed me-2 text-muted'}`}></i>
+                          <i className={`bi ${isCurrentPlaying ? 'bi-soundwave text-danger' : isCurrent ? 'bi-pause-circle text-warning' : 'bi-music-note-beamed me-2 text-muted'}`}></i>
                           <span className="favorite-title">{fav.title || `Track (${key})`}</span>
                         </div>
                         <div className="favorite-actions">
@@ -1058,12 +1290,17 @@ export default function YouTubePage({
                             type="button"
                             className="btn-fav-play"
                             onClick={() => {
-                              setActiveVideo(fav);
-                              setIsPlaying(true);
+                              if (isCurrent) {
+                                handlePauseResume();
+                              } else {
+                                setActiveVideo(fav);
+                                setIsPlaying(true);
+                                setIsPaused(false);
+                              }
                             }}
-                            title="Play"
+                            title={isCurrent ? (isPlaying ? "Pause" : "Resume") : "Play"}
                           >
-                            <i className="bi bi-play-fill"></i>
+                            <i className={`bi ${isCurrentPlaying ? 'bi-pause-fill' : 'bi-play-fill'}`}></i>
                           </button>
                           <button
                             type="button"

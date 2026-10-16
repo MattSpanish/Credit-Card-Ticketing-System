@@ -111,10 +111,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-16-v2221",
+    version: "v2.22.1",
+    date: "October 16 2026",
+    isLatest: true,
+    badge: "MUSIC & CONTROLS",
+    title: "Music Tab: Volume Slider & Seamless Background Pause",
+    summary: "Added a dedicated volume adjustment slider with 1-click mute/unmute to the Music player. Fixed background pause so the player and loaded track remain active and responsive instead of closing.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-volume-up-fill",
+        title: "Volume Adjustment Slider",
+        desc: "Adjust volume anytime from 0% to 100% on the Now Playing dock, Audio-Only stage, and floating mini player with volume persistence.",
+        tag: "Audio"
+      },
+      {
+        type: "fix",
+        icon: "bi-pause-circle-fill",
+        title: "Seamless Pause & Resume",
+        desc: "Fixed track disappearing on pause: the player keeps the track loaded and paused without resetting.",
+        tag: "Playback"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-16-v2220",
     version: "v2.22.0",
     date: "October 16 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "MUSIC & UX",
     title: "Music Tab: Pause Button, Neutral Branding & Renamed to Music",
     summary: "Added a dedicated Pause/Resume button to keep tracks loaded without stopping. Removed all YouTube branding — the tab is now simply called 'Music' with neutral music icons throughout.",
@@ -3987,6 +4012,7 @@ function Sidebar({
   currentView = 'dashboard',
   onSelectView,
   isYouTubePlaying = false,
+  isYouTubePaused = false,
   currentUserName = '',
   onEditName
 }) {
@@ -4074,11 +4100,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.22.0">
+          <div className="logo" title="PH Portal v2.22.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.22.0</span>
+              <span className="logo-version">v2.22.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4218,17 +4244,21 @@ function Sidebar({
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               })}
               aria-current={currentView === 'youtube' ? 'page' : undefined}
-              title={isYouTubePlaying ? "Music (Playing)" : "Music"}
+              title={isYouTubePlaying ? "Music (Playing)" : isYouTubePaused ? "Music (Paused)" : "Music"}
             >
               <i className="bi bi-music-note-beamed me-1 nav-youtube-icon" aria-hidden="true"></i>
               <span className="nav-text">Music</span>
-              {isYouTubePlaying && (
+              {isYouTubePlaying ? (
                 <span className="nav-youtube-pulse" title="Playing">
                   <span className="pulse-bar bar-1"></span>
                   <span className="pulse-bar bar-2"></span>
                   <span className="pulse-bar bar-3"></span>
                 </span>
-              )}
+              ) : isYouTubePaused ? (
+                <span className="nav-youtube-pulse is-paused" title="Paused">
+                  <i className="bi bi-pause-fill text-warning" style={{ fontSize: '11px' }}></i>
+                </span>
+              ) : null}
             </button>
           </nav>
 
@@ -6174,6 +6204,7 @@ export default function App() {
     }
   });
   const [isYtPlaying, setIsYtPlaying] = useState(false);
+  const [isYtPaused, setIsYtPaused] = useState(false);
   const [isYtMiniMinimized, setIsYtMiniMinimized] = useState(() => {
     const saved = localStorage.getItem('yt_mini_minimized');
     return saved !== null ? saved === 'true' : true;
@@ -6388,7 +6419,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.22.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.22.1';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6404,7 +6435,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.22.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.22.1';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -6632,6 +6663,7 @@ export default function App() {
           currentView={currentView}
           onSelectView={setCurrentView}
           isYouTubePlaying={isYtPlaying}
+          isYouTubePaused={isYtPaused}
           currentUserName={currentUserName}
           onEditName={() => setShowUserNameModal(true)}
         />
@@ -6720,6 +6752,8 @@ export default function App() {
               setActiveVideo={setYtActiveVideo}
               isPlaying={isYtPlaying}
               setIsPlaying={setIsYtPlaying}
+              isPaused={isYtPaused}
+              setIsPaused={setIsYtPaused}
               isMiniMinimized={isYtMiniMinimized}
               setIsMiniMinimized={setIsYtMiniMinimized}
               isHideVideo={isYtHideVideo}
