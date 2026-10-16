@@ -111,10 +111,157 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-16-v2226",
+    version: "v2.22.6",
+    date: "October 16 2026",
+    isLatest: true,
+    badge: "UI ALIGNMENT",
+    title: "Pending Tasks: Filter Tabs Aligned With Task Box",
+    summary: "Aligned the Pending, Resolved, and All Tasks tab bar and controls cleanly to the exact 1180px width and bounding edges of the task cards below.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layout-three-columns",
+        title: "Flush Tabs & Box Alignment",
+        desc: "Constrained the controls bar and metric stats to 1180px centered so the filter tabs and search controls align flush with the task cards.",
+        tag: "Alignment"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-16-v2225",
+    version: "v2.22.5",
+    date: "October 16 2026",
+    isLatest: false,
+    badge: "UI REFINEMENT",
+    title: "Pending Tasks: Expanded Task Box Width",
+    summary: "Further increased the width of Pending Task boxes to 1180px, providing expansive horizontal space for long task details, comments, and status controls while remaining balanced on widescreen displays.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-expand",
+        title: "Expanded 1180px Box Width",
+        desc: "Increased task card max-width to 1180px for a more spacious, comfortably wide feed layout.",
+        tag: "Layout"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-16-v2224",
+    version: "v2.22.4",
+    date: "October 16 2026",
+    isLatest: false,
+    badge: "UI REFINEMENT",
+    title: "Pending Tasks: Balanced Moderate Task Box Width",
+    summary: "Increased the width of Pending Task boxes to a balanced, moderate 980px width, providing ample room for task details, comments, and action buttons without excessive empty space.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-expand",
+        title: "Balanced 980px Box Width",
+        desc: "Expanded task feed cards from 740px to a comfortable 980px width while keeping page banners and metrics at full width.",
+        tag: "Layout"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-16-v2223",
+    version: "v2.22.3",
+    date: "October 16 2026",
+    isLatest: false,
+    badge: "UI REFINEMENT",
+    title: "Pending Tasks: Compact Task Box Width",
+    summary: "Refined Pending Handover Tasks layout: preserved full page width (1440px) for banners, metrics, and search controls while reducing only the task cards and empty state to a compact 740px width.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-layout-sidebar-inset",
+        title: "Targeted Task Card Width",
+        desc: "Restored full 1440px page container width and constrained only the pending task cards and feed to a compact 740px width.",
+        tag: "Layout"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-16-v2222",
+    version: "v2.22.2",
+    date: "October 16 2026",
+    isLatest: false,
+    badge: "UI REFINEMENT",
+    title: "Pending Tasks: Compact Centered Feed Width",
+    summary: "Reduced the container and feed max-width to a compact 920px, optimizing readability and eliminating wide empty margins on widescreen displays.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-contract",
+        title: "Compact Feed Max-Width",
+        desc: "Reduced max-width from 1440px to 920px for a clean, cohesive, and centered task feed.",
+        tag: "Width"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-16-v2221",
+    version: "v2.22.1",
+    date: "October 16 2026",
+    isLatest: false,
+    badge: "UI ENHANCEMENT",
+    title: "Pending Tasks: Collapsible Comments & Header Date Alignment",
+    summary: "Streamlined the Pending task view with collapsible comments ('More Comments' / 'Show Less' controls) and relocated the task creation date to the top-right corner for clean, compact readability.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-arrows-collapse",
+        title: "Collapsible Long Comment Threads",
+        desc: "Tasks with multiple comments display a compact preview by default, with one-click 'More Comments' and 'Show Less' toggles.",
+        tag: "Comments"
+      },
+      {
+        type: "ui",
+        icon: "bi-calendar-event",
+        title: "Top-Right Date Placement",
+        desc: "Relocated the task post timestamp to the upper-right header of each box, keeping titles on the left and metadata balanced.",
+        tag: "Layout"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-16-v2220",
+    version: "v2.22.0",
+    date: "October 16 2026",
+    isLatest: false,
+    badge: "NEW FEATURE",
+    title: "Pending Tasks: Comments & Discussion System with Real-Time Database Sync",
+    summary: "Introduced interactive commenting on pending tasks with live Supabase database persistence, multi-user discussion tracking, and a compact responsive card layout that eliminates excessive spacing.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-chat-left-text-fill",
+        title: "Live Task Comments",
+        desc: "Post and read comments on pending tasks with commenter attribution, timestamps, and real-time cross-device sync.",
+        tag: "Comments"
+      },
+      {
+        type: "database",
+        icon: "bi-database-fill-check",
+        title: "Supabase Database Integration",
+        desc: "All comments are synchronized to the shared cloud database, visible across all devices and team member shifts.",
+        tag: "Database"
+      },
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-contract",
+        title: "Compact Dynamic Layout",
+        desc: "Significantly reduced empty padding, margins, and card height for a clean, dense, and content-driven view.",
+        tag: "UI Clean"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-15-v2219",
     version: "v2.21.9",
     date: "October 15 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "MEDIA & STEALTH",
     title: "YouTube Music: Picture-in-Picture Stealth & Audio-Only Mode",
     summary: "Added Picture-in-Picture mode with hidden video playback so music streams discreetly in a compact audio pill or audio visualizer without displaying video.",
@@ -4049,11 +4196,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.21.9">
+          <div className="logo" title="PH Portal v2.22.6">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.21.9</span>
+              <span className="logo-version">v2.22.6</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -6363,7 +6510,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.21.9';
+      const currentVersion = latestAnnouncement?.version || 'v2.22.6';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6379,7 +6526,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.21.9';
+      const currentVersion = latestAnnouncement?.version || 'v2.22.6';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

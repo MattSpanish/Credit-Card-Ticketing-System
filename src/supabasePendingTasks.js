@@ -6,11 +6,13 @@ export const DEFAULT_PENDING_SUPABASE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16eHVud3B6ZXdsc2RrbXN1ZW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNTI3OTgsImV4cCI6MjEwNzYyODc5OH0.ZRDyobgR_kS3S4yGssbhbYXWU3VwcilEMkZ8FLtLIU4';
 
 export const PENDING_TASKS_STORAGE_KEY = 'cc_pending_tasks_data_v1';
+export const PENDING_COMMENTS_STORAGE_KEY = 'cc_pending_task_comments_v1';
 
 // SQL definition for table creation in Supabase SQL editor
 export const PENDING_TASKS_TABLE_SQL = `-- Run this in your Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/mzxunwpzewlsdkmsuenu/sql/new
 
+-- 1. Table for Pending Shift Handover Tasks
 CREATE TABLE IF NOT EXISTS public.pending_tasks (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -43,6 +45,29 @@ CREATE POLICY "Allow public update on pending_tasks" ON public.pending_tasks FOR
 
 DROP POLICY IF EXISTS "Allow public delete on pending_tasks" ON public.pending_tasks;
 CREATE POLICY "Allow public delete on pending_tasks" ON public.pending_tasks FOR DELETE USING (true);
+
+-- 2. Table for Pending Task Comments
+CREATE TABLE IF NOT EXISTS public.pending_task_comments (
+    id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL,
+    user_name TEXT NOT NULL,
+    comment TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pending_comments_task_id ON public.pending_task_comments(task_id);
+CREATE INDEX IF NOT EXISTS idx_pending_comments_created_at ON public.pending_task_comments(created_at);
+
+ALTER TABLE public.pending_task_comments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public select on pending_task_comments" ON public.pending_task_comments;
+CREATE POLICY "Allow public select on pending_task_comments" ON public.pending_task_comments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public insert on pending_task_comments" ON public.pending_task_comments;
+CREATE POLICY "Allow public insert on pending_task_comments" ON public.pending_task_comments FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public delete on pending_task_comments" ON public.pending_task_comments;
+CREATE POLICY "Allow public delete on pending_task_comments" ON public.pending_task_comments FOR DELETE USING (true);
 `;
 
 /**
@@ -80,13 +105,34 @@ export function savePendingSupabaseConfig(url, key) {
 
 /**
  * Normalizes database row to match UI camelCase structure.
+ * Transparently extracts any embedded comments if present.
  */
 export function normalizePendingTaskFromDb(row) {
   if (!row) return null;
+  let rawDetails = row.details || '';
+  let embeddedComments = [];
+
+  const commentMatch = rawDetails.match(/<!--comments:([\s\S]*?)-->/);
+  if (commentMatch) {
+    try {
+      const decoded = decodeURIComponent(commentMatch[1]);
+      const json = JSON.parse(decoded);
+      if (Array.isArray(json)) {
+        embeddedComments = json;
+      }
+    } catch (e) {
+      try {
+        const json = JSON.parse(commentMatch[1]);
+        if (Array.isArray(json)) embeddedComments = json;
+      } catch (_) {}
+    }
+    rawDetails = rawDetails.replace(/\s*<!--comments:[\s\S]*?-->/, '').trimEnd();
+  }
+
   return {
     id: String(row.id),
     title: row.title || '',
-    details: row.details || '',
+    details: rawDetails,
     createdBy: (row.created_by || row.createdBy || 'Support').trim(),
     createdAt: row.created_at || row.createdAt || new Date().toISOString(),
     status: row.status === 'resolved' ? 'resolved' : 'pending',
@@ -94,6 +140,21 @@ export function normalizePendingTaskFromDb(row) {
     resolutionNotes: row.resolution_notes || row.resolutionNotes || null,
     resolvedAt: row.resolved_at || row.resolvedAt || null,
     updatedAt: row.updated_at || row.updatedAt || new Date().toISOString(),
+    embeddedComments,
+  };
+}
+
+/**
+ * Normalizes a database row from pending_task_comments.
+ */
+export function normalizePendingCommentFromDb(row) {
+  if (!row) return null;
+  return {
+    id: String(row.id),
+    taskId: String(row.task_id || row.taskId || ''),
+    userName: (row.user_name || row.userName || 'Support').trim(),
+    comment: (row.comment || '').trim(),
+    createdAt: row.created_at || row.createdAt || new Date().toISOString(),
   };
 }
 
@@ -124,6 +185,56 @@ export function saveLocalPendingTasks(tasks) {
     console.error('Failed to save local pending tasks cache', e);
   }
 }
+
+/**
+ * Local cache helpers for pending task comments.
+ */
+export function getLocalPendingComments() {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(PENDING_COMMENTS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error('Failed to read local comments cache', e);
+    return [];
+  }
+}
+
+export function saveLocalPendingComments(comments) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(PENDING_COMMENTS_STORAGE_KEY, JSON.stringify(comments));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('pending_comments_changed'));
+    }
+  } catch (e) {
+    console.error('Failed to save local comments cache', e);
+  }
+}
+
+export function mergeLocalPendingComments(newComments) {
+  if (!Array.isArray(newComments) || newComments.length === 0) return;
+  const current = getLocalPendingComments();
+  const existingMap = new Map(current.map((c) => [c.id, c]));
+  let hasChanges = false;
+
+  for (const c of newComments) {
+    if (c && c.id && !existingMap.has(c.id)) {
+      existingMap.set(c.id, c);
+      hasChanges = true;
+    }
+  }
+
+  if (hasChanges) {
+    const merged = Array.from(existingMap.values()).sort(
+      (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
+    );
+    saveLocalPendingComments(merged);
+  }
+}
+
 
 /**
  * Tests connection to Supabase and verifies if the pending_tasks table is created.
@@ -195,6 +306,13 @@ export async function fetchPendingTasksFromDb() {
       const rows = await res.json();
       const items = Array.isArray(rows) ? rows.map(normalizePendingTaskFromDb).filter(Boolean) : [];
       saveLocalPendingTasks(items);
+
+      // Extract and merge any embedded comments across tasks
+      const embeddedComments = items.flatMap((it) => it.embeddedComments || []);
+      if (embeddedComments.length > 0) {
+        mergeLocalPendingComments(embeddedComments);
+      }
+
       return { success: true, items, source: 'cloud' };
     }
 
@@ -430,6 +548,13 @@ export async function deletePendingTaskFromDb(id) {
   const updatedLocal = localList.filter((t) => t.id !== id);
   saveLocalPendingTasks(updatedLocal);
 
+  // Clean up comments for this task locally
+  const currentComments = getLocalPendingComments();
+  const remainingComments = currentComments.filter((c) => c.taskId !== id);
+  if (remainingComments.length !== currentComments.length) {
+    saveLocalPendingComments(remainingComments);
+  }
+
   if (!config.isConfigured) {
     return { success: true, tasks: updatedLocal, source: 'local' };
   }
@@ -444,9 +569,219 @@ export async function deletePendingTaskFromDb(id) {
       },
     });
 
+    // Also attempt to delete comments in cloud table if it exists
+    fetch(`${config.url}/rest/v1/pending_task_comments?task_id=eq.${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: config.key,
+        Authorization: `Bearer ${config.key}`,
+        'Content-Type': 'application/json',
+      },
+    }).catch(() => {});
+
     return { success: res.ok, tasks: updatedLocal, source: 'cloud' };
   } catch (err) {
     console.error('Failed to delete pending task from Supabase:', err);
     return { success: true, tasks: updatedLocal, source: 'local_offline' };
   }
 }
+
+/**
+ * Fallback helper that serializes task comments into the task details trailer
+ * in the database so that comments persist across devices even if the dedicated
+ * pending_task_comments table has not yet been executed in Supabase SQL editor.
+ */
+async function syncCommentsViaTaskMetadata(taskId, taskComments, config) {
+  if (!config || !config.isConfigured || !taskId) return;
+  try {
+    // 1. Fetch current details for the task
+    const res = await fetch(
+      `${config.url}/rest/v1/pending_tasks?id=eq.${encodeURIComponent(taskId)}&select=details`,
+      {
+        method: 'GET',
+        headers: {
+          apikey: config.key,
+          Authorization: `Bearer ${config.key}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) return;
+
+    let baseDetails = rows[0].details || '';
+    // Strip any existing comments trailer
+    baseDetails = baseDetails.replace(/\s*<!--comments:[\s\S]*?-->/, '').trimEnd();
+
+    // Re-encode with new comments
+    let updatedDetails = baseDetails;
+    if (taskComments && taskComments.length > 0) {
+      updatedDetails = `${baseDetails}\n\n<!--comments:${encodeURIComponent(JSON.stringify(taskComments))}-->`;
+    }
+
+    // 2. PATCH task row
+    await fetch(`${config.url}/rest/v1/pending_tasks?id=eq.${encodeURIComponent(taskId)}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: config.key,
+        Authorization: `Bearer ${config.key}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        details: updatedDetails,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  } catch (err) {
+    console.warn('Failed to sync comments via task metadata:', err);
+  }
+}
+
+/**
+ * Fetches all comments for pending tasks from Supabase.
+ * Checks the dedicated pending_task_comments table and falls back to local cache.
+ */
+export async function fetchPendingCommentsFromDb() {
+  const config = getPendingSupabaseConfig();
+  const localList = getLocalPendingComments();
+
+  if (!config.isConfigured) {
+    return { success: true, comments: localList, source: 'local' };
+  }
+
+  try {
+    const res = await fetch(`${config.url}/rest/v1/pending_task_comments?select=*&order=created_at.asc`, {
+      method: 'GET',
+      headers: {
+        apikey: config.key,
+        Authorization: `Bearer ${config.key}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (res.ok) {
+      const rows = await res.json();
+      const comments = Array.isArray(rows) ? rows.map(normalizePendingCommentFromDb).filter(Boolean) : [];
+      saveLocalPendingComments(comments);
+      return { success: true, comments, source: 'cloud' };
+    }
+
+    // If 404/400 (table pending_task_comments not yet created), return localList (which includes embedded comments)
+    return { success: true, comments: localList, source: 'local_fallback', needsTable: res.status === 404 };
+  } catch (err) {
+    console.error('Error fetching comments from Supabase:', err);
+    return { success: false, comments: localList, source: 'local_fallback', error: err.message };
+  }
+}
+
+/**
+ * Posts a new comment to a pending task in Supabase and local cache.
+ */
+export async function createPendingCommentInDb({ taskId, comment, userName }) {
+  const config = getPendingSupabaseConfig();
+  const now = new Date().toISOString();
+  const id = `comment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const newComment = {
+    id,
+    taskId: String(taskId),
+    userName: (userName || 'Support').trim(),
+    comment: (comment || '').trim(),
+    createdAt: now,
+  };
+
+  // Immediate optimistic local cache update
+  const localList = getLocalPendingComments();
+  const updatedLocal = [...localList.filter((c) => c.id !== id), newComment];
+  saveLocalPendingComments(updatedLocal);
+
+  if (!config.isConfigured) {
+    return { success: true, comment: newComment, source: 'local' };
+  }
+
+  try {
+    // 1. Try dedicated table first
+    const dbPayload = {
+      id: newComment.id,
+      task_id: newComment.taskId,
+      user_name: newComment.userName,
+      comment: newComment.comment,
+      created_at: newComment.createdAt,
+    };
+
+    const res = await fetch(`${config.url}/rest/v1/pending_task_comments`, {
+      method: 'POST',
+      headers: {
+        apikey: config.key,
+        Authorization: `Bearer ${config.key}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(dbPayload),
+    });
+
+    if (res.ok) {
+      const inserted = await res.json().catch(() => []);
+      const saved = Array.isArray(inserted) && inserted[0]
+        ? normalizePendingCommentFromDb(inserted[0])
+        : newComment;
+      return { success: true, comment: saved, source: 'cloud' };
+    }
+
+    // 2. If table doesn't exist yet (HTTP 404), seamlessly sync via task metadata!
+    if (res.status === 404 || res.status === 400) {
+      const taskComments = updatedLocal.filter((c) => c.taskId === taskId);
+      await syncCommentsViaTaskMetadata(taskId, taskComments, config);
+      return { success: true, comment: newComment, source: 'cloud_embedded' };
+    }
+
+    return { success: true, comment: newComment, source: 'local' };
+  } catch (err) {
+    console.error('Failed to sync comment to Supabase:', err);
+    // Offline / network failure: fallback sync via task metadata if possible
+    try {
+      const taskComments = updatedLocal.filter((c) => c.taskId === taskId);
+      await syncCommentsViaTaskMetadata(taskId, taskComments, config);
+    } catch (_) {}
+    return { success: true, comment: newComment, source: 'local_offline' };
+  }
+}
+
+/**
+ * Deletes a comment from Supabase and local cache.
+ */
+export async function deletePendingCommentInDb(commentId, taskId) {
+  const config = getPendingSupabaseConfig();
+  const localList = getLocalPendingComments();
+  const updatedLocal = localList.filter((c) => c.id !== commentId);
+  saveLocalPendingComments(updatedLocal);
+
+  if (!config.isConfigured) {
+    return { success: true, source: 'local' };
+  }
+
+  try {
+    const res = await fetch(`${config.url}/rest/v1/pending_task_comments?id=eq.${encodeURIComponent(commentId)}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: config.key,
+        Authorization: `Bearer ${config.key}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (res.status === 404 || res.status === 400) {
+      // Table doesn't exist yet, sync removal via task metadata
+      const taskComments = updatedLocal.filter((c) => c.taskId === taskId);
+      await syncCommentsViaTaskMetadata(taskId, taskComments, config);
+    }
+
+    return { success: true, source: 'cloud' };
+  } catch (err) {
+    console.error('Failed to delete comment in Supabase:', err);
+    return { success: true, source: 'local_offline' };
+  }
+}
+

@@ -12,6 +12,10 @@ import {
   reopenPendingTaskInDb,
   deletePendingTaskFromDb,
   getLocalPendingTasks,
+  getLocalPendingComments,
+  fetchPendingCommentsFromDb,
+  createPendingCommentInDb,
+  deletePendingCommentInDb,
   PENDING_TASKS_TABLE_SQL,
   DEFAULT_PENDING_SUPABASE_URL,
 } from './supabasePendingTasks';
@@ -31,9 +35,44 @@ function formatDate(isoStr) {
   });
 }
 
+function formatCommentDate(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return isoStr;
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+
+  const timeStr = d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  if (isToday) return `Today at ${timeStr}`;
+  if (isYesterday) return `Yesterday at ${timeStr}`;
+
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 export default function PendingTasksPage({ onBackToDashboard, currentUserName }) {
   // Local state & database sync state
   const [tasks, setTasks] = useState(() => getLocalPendingTasks());
+  const [comments, setComments] = useState(() => getLocalPendingComments());
+  const [commentDrafts, setCommentDrafts] = useState({});
+  const [commentPosting, setCommentPosting] = useState({});
+  const [expandedComments, setExpandedComments] = useState({});
+  const [expandedMoreComments, setExpandedMoreComments] = useState({});
+
   const [cloudStatus, setCloudStatus] = useState('connecting'); // 'connected' | 'needs_table' | 'offline' | 'connecting'
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSqlModal, setShowSqlModal] = useState(false);
@@ -76,21 +115,31 @@ export default function PendingTasksPage({ onBackToDashboard, currentUserName })
     }
   }, [currentUserName]);
 
-  // Cloud Database Sync Function
+  // Cloud Database Sync Function (Syncs both tasks and comments)
   const syncWithDb = useCallback(async (showToastFeedback = false) => {
     setIsSyncing(true);
     try {
-      const res = await fetchPendingTasksFromDb();
-      if (res && res.items) {
-        setTasks(res.items);
+      const [tasksRes, commentsRes] = await Promise.all([
+        fetchPendingTasksFromDb(),
+        fetchPendingCommentsFromDb(),
+      ]);
+
+      if (tasksRes && tasksRes.items) {
+        setTasks(tasksRes.items);
       }
 
-      if (res && res.source === 'cloud') {
+      if (commentsRes && commentsRes.comments) {
+        setComments(commentsRes.comments);
+      } else {
+        setComments(getLocalPendingComments());
+      }
+
+      if (tasksRes && tasksRes.source === 'cloud') {
         setCloudStatus('connected');
         if (showToastFeedback) {
           showToast('Tasks synchronized with Supabase database!');
         }
-      } else if (res && res.needsTable) {
+      } else if (tasksRes && tasksRes.needsTable) {
         setCloudStatus('needs_table');
         if (showToastFeedback) {
           showToast('Connected to Supabase, but "pending_tasks" table is not yet created.', 'info');
@@ -113,26 +162,104 @@ export default function PendingTasksPage({ onBackToDashboard, currentUserName })
 
     // Listen for local changes across tabs or windows
     const handleStorageChange = () => {
-      const cached = getLocalPendingTasks();
-      if (cached && cached.length >= 0) {
-        setTasks(cached);
+      const cachedTasks = getLocalPendingTasks();
+      if (cachedTasks && cachedTasks.length >= 0) {
+        setTasks(cachedTasks);
       }
+      const cachedComments = getLocalPendingComments();
+      if (cachedComments && cachedComments.length >= 0) {
+        setComments(cachedComments);
+      }
+    };
+
+    const handleFocus = () => {
+      syncWithDb();
     };
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('pending_tasks_changed', handleStorageChange);
+    window.addEventListener('pending_comments_changed', handleStorageChange);
+    window.addEventListener('focus', handleFocus);
 
-    // Auto sync with Supabase every 8 seconds so other shifts' tasks appear live
+    // Auto sync with Supabase every 5 seconds for real-time team collaboration
     const pollInterval = setInterval(() => {
       syncWithDb();
-    }, 8000);
+    }, 5000);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('pending_tasks_changed', handleStorageChange);
+      window.removeEventListener('pending_comments_changed', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
       clearInterval(pollInterval);
     };
   }, [syncWithDb]);
+
+  // Comment Handlers
+  const handleCommentDraftChange = (taskId, text) => {
+    setCommentDrafts((prev) => ({ ...prev, [taskId]: text }));
+  };
+
+  const toggleCommentsExpanded = (taskId) => {
+    setExpandedComments((prev) => ({
+      ...prev,
+      [taskId]: prev[taskId] === undefined ? false : !prev[taskId],
+    }));
+  };
+
+  const toggleMoreComments = (taskId) => {
+    setExpandedMoreComments((prev) => ({
+      ...prev,
+      [taskId]: !prev[taskId],
+    }));
+  };
+
+  const handlePostComment = async (taskId) => {
+    const text = (commentDrafts[taskId] || '').trim();
+    if (!text) return;
+
+    const author = currentUserName || getCurrentUserName() || 'Support';
+
+    // Clear input immediately for responsive UX
+    setCommentDrafts((prev) => ({ ...prev, [taskId]: '' }));
+    setCommentPosting((prev) => ({ ...prev, [taskId]: true }));
+
+    // Ensure expanded so user sees their new comment
+    setExpandedComments((prev) => ({ ...prev, [taskId]: true }));
+    setExpandedMoreComments((prev) => ({ ...prev, [taskId]: true }));
+
+    try {
+      const res = await createPendingCommentInDb({
+        taskId,
+        comment: text,
+        userName: author,
+      });
+
+      if (res && res.comment) {
+        setComments((prev) => [...prev.filter((c) => c.id !== res.comment.id), res.comment]);
+      }
+      showToast('Comment posted!');
+      syncWithDb();
+    } catch (err) {
+      console.error('Failed to post comment:', err);
+      showToast('Comment saved locally.', 'info');
+    } finally {
+      setCommentPosting((prev) => ({ ...prev, [taskId]: false }));
+    }
+  };
+
+  const handleDeleteComment = async (commentId, taskId) => {
+    try {
+      await deletePendingCommentInDb(commentId, taskId);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      showToast('Comment deleted.');
+      syncWithDb();
+    } catch (err) {
+      console.error('Failed to delete comment:', err);
+      showToast('Comment removed locally.', 'info');
+    }
+  };
+
 
   // Summary counts
   const summary = useMemo(() => getPendingTasksSummary(tasks), [tasks]);
@@ -153,7 +280,10 @@ export default function PendingTasksPage({ onBackToDashboard, currentUserName })
           const creatorMatch = (task.createdBy || '').toLowerCase().includes(q);
           const resolverMatch = (task.resolvedBy || '').toLowerCase().includes(q);
           const notesMatch = (task.resolutionNotes || '').toLowerCase().includes(q);
-          return titleMatch || detailsMatch || creatorMatch || resolverMatch || notesMatch;
+          const commentsMatch = comments.some(
+            (c) => c.taskId === task.id && (c.comment || '').toLowerCase().includes(q)
+          );
+          return titleMatch || detailsMatch || creatorMatch || resolverMatch || notesMatch || commentsMatch;
         }
 
         return true;
@@ -163,7 +293,7 @@ export default function PendingTasksPage({ onBackToDashboard, currentUserName })
         const timeB = new Date(b.createdAt || 0).getTime();
         return sortOrder === 'newest' ? timeB - timeA : timeA - timeB;
       });
-  }, [tasks, activeFilter, searchQuery, sortOrder]);
+  }, [tasks, comments, activeFilter, searchQuery, sortOrder]);
 
   // Open Create Modal
   const handleOpenCreate = () => {
@@ -569,7 +699,7 @@ export default function PendingTasksPage({ onBackToDashboard, currentUserName })
                 key={task.id}
                 className={`pending-task-card ${isPending ? 'is-pending' : 'is-resolved'}`}
               >
-                {/* Card Top Row: Status pill & Title on upper left, delete icon on upper right */}
+                {/* Card Top Row: Status pill & Title on upper left, Date & delete icon on upper right */}
                 <div className="pending-card-top-row">
                   <div className="pending-card-title-group">
                     <span className={`shift-task-status-pill ${task.status}`}>
@@ -579,17 +709,24 @@ export default function PendingTasksPage({ onBackToDashboard, currentUserName })
                     <h2 className="pending-card-title">{task.title}</h2>
                   </div>
 
-                  {!isPending && (
-                    <button
-                      type="button"
-                      className="btn-task-delete"
-                      onClick={() => handleDelete(task)}
-                      title="Delete resolved task"
-                      aria-label={`Delete task ${task.title}`}
-                    >
-                      <i className="bi bi-trash3" aria-hidden="true"></i>
-                    </button>
-                  )}
+                  <div className="pending-card-top-right">
+                    <span className="pending-card-top-date" title={`Posted on ${formatDate(task.createdAt)}`}>
+                      <i className="bi bi-clock" aria-hidden="true"></i>
+                      <span>{formatDate(task.createdAt)}</span>
+                    </span>
+
+                    {!isPending && (
+                      <button
+                        type="button"
+                        className="btn-task-delete"
+                        onClick={() => handleDelete(task)}
+                        title="Delete resolved task"
+                        aria-label={`Delete task ${task.title}`}
+                      >
+                        <i className="bi bi-trash3" aria-hidden="true"></i>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Details Section - Generous and clear */}
@@ -616,18 +753,137 @@ export default function PendingTasksPage({ onBackToDashboard, currentUserName })
                   </div>
                 )}
 
-                {/* Card Meta Footer: Author and Date on bottom left (no date icon), Resolve action on bottom right */}
+                {/* Comments Section - Real-time Discussion & Notes */}
+                {(() => {
+                  const taskComments = comments
+                    .filter((c) => c.taskId === task.id)
+                    .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+                  const isExpanded = expandedComments[task.id] !== false;
+                  const DEFAULT_VISIBLE_COMMENTS = 2;
+                  const isMoreExpanded = Boolean(expandedMoreComments[task.id]);
+                  const hasExcessComments = taskComments.length > DEFAULT_VISIBLE_COMMENTS;
+                  const displayedComments = isMoreExpanded || !hasExcessComments
+                    ? taskComments
+                    : taskComments.slice(0, DEFAULT_VISIBLE_COMMENTS);
+
+                  return (
+                    <div className="pending-comments-section">
+                      <div className="pending-comments-bar-header">
+                        <button
+                          type="button"
+                          className={`btn-toggle-comments ${taskComments.length > 0 ? 'has-comments' : ''}`}
+                          onClick={() => toggleCommentsExpanded(task.id)}
+                          title={isExpanded ? 'Collapse comments' : 'Expand comments'}
+                        >
+                          <i className={`bi ${taskComments.length > 0 ? 'bi-chat-left-text-fill' : 'bi-chat-left-dots'}`}></i>
+                          <span>
+                            {taskComments.length === 0
+                              ? '0 Comments'
+                              : `${taskComments.length} ${taskComments.length === 1 ? 'Comment' : 'Comments'}`}
+                          </span>
+                          {taskComments.length > 0 && (
+                            <i
+                              className={`bi bi-chevron-${isExpanded ? 'up' : 'down'}`}
+                              style={{ fontSize: '0.65rem', opacity: 0.7 }}
+                            ></i>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Comments Thread */}
+                      {isExpanded && taskComments.length > 0 && (
+                        <div className="pending-comments-list">
+                          {displayedComments.map((comment) => {
+                            const canDelete =
+                              (currentUserName && comment.userName.toLowerCase() === currentUserName.toLowerCase()) ||
+                              comment.userName.toLowerCase() === (getCurrentUserName() || '').toLowerCase();
+
+                            return (
+                              <div key={comment.id} className="pending-comment-item">
+                                <div className="pending-comment-header">
+                                  <div className="pending-comment-user">
+                                    <span className="pending-comment-avatar">
+                                      {(comment.userName || 'U').slice(0, 2).toUpperCase()}
+                                    </span>
+                                    <strong className="pending-comment-author">{comment.userName}</strong>
+                                  </div>
+                                  <div className="pending-comment-meta">
+                                    <span className="pending-comment-time">
+                                      {formatCommentDate(comment.createdAt)}
+                                    </span>
+                                    {canDelete && (
+                                      <button
+                                        type="button"
+                                        className="btn-comment-delete"
+                                        onClick={() => handleDeleteComment(comment.id, task.id)}
+                                        title="Delete comment"
+                                        aria-label="Delete comment"
+                                      >
+                                        <i className="bi bi-trash3" aria-hidden="true"></i>
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="pending-comment-body">{comment.comment}</div>
+                              </div>
+                            );
+                          })}
+
+                          {hasExcessComments && (
+                            <button
+                              type="button"
+                              className="btn-comments-more"
+                              onClick={() => toggleMoreComments(task.id)}
+                              title={isMoreExpanded ? 'Collapse comments' : 'View more comments'}
+                            >
+                              <i className={`bi ${isMoreExpanded ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+                              <span>
+                                {isMoreExpanded
+                                  ? 'Show Less'
+                                  : `More Comments (${taskComments.length - DEFAULT_VISIBLE_COMMENTS})`}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Quick Add Comment Input Bar */}
+                      <div className="pending-comment-input-bar">
+                        <input
+                          type="text"
+                          className="pending-comment-input"
+                          placeholder={`Add a comment as ${currentUserName || getCurrentUserName() || 'Support'}...`}
+                          value={commentDrafts[task.id] || ''}
+                          onChange={(e) => handleCommentDraftChange(task.id, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handlePostComment(task.id);
+                            }
+                          }}
+                          aria-label={`Add comment on task ${task.title}`}
+                        />
+                        <button
+                          type="button"
+                          className="btn-comment-send"
+                          disabled={!(commentDrafts[task.id] || '').trim() || commentPosting[task.id]}
+                          onClick={() => handlePostComment(task.id)}
+                          title="Post comment (Enter)"
+                          aria-label="Post comment"
+                        >
+                          <i className="bi bi-send-fill" aria-hidden="true"></i>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Card Meta Footer: Author on bottom left, Resolve action on bottom right */}
                 <div className="pending-card-meta">
                   <div className="pending-meta-left">
                     <span className="pending-meta-item pending-meta-author">
                       <i className="bi bi-person-fill" style={{ color: '#8b5cf6' }}></i>
                       <span>Posted by <strong>{task.createdBy || 'Support'}</strong></span>
-                    </span>
-
-                    <span className="pending-meta-dot">•</span>
-
-                    <span className="pending-meta-item pending-meta-date">
-                      <span>{formatDate(task.createdAt)}</span>
                     </span>
                   </div>
 
