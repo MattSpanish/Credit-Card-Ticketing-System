@@ -469,12 +469,12 @@ export default function YouTubePage({
           <div>
             <div className="youtube-kicker">
               <span className="kicker-pill youtube-kicker-pill">
-                <i className="bi bi-youtube me-1 text-danger" aria-hidden="true"></i> YouTube Music
+                <i className="bi bi-music-note-beamed me-1" aria-hidden="true"></i> Music
               </span>
             </div>
-            <h1>YOUTUBE MUSIC</h1>
+            <h1>MUSIC</h1>
             <p className="panel-subtitle">
-              Search any song, artist, or stream and play it directly on YouTube Music. Keeps playing continuously while you work across other tabs.
+              Search any song, artist, or stream and play it instantly. Keeps playing continuously while you work across other tabs.
             </p>
           </div>
           <button
@@ -523,8 +523,8 @@ export default function YouTubePage({
             {/* FLOATING HEADER (Visible in Mini-Player mode on other tabs or when PiP active) */}
             {!isFullView && isPlaying && activeVideo && (
               <div className="youtube-mini-header">
-                <div className="youtube-mini-title-wrap" title={activeVideo.title || 'YouTube Music Player'}>
-                  <i className="bi bi-youtube text-danger me-1"></i>
+                <div className="youtube-mini-title-wrap" title={activeVideo.title || 'Music Player'}>
+                  <i className="bi bi-music-note-beamed me-1"></i>
                   <span className="youtube-mini-title-text">{activeVideo.title || 'Playing Video'}</span>
                 </div>
                 <div className="youtube-mini-actions">
@@ -545,8 +545,8 @@ export default function YouTubePage({
                       onSelectView && onSelectView('youtube');
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    title="Open YouTube Music Tab"
-                    aria-label="Open YouTube Music Tab"
+                    title="Open Music Tab"
+                    aria-label="Open Music Tab"
                   >
                     <i className="bi bi-arrows-angle-expand"></i>
                   </button>
@@ -572,7 +572,7 @@ export default function YouTubePage({
                   <span className="sound-bar bar-3"></span>
                 </div>
                 <span className="youtube-pill-title" title={activeVideo.title || 'Playing Video'}>
-                  {activeVideo.title || 'Playing YouTube Music'}
+                  {activeVideo.title || 'Playing Music'}
                 </span>
                 <span className="badge-stealth-pill ms-auto" title="Video hidden (audio only)">
                   <i className="bi bi-eye-slash-fill me-1"></i> Audio
@@ -597,7 +597,7 @@ export default function YouTubePage({
                   <div className="youtube-empty-icon-wrap">
                     <i className="bi bi-music-note-beamed"></i>
                   </div>
-                  <h3>Ready to Stream with YouTube Music</h3>
+                  <h3>Ready to Stream</h3>
                   <p>Search any artist, song, or lofi mix on the right to start playing instantly.</p>
                   <button
                     type="button"
@@ -633,7 +633,7 @@ export default function YouTubePage({
                     <h3 className="audio-stage-title" title={activeVideo.title}>{activeVideo.title}</h3>
                     <p className="audio-stage-artist">
                       <i className="bi bi-person-circle me-1"></i>
-                      {activeVideo.uploader || 'YouTube Artist'}
+                      {activeVideo.uploader || 'Artist'}
                     </p>
                     <div className="audio-stage-soundwave">
                       <span className="stage-wave wave-1"></span>
@@ -649,6 +649,15 @@ export default function YouTubePage({
                 </div>
 
                 <div className="audio-stage-toolbar">
+                  <button
+                    type="button"
+                    className="btn-audio-toolbar"
+                    onClick={() => setIsPlaying((prev) => !prev)}
+                    title={isPlaying ? 'Pause music' : 'Resume music'}
+                  >
+                    <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} me-1 ${isPlaying ? 'text-warning' : 'text-success'}`}></i>
+                    {isPlaying ? 'Pause' : 'Resume'}
+                  </button>
                   <button
                     type="button"
                     className="btn-audio-toolbar"
@@ -689,7 +698,7 @@ export default function YouTubePage({
                   <span className="now-playing-tag">
                     <span className="pulse-dot"></span> NOW PLAYING
                   </span>
-                  <h3 className="now-playing-title">{activeVideo.title || 'YouTube Music Stream'}</h3>
+                  <h3 className="now-playing-title">{activeVideo.title || 'Music Stream'}</h3>
                   <div className="now-playing-meta">
                     {activeVideo.uploader && (
                       <span className="now-playing-channel">
@@ -704,12 +713,21 @@ export default function YouTubePage({
                         rel="noopener noreferrer"
                         className="now-playing-link"
                       >
-                        <i className="bi bi-box-arrow-up-right me-1"></i> YouTube Music
+                        <i className="bi bi-box-arrow-up-right me-1"></i> Listen Online
                       </a>
                     )}
                   </div>
                 </div>
                 <div className="now-playing-right">
+                  <button
+                    type="button"
+                    className="btn-yt-action"
+                    onClick={() => setIsPlaying((prev) => !prev)}
+                    title={isPlaying ? 'Pause music' : 'Resume music'}
+                  >
+                    <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} me-1`}></i>
+                    {isPlaying ? 'Pause' : 'Resume'}
+                  </button>
                   <button
                     type="button"
                     className="btn-yt-action"
@@ -819,7 +837,7 @@ export default function YouTubePage({
           <div className="youtube-card">
             <div className="youtube-card-header">
               <h4 className="youtube-card-title">
-                <i className="bi bi-search me-1 text-danger"></i> Search YouTube Music
+                <i className="bi bi-search me-1 text-primary"></i> Search Music
               </h4>
             </div>
             <div className="youtube-card-body">
@@ -829,7 +847,7 @@ export default function YouTubePage({
                   <input
                     type="text"
                     className="youtube-search-input"
-                    placeholder="Search songs or artists on YouTube Music (e.g. Taylor Swift, Coldplay, Lofi)..."
+                    placeholder="Search songs or artists (e.g. Taylor Swift, Coldplay, Lofi)..."
                     value={searchInput}
                     onChange={(e) => {
                       setSearchInput(e.target.value);
@@ -857,7 +875,7 @@ export default function YouTubePage({
                       </>
                     ) : (
                       <>
-                        <i className="bi bi-search me-1"></i> Search YouTube Music
+                        <i className="bi bi-search me-1"></i> Search Music
                       </>
                     )}
                   </button>
@@ -865,9 +883,9 @@ export default function YouTubePage({
                     type="button"
                     className="btn-yt-search-external"
                     onClick={handleOpenSearchExternal}
-                    title="Search YouTube Music in a new tab"
+                    title="Search online in a new tab"
                   >
-                    <i className="bi bi-youtube me-1"></i> Open on YouTube Music
+                    <i className="bi bi-box-arrow-up-right me-1"></i> Search Online
                   </button>
                 </div>
               </form>
@@ -909,12 +927,12 @@ export default function YouTubePage({
               {isSearching ? (
                 <div className="youtube-search-loading">
                   <div className="spinner-border text-danger mb-2" role="status"></div>
-                  <p>Searching YouTube Music for matching songs...</p>
+                  <p>Searching for matching songs...</p>
                 </div>
               ) : searchResults.length === 0 ? (
                 <div className="youtube-search-empty">
                   <i className="bi bi-music-note text-muted mb-2"></i>
-                  <p>Type any song name or artist above and click <strong>Search YouTube Music</strong> to find tracks!</p>
+                  <p>Type any song name or artist above and click <strong>Search Music</strong> to find tracks!</p>
                 </div>
               ) : (
                 <div className="youtube-results-scrollable">

@@ -111,10 +111,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-16-v2220",
+    version: "v2.22.0",
+    date: "October 16 2026",
+    isLatest: true,
+    badge: "MUSIC & UX",
+    title: "Music Tab: Pause Button, Neutral Branding & Renamed to Music",
+    summary: "Added a dedicated Pause/Resume button to keep tracks loaded without stopping. Removed all YouTube branding — the tab is now simply called 'Music' with neutral music icons throughout.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-pause-fill",
+        title: "Pause / Resume Button",
+        desc: "Pause keeps the current track loaded. Hit Resume to continue — distinct from Stop which clears the player.",
+        tag: "Playback"
+      },
+      {
+        type: "improvement",
+        icon: "bi-music-note-beamed",
+        title: "Renamed to 'Music'",
+        desc: "Tab, sidebar, header, search card, and all labels updated from 'YouTube Music' to 'Music' with neutral music icons.",
+        tag: "Branding"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-15-v2219",
     version: "v2.21.9",
     date: "October 15 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "MEDIA & STEALTH",
     title: "YouTube Music: Picture-in-Picture Stealth & Audio-Only Mode",
     summary: "Added Picture-in-Picture mode with hidden video playback so music streams discreetly in a compact audio pill or audio visualizer without displaying video.",
@@ -4049,11 +4074,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.21.9">
+          <div className="logo" title="PH Portal v2.22.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.21.9</span>
+              <span className="logo-version">v2.22.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4193,10 +4218,10 @@ function Sidebar({
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               })}
               aria-current={currentView === 'youtube' ? 'page' : undefined}
-              title={isYouTubePlaying ? "YouTube Music (Playing)" : "YouTube Music"}
+              title={isYouTubePlaying ? "Music (Playing)" : "Music"}
             >
-              <i className="bi bi-youtube me-1 nav-youtube-icon" aria-hidden="true"></i>
-              <span className="nav-text">YouTube Music</span>
+              <i className="bi bi-music-note-beamed me-1 nav-youtube-icon" aria-hidden="true"></i>
+              <span className="nav-text">Music</span>
               {isYouTubePlaying && (
                 <span className="nav-youtube-pulse" title="Playing">
                   <span className="pulse-bar bar-1"></span>
@@ -6363,7 +6388,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.21.9';
+      const currentVersion = latestAnnouncement?.version || 'v2.22.0';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6379,7 +6404,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.21.9';
+      const currentVersion = latestAnnouncement?.version || 'v2.22.0';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
