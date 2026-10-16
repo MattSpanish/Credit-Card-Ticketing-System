@@ -126,6 +126,14 @@ export function deletePendingTask(id) {
   }
   const updatedTasks = currentTasks.filter((t) => t.id !== id);
   saveStoredPendingTasks(updatedTasks);
+
+  // Also clean up associated comments
+  const currentComments = getStoredPendingComments();
+  const updatedComments = currentComments.filter((c) => c.taskId !== id);
+  if (updatedComments.length !== currentComments.length) {
+    saveStoredPendingComments(updatedComments);
+  }
+
   return { success: true, tasks: updatedTasks };
 }
 
@@ -142,3 +150,65 @@ export function getPendingTasksSummary(tasks = null) {
     resolved: resolvedCount,
   };
 }
+
+export const PENDING_COMMENTS_STORAGE_KEY = 'cc_pending_task_comments_v1';
+
+/**
+ * Retrieves all stored comments from localStorage.
+ */
+export function getStoredPendingComments() {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(PENDING_COMMENTS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error('Error loading pending task comments from localStorage:', err);
+    return [];
+  }
+}
+
+/**
+ * Saves comments list to localStorage and dispatches event.
+ */
+export function saveStoredPendingComments(comments) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(PENDING_COMMENTS_STORAGE_KEY, JSON.stringify(comments));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('pending_comments_changed'));
+    }
+  } catch (err) {
+    console.error('Error saving pending task comments to localStorage:', err);
+  }
+}
+
+/**
+ * Creates a comment in localStorage cache.
+ */
+export function createPendingComment({ taskId, comment, userName }) {
+  const currentComments = getStoredPendingComments();
+  const newComment = {
+    id: `comment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    taskId: String(taskId),
+    userName: (userName || 'Support').trim(),
+    comment: (comment || '').trim(),
+    createdAt: new Date().toISOString(),
+  };
+
+  const updatedComments = [...currentComments, newComment];
+  saveStoredPendingComments(updatedComments);
+  return { comment: newComment, comments: updatedComments };
+}
+
+/**
+ * Deletes a comment by ID from localStorage.
+ */
+export function deletePendingComment(id) {
+  const currentComments = getStoredPendingComments();
+  const updatedComments = currentComments.filter((c) => c.id !== id);
+  saveStoredPendingComments(updatedComments);
+  return { success: true, comments: updatedComments };
+}
+
