@@ -9,6 +9,7 @@ import ToolsPage from './ToolsPage';
 import KnowledgeBasePage from './KnowledgeBasePage';
 import YouTubePage from './YouTubePage';
 import PendingTasksPage from './PendingTasksPage';
+import SchedulePlottingPage from './SchedulePlottingPage';
 import { getPendingTasksSummary } from './pendingTasksStorage';
 import {
   fetchReminders,
@@ -111,10 +112,160 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-18-v2253",
+    version: "v2.25.3",
+    date: "October 18 2026",
+    isLatest: true,
+    badge: "SYNTAX RESOLUTION",
+    title: "Schedule Plotting JSX Syntax Fix",
+    summary: "Fixed an unclosed table row tag in SchedulePlottingPage.jsx to ensure clean, instant build transforms with zero oxc parse errors.",
+    items: [
+      {
+        type: "fix",
+        icon: "bi-check2-circle",
+        title: "JSX Element Syntax Closure",
+        desc: "Closed the member table row element cleanly, resolving the Vite oxc parse error.",
+        tag: "Stability"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-18-v2252",
+    version: "v2.25.2",
+    date: "October 18 2026",
+    isLatest: false,
+    badge: "NAME-ONLY DRAG & DROP",
+    title: "Isolated Employee Name Dragging (Zero Schedule Movement)",
+    summary: "Refined schedule drag-and-drop so that only employee names move between slots. Shift hours, days off, holiday tags, and schedule details stay strictly fixed in their slots without moving or displacing any other shifts.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-arrow-left-right",
+        title: "Name-Only Slot Swapping",
+        desc: "Dragging an employee name to another slot swaps only the names. All schedule details (in/out hours, days off) stay in place.",
+        tag: "Schedule Plotting"
+      },
+      {
+        type: "ui",
+        icon: "bi-cursor-fill",
+        title: "Focused Name Drop Indicator",
+        desc: "Schedule time cells remain completely unperturbed while dragging. Only target name pills highlight with clear 'Swap Name' indicators.",
+        tag: "UI Enhancement"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-18-v2251",
+    version: "v2.25.1",
+    date: "October 18 2026",
+    isLatest: false,
+    badge: "COMPACT NAME DRAGGING",
+    title: "Isolated Name Pill Dragging & Smooth Slot Reordering",
+    summary: "Refined schedule drag-and-drop so that grabbing an employee lifts only their compact name badge instead of the entire table cell, providing clean cursor tracking and effortless slot moving.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-grip-vertical",
+        title: "Compact Name Badge Dragging",
+        desc: "Dragging an employee now floats only their clean name pill under the cursor, keeping the rest of the schedule table crisp and static.",
+        tag: "Drag & Drop"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-18-v2250",
+    version: "v2.25.0",
+    date: "October 18 2026",
+    isLatest: false,
+    badge: "DRAG & DROP & SAME-DAY SYNC",
+    title: "Drag-and-Drop Employee Slot Moving & Consistent Same-Day Shift Sync",
+    summary: "Added native drag-and-drop to easily move employees between schedule slots and shift groups. Implemented automatic same-day clock-in and clock-out consistency that synchronizes working hours across all agents on that date without altering other dates.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-grip-vertical",
+        title: "Drag-and-Drop Employee Slots",
+        desc: "Grab any employee's grip handle to drag and drop them between slots or move them directly across Night, Morning, and Afternoon shift groups.",
+        tag: "Drag & Drop"
+      },
+      {
+        type: "feature",
+        icon: "bi-clock-history",
+        title: "Same-Day Consistent Clock-In / Clock-Out",
+        desc: "Changing a shift's time automatically updates all corresponding working agents for that specific day, keeping duty times consistent without affecting other calendar dates.",
+        tag: "Schedule Sync"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-18-v2241",
+    version: "v2.24.1",
+    date: "October 18 2026",
+    isLatest: false,
+    badge: "ANNUAL ROSTER & 1-CLICK PLOTTING",
+    title: "Full-Year Calendar Navigation, Agent Renaming & 1-Click Shift Switching",
+    summary: "Expanded Schedule Plotting with full-year calendar navigation (jump to any week or month of the entire year), instant 1-click shift switching palette, agent renaming, and 1-click week duplication.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-calendar-range-fill",
+        title: "Full-Year Navigation & Month Jumper",
+        desc: "Browse and plot any week across the whole year with quick month buttons (Jan–Dec), week steppers, and year selector.",
+        tag: "Calendar"
+      },
+      {
+        type: "feature",
+        icon: "bi-lightning-charge-fill",
+        title: "1-Click Shift Selector Palette",
+        desc: "Tap any day cell to open a fast 1-click shift palette to set Night, Morning, Afternoon, Day-Off, Holiday, or OT/RD in seconds.",
+        tag: "Plotting"
+      },
+      {
+        type: "feature",
+        icon: "bi-person-gear",
+        title: "Agent Renaming & Week Copying",
+        desc: "Rename team members directly on the roster and copy an entire week's schedule to the next week with one click.",
+        tag: "Roster"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-18-v2240",
+    version: "v2.24.0",
+    date: "October 18 2026",
+    isLatest: false,
+    badge: "SCHEDULE PLOTTING",
+    title: "Dedicated Schedule Plotting & Shift Roster Live View",
+    summary: "Added a dedicated 'Schedule Plotting' page accessible directly from the sidebar. View weekly shift rosters for November 2–8, 2026 across Night, Morning, and Afternoon shifts with IN/OUT times, DAY-OFF, HOLIDAY, OT/RD statuses, search filtering, and CSV/print export.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-calendar3-range",
+        title: "Weekly Shift Matrix & Live Portal View",
+        desc: "Displays the complete November 2–8, 2026 schedule for all 13 team members with color-coded shift groups (Night: 9PM–6AM, Morning: 5AM–2PM, Afternoon: 2PM–11PM) and clear rest days & holidays.",
+        tag: "Schedule"
+      },
+      {
+        type: "feature",
+        icon: "bi-search",
+        title: "Agent Search, Shift Filtering & Personal Highlighting",
+        desc: "Quickly filter by shift group or search by agent name, with automatic row highlighting for your logged-in username.",
+        tag: "Filters"
+      },
+      {
+        type: "feature",
+        icon: "bi-file-earmark-spreadsheet",
+        title: "Export CSV & Printer-Friendly Roster",
+        desc: "One-click export of the full schedule to CSV format, plus dedicated printer-friendly styling for supervisor offline records.",
+        tag: "Export"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-18-v2231",
     version: "v2.23.1",
     date: "October 18 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "AUTO-PLAY & UP NEXT",
     title: "Continuous Auto-Play & Next Video Chaining",
     summary: "Fixed video completion so that instead of pausing on YouTube's 'More videos' grid, the player automatically chains and plays the next video seamlessly with visual 'Up Next' indicators.",
@@ -4175,11 +4326,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.23.1">
+          <div className="logo" title="PH Portal v2.25.3">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.23.1</span>
+              <span className="logo-version">v2.25.3</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4277,6 +4428,22 @@ function Sidebar({
             >
               <i className="bi bi-file-earmark-bar-graph me-1" aria-hidden="true"></i>
               <span className="nav-text">Shift Report</span>
+            </button>
+
+            {/* Dedicated Schedule Plotting Tab */}
+            <button 
+              id="nav-schedule-plotting"
+              className={`nav-item ${currentView === 'schedule' ? 'active' : ''}`}
+              onClick={() => handleNavAction(() => {
+                onSelectView && onSelectView('schedule');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              })}
+              aria-current={currentView === 'schedule' ? 'page' : undefined}
+              title="Schedule Plotting"
+            >
+              <i className="bi bi-calendar3-range me-2" aria-hidden="true" style={{ color: '#0ea5e9' }}></i>
+              <span className="nav-text">Schedule Plotting</span>
+              <span className="nav-item-badge" style={{ background: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9' }}>ROSTER</span>
             </button>
 
             {/* Tools Tab */}
@@ -6535,7 +6702,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.23.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.25.3';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6551,7 +6718,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.23.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.25.3';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
@@ -6835,6 +7002,14 @@ export default function App() {
           {/* ✅ INDEPENDENT SHIFT REPORT PAGE (Paste-only, Supabase shared sync) */}
           <div style={{ display: currentView === 'shift-report' ? 'block' : 'none' }}>
             <ShiftReportPage onBackToDashboard={() => setCurrentView('dashboard')} />
+          </div>
+
+          {/* ✅ INDEPENDENT SCHEDULE PLOTTING PAGE (Roster Matrix & Shift Breakdown) */}
+          <div style={{ display: currentView === 'schedule' ? 'block' : 'none' }}>
+            <SchedulePlottingPage
+              onBackToDashboard={() => setCurrentView('dashboard')}
+              currentUserName={currentUserName}
+            />
           </div>
 
           {/* ✅ INDEPENDENT TOOLS PAGE (Utilities & PDF Generators) */}
