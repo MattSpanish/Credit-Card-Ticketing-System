@@ -166,15 +166,21 @@ export function parseYouTubeInput(raw) {
   return null;
 }
 
-export function buildEmbedUrl(video) {
+export function buildEmbedUrl(video, options = {}) {
   if (!video) return '';
   const { type, id, playlistId } = video;
+  const { isLoop = false } = options;
   const params = new URLSearchParams({
     autoplay: '1',
     enablejsapi: '1',
     rel: '0',
     modestbranding: '1'
   });
+
+  if (isLoop && id) {
+    params.set('loop', '1');
+    params.set('playlist', id);
+  }
 
   if (typeof window !== 'undefined' && window.location.origin && !window.location.origin.startsWith('file:')) {
     params.set('origin', window.location.origin);
@@ -304,6 +310,37 @@ export default function YouTubePage({
       return localStorage.getItem('yt_is_muted') === 'true';
     } catch {
       return false;
+    }
+  });
+
+  // Auto-Play: automatically play next track when current finishes
+  const [isAutoplay, setIsAutoplay] = useState(() => {
+    try {
+      const saved = localStorage.getItem('yt_autoplay');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  // Playback Rate: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+  const PLAYBACK_RATES = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+  const [playbackRate, setPlaybackRate] = useState(() => {
+    try {
+      const saved = localStorage.getItem('yt_playback_rate');
+      return saved !== null && [0.5, 0.75, 1.0, 1.25, 1.5, 2.0].includes(Number(saved)) ? Number(saved) : 1.0;
+    } catch {
+      return 1.0;
+    }
+  });
+
+  // Playback Repeat mode: 'off' | 'all' | 'single'
+  const [playbackRepeat, setPlaybackRepeat] = useState(() => {
+    try {
+      const saved = localStorage.getItem('yt_playback_repeat');
+      return (saved === 'off' || saved === 'all' || saved === 'single') ? saved : 'off';
+    } catch {
+      return 'off';
     }
   });
 
@@ -548,7 +585,122 @@ export default function YouTubePage({
     setActiveVideo(null);
   };
 
-  // When active track changes, apply current volume to the new player
+  // Helper to play any item from searchResults, favorites, or presets
+  const playQueueItem = (item) => {
+    if (!item) return;
+    setActiveVideo({
+      type: item.type || 'video',
+      id: item.id,
+      playlistId: item.playlistId || null,
+      title: item.title,
+      uploader: item.uploader || (item.tag ? `${item.tag} Radio` : 'Music Artist'),
+      duration: item.duration || 'LIVE',
+      thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
+      rawUrl: item.rawUrl || `https://www.youtube.com/watch?v=${item.id}`
+    });
+    setIsPlaying(true);
+    setIsPaused(false);
+  };
+
+  // Get currently active queue based on where the track originated
+  const getCurrentQueue = () => {
+    if (!activeVideo) return searchResults.length > 0 ? searchResults : PRESET_STATIONS;
+    const activeKey = activeVideo.id || activeVideo.playlistId;
+
+    if (searchResults.some((r) => r.id === activeKey)) {
+      return searchResults;
+    }
+    if (favorites.some((f) => (f.id || f.playlistId) === activeKey)) {
+      return favorites;
+    }
+    if (PRESET_STATIONS.some((p) => p.id === activeKey)) {
+      return PRESET_STATIONS;
+    }
+    return searchResults.length > 0 ? searchResults : PRESET_STATIONS;
+  };
+
+  // Replay current track from 0:00
+  const handleReplayTrack = () => {
+    sendYTCommand('seekTo', [0, true]);
+    sendYTCommand('playVideo');
+    setIsPlaying(true);
+    setIsPaused(false);
+  };
+
+  // Next Track
+  const handlePlayNext = () => {
+    const queue = getCurrentQueue();
+    if (!queue || queue.length === 0) return;
+    const activeKey = activeVideo?.id || activeVideo?.playlistId;
+    const currentIndex = queue.findIndex((item) => (item.id || item.playlistId) === activeKey);
+
+    if (currentIndex >= 0 && currentIndex < queue.length - 1) {
+      playQueueItem(queue[currentIndex + 1]);
+    } else if (currentIndex === queue.length - 1 || currentIndex === -1) {
+      if (playbackRepeat === 'all' || isAutoplay) {
+        playQueueItem(queue[0]);
+      }
+    }
+  };
+
+  // Previous Track (or restart current if beginning of queue)
+  const handlePlayPrevious = () => {
+    const queue = getCurrentQueue();
+    if (!queue || queue.length === 0) return;
+    const activeKey = activeVideo?.id || activeVideo?.playlistId;
+    const currentIndex = queue.findIndex((item) => (item.id || item.playlistId) === activeKey);
+
+    if (currentIndex > 0) {
+      playQueueItem(queue[currentIndex - 1]);
+    } else if (currentIndex === 0) {
+      if (playbackRepeat === 'all') {
+        playQueueItem(queue[queue.length - 1]);
+      } else {
+        handleReplayTrack();
+      }
+    } else {
+      handleReplayTrack();
+    }
+  };
+
+  // Cycle playback speed: 0.5x, 0.75x, 1x, 1.25x, 1.5x, 2x
+  const handleCyclePlaybackRate = () => {
+    const currentIndex = PLAYBACK_RATES.indexOf(playbackRate);
+    const nextIndex = (currentIndex + 1) % PLAYBACK_RATES.length;
+    const nextRate = PLAYBACK_RATES[nextIndex];
+    setPlaybackRate(nextRate);
+    try {
+      localStorage.setItem('yt_playback_rate', String(nextRate));
+    } catch {}
+    sendYTCommand('setPlaybackRate', [nextRate]);
+  };
+
+  // Cycle Repeat Mode: off -> all -> single -> off
+  const handleCycleRepeat = () => {
+    setPlaybackRepeat((prev) => {
+      let next = 'off';
+      if (prev === 'off') next = 'all';
+      else if (prev === 'all') next = 'single';
+      else next = 'off';
+      try {
+        localStorage.setItem('yt_playback_repeat', next);
+      } catch {}
+      return next;
+    });
+  };
+
+  // Toggle Auto-Play on / off
+  const handleToggleAutoplay = () => {
+    setIsAutoplay((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('yt_autoplay', next ? 'true' : 'false');
+      } catch {}
+      return next;
+    });
+  };
+
+  // When active track changes, apply current volume & playback rate to the new player
   useEffect(() => {
     if (activeVideo) {
       const timer = setTimeout(() => {
@@ -558,10 +710,44 @@ export default function YouTubePage({
           sendYTCommand('unMute');
           sendYTCommand('setVolume', [volume]);
         }
+        if (playbackRate !== 1.0) {
+          sendYTCommand('setPlaybackRate', [playbackRate]);
+        }
       }, 700);
       return () => clearTimeout(timer);
     }
   }, [activeVideo?.id, activeVideo?.playlistId]);
+
+  // YouTube player state events (Auto-Play / Repeat triggers on track end)
+  useEffect(() => {
+    const handleWindowMessage = (event) => {
+      try {
+        let data = event.data;
+        if (typeof data === 'string') {
+          data = JSON.parse(data);
+        }
+        if (!data) return;
+
+        const playerState = data?.info?.playerState !== undefined 
+          ? data.info.playerState 
+          : (data?.event === 'onStateChange' ? data.info : null);
+
+        if (playerState === 0) { // ENDED
+          if (playbackRepeat === 'single') {
+            handleReplayTrack();
+          } else if (isAutoplay || playbackRepeat === 'all') {
+            handlePlayNext();
+          } else {
+            setIsPlaying(false);
+            setIsPaused(false);
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener('message', handleWindowMessage);
+    return () => window.removeEventListener('message', handleWindowMessage);
+  });
 
   const isCurrentInFavorites = useMemo(() => {
     if (!activeVideo) return false;
@@ -570,8 +756,8 @@ export default function YouTubePage({
   }, [activeVideo, favorites]);
 
   const embedUrl = useMemo(() => {
-    return activeVideo ? buildEmbedUrl(activeVideo) : '';
-  }, [activeVideo]);
+    return activeVideo ? buildEmbedUrl(activeVideo, { isLoop: playbackRepeat === 'single' }) : '';
+  }, [activeVideo, playbackRepeat]);
 
   const hasTrack = Boolean(activeVideo);
 
@@ -647,11 +833,29 @@ export default function YouTubePage({
                   <button
                     type="button"
                     className="btn-mini-control"
+                    onClick={handlePlayPrevious}
+                    title="Previous Track"
+                    aria-label="Previous Track"
+                  >
+                    <i className="bi bi-skip-start-fill"></i>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-mini-control"
                     onClick={handlePauseResume}
                     title={isPlaying ? 'Pause' : 'Resume'}
                     aria-label={isPlaying ? 'Pause' : 'Resume'}
                   >
                     <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'}`}></i>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-mini-control"
+                    onClick={handlePlayNext}
+                    title="Next Track"
+                    aria-label="Next Track"
+                  >
+                    <i className="bi bi-skip-end-fill"></i>
                   </button>
                   <button
                     type="button"
@@ -796,6 +1000,16 @@ export default function YouTubePage({
                 </div>
 
                 <div className="audio-stage-toolbar">
+                  {/* Playback Navigation */}
+                  <button
+                    type="button"
+                    className="btn-audio-toolbar"
+                    onClick={handlePlayPrevious}
+                    title="Previous Track"
+                  >
+                    <i className="bi bi-skip-start-fill"></i>
+                  </button>
+
                   <button
                     type="button"
                     className="btn-audio-toolbar"
@@ -804,6 +1018,57 @@ export default function YouTubePage({
                   >
                     <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} me-1 ${isPlaying ? 'text-warning' : 'text-success'}`}></i>
                     {isPlaying ? 'Pause' : 'Resume'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-audio-toolbar"
+                    onClick={handlePlayNext}
+                    title="Next Track"
+                  >
+                    <i className="bi bi-skip-end-fill"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-audio-toolbar"
+                    onClick={handleReplayTrack}
+                    title="Replay from start"
+                  >
+                    <i className="bi bi-arrow-counterclockwise"></i>
+                  </button>
+
+                  {/* Playback Speed */}
+                  <button
+                    type="button"
+                    className="btn-audio-toolbar"
+                    onClick={handleCyclePlaybackRate}
+                    title={`Playback Speed: ${playbackRate}x (click to change)`}
+                  >
+                    <i className="bi bi-speedometer2 me-1"></i>
+                    <span>{playbackRate}x</span>
+                  </button>
+
+                  {/* Repeat Mode */}
+                  <button
+                    type="button"
+                    className={`btn-audio-toolbar ${playbackRepeat !== 'off' ? 'btn-yt-active' : ''}`}
+                    onClick={handleCycleRepeat}
+                    title={`Repeat: ${playbackRepeat === 'single' ? 'Current Track' : playbackRepeat === 'all' ? 'All Tracks' : 'Off'}`}
+                  >
+                    <i className={`bi ${playbackRepeat === 'single' ? 'bi-repeat-1' : 'bi-repeat'} me-1`}></i>
+                    <span>{playbackRepeat === 'single' ? '1' : playbackRepeat === 'all' ? 'All' : 'Off'}</span>
+                  </button>
+
+                  {/* Auto-Play Toggle */}
+                  <button
+                    type="button"
+                    className={`btn-audio-toolbar ${isAutoplay ? 'btn-yt-active' : ''}`}
+                    onClick={handleToggleAutoplay}
+                    title={`Auto-Play: ${isAutoplay ? 'ON (Next track plays automatically)' : 'OFF'}`}
+                  >
+                    <i className="bi bi-infinity me-1"></i>
+                    <span>Auto-Play</span>
                   </button>
 
                   {/* Volume Adjust on Stage */}
@@ -896,6 +1161,77 @@ export default function YouTubePage({
                   </div>
                 </div>
                 <div className="now-playing-right">
+                  {/* Playback Navigation Buttons */}
+                  <button
+                    type="button"
+                    className="btn-playback-step"
+                    onClick={handlePlayPrevious}
+                    title="Previous Track"
+                  >
+                    <i className="bi bi-skip-start-fill"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-yt-action"
+                    onClick={handlePauseResume}
+                    title={isPlaying ? 'Pause music' : 'Resume music'}
+                  >
+                    <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} me-1 ${isPlaying ? 'text-warning' : 'text-success'}`}></i>
+                    {isPlaying ? 'Pause' : 'Resume'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-playback-step"
+                    onClick={handlePlayNext}
+                    title="Next Track"
+                  >
+                    <i className="bi bi-skip-end-fill"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-playback-step"
+                    onClick={handleReplayTrack}
+                    title="Replay Track from Beginning"
+                  >
+                    <i className="bi bi-arrow-counterclockwise"></i>
+                  </button>
+
+                  {/* Playback Speed */}
+                  <button
+                    type="button"
+                    className="btn-playback-step"
+                    onClick={handleCyclePlaybackRate}
+                    title={`Playback Speed: ${playbackRate}x (click to change)`}
+                  >
+                    <i className="bi bi-speedometer2 me-1"></i>
+                    <span>{playbackRate}x</span>
+                  </button>
+
+                  {/* Repeat / Loop Mode */}
+                  <button
+                    type="button"
+                    className={`btn-playback-step ${playbackRepeat !== 'off' ? 'btn-yt-active' : ''}`}
+                    onClick={handleCycleRepeat}
+                    title={`Repeat: ${playbackRepeat === 'single' ? 'Repeat Current Track' : playbackRepeat === 'all' ? 'Repeat Entire Queue' : 'Repeat Off'}`}
+                  >
+                    <i className={`bi ${playbackRepeat === 'single' ? 'bi-repeat-1' : 'bi-repeat'} me-1`}></i>
+                    <span>{playbackRepeat === 'single' ? '1' : playbackRepeat === 'all' ? 'All' : 'Off'}</span>
+                  </button>
+
+                  {/* Auto-Play Toggle */}
+                  <button
+                    type="button"
+                    className={`btn-playback-step ${isAutoplay ? 'btn-yt-active' : ''}`}
+                    onClick={handleToggleAutoplay}
+                    title={`Auto-Play: ${isAutoplay ? 'ON (Next track plays automatically)' : 'OFF'}`}
+                  >
+                    <i className="bi bi-infinity me-1"></i>
+                    <span>Auto-Play</span>
+                  </button>
+
                   {/* Volume Adjust on Now Playing Bar */}
                   <div className="now-playing-volume-wrap" title={`Volume: ${isMuted ? 'Muted' : `${volume}%`}`}>
                     <button
@@ -918,16 +1254,6 @@ export default function YouTubePage({
                     />
                     <span className="yt-volume-percent">{isMuted ? '0%' : `${volume}%`}</span>
                   </div>
-
-                  <button
-                    type="button"
-                    className="btn-yt-action"
-                    onClick={handlePauseResume}
-                    title={isPlaying ? 'Pause music' : 'Resume music'}
-                  >
-                    <i className={`bi ${isPlaying ? 'bi-pause-fill' : 'bi-play-fill'} me-1 ${isPlaying ? 'text-warning' : 'text-success'}`}></i>
-                    {isPlaying ? 'Pause' : 'Resume'}
-                  </button>
                   <button
                     type="button"
                     className="btn-yt-action"

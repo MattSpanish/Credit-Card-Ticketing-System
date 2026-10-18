@@ -111,10 +111,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-18-v2230",
+    version: "v2.23.0",
+    date: "October 18 2026",
+    isLatest: true,
+    badge: "STEALTH & PLAYBACK",
+    title: "Sidebar Secret Tab & Music Playback with Auto-Play",
+    summary: "Moved Music inside a stealth 'Secret' collapsible sidebar dropdown. Added full Playback controls including Auto-Play next track, speed control (0.5x–2x), repeat/loop modes, and previous/next track navigation.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-shield-lock-fill",
+        title: "Sidebar Secret Tab & Dropdown",
+        desc: "Music is now discreetly tucked under an expandable Secret tab with stealth status indicators so your music stays completely private.",
+        tag: "Sidebar"
+      },
+      {
+        type: "feature",
+        icon: "bi-play-circle-fill",
+        title: "Auto-Play & Playback Controls",
+        desc: "Seamless Auto-Play next song, Playback speed selector (0.5x to 2x), Repeat modes (Repeat 1 / Loop All), and skip/replay buttons.",
+        tag: "Playback"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-16-v2221",
     version: "v2.22.1",
     date: "October 16 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "MUSIC & CONTROLS",
     title: "Music Tab: Volume Slider & Seamless Background Pause",
     summary: "Added a dedicated volume adjustment slider with 1-click mute/unmute to the Music player. Fixed background pause so the player and loaded track remain active and responsive instead of closing.",
@@ -4019,6 +4044,31 @@ function Sidebar({
   const [userName, setUserName] = useState(() => currentUserName || getCurrentUserName() || '');
   const [pendingCount, setPendingCount] = useState(0);
 
+  const [isSecretOpen, setIsSecretOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sidebar_secret_open');
+      if (saved !== null) return saved === 'true';
+    } catch {}
+    return false;
+  });
+
+  // Automatically expand if currently viewing youtube (Music) tab
+  useEffect(() => {
+    if (currentView === 'youtube') {
+      setIsSecretOpen(true);
+    }
+  }, [currentView]);
+
+  const handleToggleSecret = () => {
+    setIsSecretOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('sidebar_secret_open', next ? 'true' : 'false');
+      } catch {}
+      return next;
+    });
+  };
+
   useEffect(() => {
     const updatePendingCount = () => {
       try {
@@ -4100,11 +4150,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.22.1">
+          <div className="logo" title="PH Portal v2.23.0">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.22.1</span>
+              <span className="logo-version">v2.23.0</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -4235,31 +4285,72 @@ function Sidebar({
               <span className="nav-item-badge">BETA</span>
             </button>
 
-            {/* Dedicated YouTube Music Tab */}
-            <button 
-              id="nav-youtube"
-              className={`nav-item ${currentView === 'youtube' ? 'active' : ''}`}
-              onClick={() => handleNavAction(() => {
-                onSelectView && onSelectView('youtube');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              })}
-              aria-current={currentView === 'youtube' ? 'page' : undefined}
-              title={isYouTubePlaying ? "Music (Playing)" : isYouTubePaused ? "Music (Paused)" : "Music"}
-            >
-              <i className="bi bi-music-note-beamed me-1 nav-youtube-icon" aria-hidden="true"></i>
-              <span className="nav-text">Music</span>
-              {isYouTubePlaying ? (
-                <span className="nav-youtube-pulse" title="Playing">
-                  <span className="pulse-bar bar-1"></span>
-                  <span className="pulse-bar bar-2"></span>
-                  <span className="pulse-bar bar-3"></span>
-                </span>
-              ) : isYouTubePaused ? (
-                <span className="nav-youtube-pulse is-paused" title="Paused">
-                  <i className="bi bi-pause-fill text-warning" style={{ fontSize: '11px' }}></i>
-                </span>
-              ) : null}
-            </button>
+            {/* 🔒 Secret Tab with Dropdown for Music */}
+            <div className={`nav-secret-group ${isSecretOpen ? 'is-open' : ''}`}>
+              <button 
+                id="nav-secret-toggle"
+                type="button"
+                className={`nav-item nav-secret-toggle ${currentView === 'youtube' ? 'has-active-child' : ''} ${isSecretOpen ? 'is-expanded' : ''}`}
+                onClick={() => {
+                  if (isCollapsed) {
+                    handleNavAction(() => {
+                      onSelectView && onSelectView('youtube');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                  } else {
+                    handleToggleSecret();
+                  }
+                }}
+                aria-expanded={isSecretOpen}
+                title={
+                  isCollapsed 
+                    ? (isYouTubePlaying ? "Secret: Music (Playing)" : isYouTubePaused ? "Secret: Music (Paused)" : "Secret: Music")
+                    : (isSecretOpen ? "Collapse Secret Menu" : "Expand Secret Menu")
+                }
+              >
+                <i className="bi bi-shield-lock me-2 nav-secret-icon" aria-hidden="true" style={{ color: '#8b5cf6' }}></i>
+                <span className="nav-text">Secret</span>
+                {isYouTubePlaying ? (
+                  <span className="nav-secret-pulse-dot is-playing" title="Music Playing in Secret"></span>
+                ) : isYouTubePaused ? (
+                  <span className="nav-secret-pulse-dot is-paused" title="Music Paused in Secret"></span>
+                ) : null}
+                <span className="nav-item-badge nav-item-badge-secret ms-auto">SECRET</span>
+                {!isCollapsed && (
+                  <i className={`bi ${isSecretOpen ? 'bi-chevron-up' : 'bi-chevron-down'} nav-secret-chevron ms-1`} aria-hidden="true"></i>
+                )}
+              </button>
+
+              {/* Submenu Dropdown containing Music */}
+              {isSecretOpen && !isCollapsed && (
+                <div className="nav-secret-dropdown">
+                  <button 
+                    id="nav-youtube"
+                    className={`nav-item nav-sub-item ${currentView === 'youtube' ? 'active' : ''}`}
+                    onClick={() => handleNavAction(() => {
+                      onSelectView && onSelectView('youtube');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    })}
+                    aria-current={currentView === 'youtube' ? 'page' : undefined}
+                    title={isYouTubePlaying ? "Music (Playing)" : isYouTubePaused ? "Music (Paused)" : "Music"}
+                  >
+                    <i className="bi bi-music-note-beamed me-2 nav-youtube-icon" aria-hidden="true"></i>
+                    <span className="nav-text">Music</span>
+                    {isYouTubePlaying ? (
+                      <span className="nav-youtube-pulse ms-auto" title="Playing">
+                        <span className="pulse-bar bar-1"></span>
+                        <span className="pulse-bar bar-2"></span>
+                        <span className="pulse-bar bar-3"></span>
+                      </span>
+                    ) : isYouTubePaused ? (
+                      <span className="nav-youtube-pulse is-paused ms-auto" title="Paused">
+                        <i className="bi bi-pause-fill text-warning" style={{ fontSize: '11px' }}></i>
+                      </span>
+                    ) : null}
+                  </button>
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* ☕ DAYOFF / 1 HR Break Card positioned at bottom of left panel */}
@@ -6419,7 +6510,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.22.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.23.0';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6435,7 +6526,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.22.1';
+      const currentVersion = latestAnnouncement?.version || 'v2.23.0';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

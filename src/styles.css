@@ -8623,6 +8623,44 @@ body.dark-mode .youtube-player-dock.mode-mini {
     text-align: right;
 }
 
+/* Playback Controls & Auto-Play */
+.btn-playback-step {
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    color: var(--text-primary);
+    padding: 5px 9px;
+    border-radius: 7px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 32px;
+    box-sizing: border-box;
+    transition: all var(--t-fast) var(--ease);
+}
+
+.btn-playback-step:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg-hover);
+}
+
+.btn-yt-active {
+    background: rgba(99, 102, 241, 0.16) !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
+    color: #6366f1 !important;
+    font-weight: 700 !important;
+}
+
+[data-theme="dark"] .btn-yt-active {
+    background: rgba(129, 140, 248, 0.22) !important;
+    border-color: rgba(129, 140, 248, 0.6) !important;
+    color: #a5b4fc !important;
+}
+
 /* Paused State Styles */
 .spinning-album.paused {
     animation-play-state: paused !important;
@@ -9007,6 +9045,87 @@ body.dark-mode .youtube-player-dock.mode-mini {
 @keyframes pulseEqualizer {
     0% { height: 3px; }
     100% { height: 12px; }
+}
+
+/* Sidebar Secret Tab & Collapsible Dropdown */
+.nav-secret-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.nav-secret-toggle {
+    display: flex;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+}
+
+.nav-secret-toggle.has-active-child {
+    color: #8b5cf6;
+    font-weight: 600;
+}
+
+.nav-secret-chevron {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    transition: transform var(--t-fast) var(--ease);
+    display: flex;
+    align-items: center;
+}
+
+.nav-item-badge-secret {
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    color: #8b5cf6;
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    margin-right: 4px;
+}
+
+[data-theme="dark"] .nav-item-badge-secret {
+    background: rgba(167, 139, 250, 0.2);
+    border-color: rgba(167, 139, 250, 0.45);
+    color: #c4b5fd;
+}
+
+.nav-secret-pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-right: 6px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.nav-secret-pulse-dot.is-playing {
+    background: #ef4444;
+    animation: pulseDot 1.4s infinite;
+}
+
+.nav-secret-pulse-dot.is-paused {
+    background: #f59e0b;
+}
+
+.nav-secret-dropdown {
+    margin-left: 14px;
+    padding-left: 8px;
+    border-left: 2px solid rgba(139, 92, 246, 0.28);
+    margin-top: 2px;
+    margin-bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.nav-sub-item {
+    padding: 7px 12px;
+    font-size: 0.85rem;
+    border-radius: 6px;
 }
 
 /* Quick Search Genre Pills */
