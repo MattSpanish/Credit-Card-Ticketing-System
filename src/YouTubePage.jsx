@@ -169,17 +169,23 @@ export function parseYouTubeInput(raw) {
 export function buildEmbedUrl(video, options = {}) {
   if (!video) return '';
   const { type, id, playlistId } = video;
-  const { isLoop = false } = options;
+  const { isLoop = false, queueIds = [] } = options;
   const params = new URLSearchParams({
     autoplay: '1',
     enablejsapi: '1',
     rel: '0',
-    modestbranding: '1'
+    modestbranding: '1',
+    playsinline: '1'
   });
 
   if (isLoop && id) {
     params.set('loop', '1');
     params.set('playlist', id);
+  } else if (!isLoop && queueIds && queueIds.length > 0) {
+    const nextIds = queueIds.filter((qId) => qId && qId !== id).slice(0, 50);
+    if (nextIds.length > 0) {
+      params.set('playlist', nextIds.join(','));
+    }
   }
 
   if (typeof window !== 'undefined' && window.location.origin && !window.location.origin.startsWith('file:')) {
@@ -627,8 +633,37 @@ export default function YouTubePage({
     setIsPaused(false);
   };
 
-  // Next Track
-  const handlePlayNext = () => {
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  // Compute upcoming video IDs in active queue for YouTube playlist parameter
+  const queueIds = useMemo(() => {
+    const queue = getCurrentQueue();
+    if (!queue || queue.length === 0) return [];
+    const activeKey = activeVideo?.id || activeVideo?.playlistId;
+    const currentIndex = queue.findIndex((item) => (item.id || item.playlistId) === activeKey);
+    const reordered = currentIndex >= 0 
+      ? [...queue.slice(currentIndex + 1), ...queue.slice(0, currentIndex)]
+      : queue;
+    return reordered.map((item) => item.id).filter(Boolean);
+  }, [activeVideo?.id, activeVideo?.playlistId, searchResults, favorites]);
+
+  // Next Track object for UI previews / badges
+  const nextTrack = useMemo(() => {
+    const queue = getCurrentQueue();
+    if (!queue || queue.length === 0) return null;
+    const activeKey = activeVideo?.id || activeVideo?.playlistId;
+    const currentIndex = queue.findIndex((item) => (item.id || item.playlistId) === activeKey);
+    if (currentIndex >= 0 && currentIndex < queue.length - 1) {
+      return queue[currentIndex + 1];
+    }
+    if (playbackRepeat === 'all' || isAutoplay) {
+      return queue[0] || null;
+    }
+    return null;
+  }, [activeVideo?.id, activeVideo?.playlistId, searchResults, favorites, isAutoplay, playbackRepeat]);
+
+  // Next Track with auto-fetch more videos so playback never stops
+  const handlePlayNext = async () => {
     const queue = getCurrentQueue();
     if (!queue || queue.length === 0) return;
     const activeKey = activeVideo?.id || activeVideo?.playlistId;
@@ -636,7 +671,28 @@ export default function YouTubePage({
 
     if (currentIndex >= 0 && currentIndex < queue.length - 1) {
       playQueueItem(queue[currentIndex + 1]);
-    } else if (currentIndex === queue.length - 1 || currentIndex === -1) {
+    } else {
+      // Reached the end of the queue: automatically fetch more tracks based on current song/artist
+      if (activeVideo && !isFetchingMore) {
+        setIsFetchingMore(true);
+        try {
+          const query = activeVideo.uploader || activeVideo.title;
+          const moreTracks = await searchYouTubeMusic(`${query} songs`);
+          const existingIds = new Set(queue.map((i) => i.id));
+          const newTracks = moreTracks.filter((t) => !existingIds.has(t.id));
+          if (newTracks.length > 0) {
+            setSearchResults((prev) => [...prev, ...newTracks]);
+            playQueueItem(newTracks[0]);
+            setIsFetchingMore(false);
+            return;
+          }
+        } catch (err) {
+          console.warn('Auto-fetch more videos failed:', err);
+        }
+        setIsFetchingMore(false);
+      }
+
+      // Loop back to start if repeat is 'all' or auto-play is on
       if (playbackRepeat === 'all' || isAutoplay) {
         playQueueItem(queue[0]);
       }
@@ -718,6 +774,28 @@ export default function YouTubePage({
     }
   }, [activeVideo?.id, activeVideo?.playlistId]);
 
+  // Active polling to guarantee video end detection and handshake with YouTube iframe API
+  useEffect(() => {
+    if (!activeVideo || !isPlaying) return;
+
+    const handshakeAndPoll = () => {
+      try {
+        const iframe = iframeRef.current;
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+        }
+      } catch {}
+      sendYTCommand('addEventListener', ['onStateChange']);
+      sendYTCommand('getPlayerState');
+      sendYTCommand('getCurrentTime');
+      sendYTCommand('getDuration');
+    };
+
+    handshakeAndPoll();
+    const interval = setInterval(handshakeAndPoll, 1000);
+    return () => clearInterval(interval);
+  }, [activeVideo?.id, isPlaying]);
+
   // YouTube player state events (Auto-Play / Repeat triggers on track end)
   useEffect(() => {
     const handleWindowMessage = (event) => {
@@ -728,11 +806,42 @@ export default function YouTubePage({
         }
         if (!data) return;
 
+        // 1. Sync metadata if YouTube natively auto-advanced to the next video in the playlist
+        const incomingVideoId = data?.info?.videoData?.video_id;
+        if (incomingVideoId && activeVideo?.id && incomingVideoId !== activeVideo.id) {
+          const queue = getCurrentQueue();
+          const matchedItem = queue.find((item) => item.id === incomingVideoId);
+          if (matchedItem) {
+            setActiveVideo(matchedItem);
+            setIsPlaying(true);
+            setIsPaused(false);
+            return;
+          } else if (data.info.videoData.title) {
+            setActiveVideo({
+              type: 'video',
+              id: incomingVideoId,
+              playlistId: null,
+              title: data.info.videoData.title,
+              uploader: data.info.videoData.author || 'YouTube Artist',
+              thumbnail: `https://i.ytimg.com/vi/${incomingVideoId}/hqdefault.jpg`,
+              rawUrl: `https://www.youtube.com/watch?v=${incomingVideoId}`
+            });
+            setIsPlaying(true);
+            setIsPaused(false);
+            return;
+          }
+        }
+
+        // 2. Track ended: playerState 0 (ENDED) or time reached duration
         const playerState = data?.info?.playerState !== undefined 
           ? data.info.playerState 
           : (data?.event === 'onStateChange' ? data.info : null);
 
-        if (playerState === 0) { // ENDED
+        const currentTime = Number(data?.info?.currentTime);
+        const duration = Number(data?.info?.duration);
+        const isTimeEnded = duration > 0 && currentTime >= duration - 0.75;
+
+        if (playerState === 0 || isTimeEnded) {
           if (playbackRepeat === 'single') {
             handleReplayTrack();
           } else if (isAutoplay || playbackRepeat === 'all') {
@@ -756,8 +865,13 @@ export default function YouTubePage({
   }, [activeVideo, favorites]);
 
   const embedUrl = useMemo(() => {
-    return activeVideo ? buildEmbedUrl(activeVideo, { isLoop: playbackRepeat === 'single' }) : '';
-  }, [activeVideo, playbackRepeat]);
+    return activeVideo 
+      ? buildEmbedUrl(activeVideo, { 
+          isLoop: playbackRepeat === 'single',
+          queueIds: isAutoplay ? queueIds : []
+        }) 
+      : '';
+  }, [activeVideo, playbackRepeat, isAutoplay, queueIds]);
 
   const hasTrack = Boolean(activeVideo);
 
@@ -942,6 +1056,24 @@ export default function YouTubePage({
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                   className="youtube-iframe-element"
+                  onLoad={() => {
+                    try {
+                      const iframe = iframeRef.current;
+                      if (iframe && iframe.contentWindow) {
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+                      }
+                    } catch {}
+                    sendYTCommand('addEventListener', ['onStateChange']);
+                    if (isMuted) {
+                      sendYTCommand('mute');
+                    } else {
+                      sendYTCommand('unMute');
+                      sendYTCommand('setVolume', [volume]);
+                    }
+                    if (playbackRate !== 1.0) {
+                      sendYTCommand('setPlaybackRate', [playbackRate]);
+                    }
+                  }}
                 />
               ) : isFullView ? (
                 <div className="youtube-empty-player-placeholder">
@@ -1316,6 +1448,7 @@ export default function YouTubePage({
                   {PRESET_STATIONS.map((preset) => {
                     const isCurrent = activeVideo?.id === preset.id;
                     const isCurrentPlaying = isCurrent && isPlaying;
+                    const isNext = isAutoplay && !isCurrent && nextTrack?.id === preset.id;
                     return (
                       <div
                         key={preset.id}
@@ -1338,6 +1471,11 @@ export default function YouTubePage({
                         <div className="preset-info">
                           <div className="preset-title-row">
                             <span className="preset-title">{preset.title}</span>
+                            {isNext && (
+                              <span className="badge-up-next ms-1" title="Plays automatically after current song">
+                                <i className="bi bi-play-circle-fill me-1"></i> Up Next
+                              </span>
+                            )}
                             <span
                               className="preset-tag"
                               style={{ backgroundColor: `${preset.badgeColor}18`, color: preset.badgeColor }}
@@ -1473,6 +1611,7 @@ export default function YouTubePage({
                     const isCurrent = activeVideo?.id === item.id;
                     const isCurrentPlaying = isCurrent && isPlaying;
                     const isFav = favorites.some((f) => (f.id || f.playlistId) === item.id);
+                    const isNext = isAutoplay && !isCurrent && nextTrack?.id === item.id;
                     return (
                       <div
                         key={item.id}
@@ -1519,7 +1658,14 @@ export default function YouTubePage({
                           }}
                           title={isCurrent ? (isPlaying ? `Pause ${item.title}` : `Resume ${item.title}`) : `Play ${item.title}`}
                         >
-                          <h5 className="yt-result-title">{item.title}</h5>
+                          <h5 className="yt-result-title">
+                            {item.title}
+                            {isNext && (
+                              <span className="badge-up-next ms-2" title="Plays automatically after current song">
+                                <i className="bi bi-play-circle-fill me-1"></i> Up Next
+                              </span>
+                            )}
+                          </h5>
                           <div className="yt-result-meta-row">
                             <span className="yt-result-uploader">
                               <i className="bi bi-person-circle me-1"></i>

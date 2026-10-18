@@ -111,10 +111,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-18-v2231",
+    version: "v2.23.1",
+    date: "October 18 2026",
+    isLatest: true,
+    badge: "AUTO-PLAY & UP NEXT",
+    title: "Continuous Auto-Play & Next Video Chaining",
+    summary: "Fixed video completion so that instead of pausing on YouTube's 'More videos' grid, the player automatically chains and plays the next video seamlessly with visual 'Up Next' indicators.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-play-circle-fill",
+        title: "Continuous Auto-Play Chaining",
+        desc: "Upcoming video IDs are now automatically queued directly into the player so it transitions immediately to the next song instead of stopping on recommendations.",
+        tag: "Music"
+      },
+      {
+        type: "feature",
+        icon: "bi-music-note-list",
+        title: "Up Next Visual Badges & Auto-Fetch",
+        desc: "Shows an 'Up Next' badge on the upcoming song and automatically fetches more related songs if the current queue reaches the end.",
+        tag: "Playback"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-18-v2230",
     version: "v2.23.0",
     date: "October 18 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "STEALTH & PLAYBACK",
     title: "Sidebar Secret Tab & Music Playback with Auto-Play",
     summary: "Moved Music inside a stealth 'Secret' collapsible sidebar dropdown. Added full Playback controls including Auto-Play next track, speed control (0.5x–2x), repeat/loop modes, and previous/next track navigation.",
@@ -4150,11 +4175,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.23.0">
+          <div className="logo" title="PH Portal v2.23.1">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.23.0</span>
+              <span className="logo-version">v2.23.1</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -6510,7 +6535,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.23.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.23.1';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6526,7 +6551,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.23.0';
+      const currentVersion = latestAnnouncement?.version || 'v2.23.1';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
