@@ -384,6 +384,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newAgentName, setNewAgentName] = useState('');
   const [newAgentGroupId, setNewAgentGroupId] = useState('night');
+  const [copiedWeek, setCopiedWeek] = useState(null);
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -802,10 +803,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
     }
   };
 
-  // Duplicate one week's complete pattern, including its week-specific names.
-  const handleCopyWeekToTarget = (sourceWeekKey, targetWeekKey) => {
-    if (!sourceWeekKey || !targetWeekKey) return;
-
+  const getWeekSnapshot = (sourceWeekKey) => {
     const sourceWeekShifts = {};
     const sourceWeekNames = {};
     rosterGroups.forEach((g) => {
@@ -818,13 +816,30 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
       });
     });
 
+    return {
+      ...sourceWeekShifts,
+      __names: sourceWeekNames,
+    };
+  };
+
+  // Copy a complete week into the in-app clipboard, including week-specific names.
+  const handleCopyWeek = (sourceWeekKey) => {
+    if (!sourceWeekKey) return;
+    setCopiedWeek({
+      sourceWeekKey,
+      schedule: getWeekSnapshot(sourceWeekKey),
+    });
+    triggerToast(`📋 Week ${sourceWeekKey} copied. Choose Paste Week on another week.`);
+  };
+
+  // Paste the copied complete week into one destination week.
+  const handlePasteWeek = (targetWeekKey) => {
+    if (!copiedWeek?.schedule || !targetWeekKey) return;
+
     setWeeksStore((prev) => {
       const updated = {
         ...prev,
-        [targetWeekKey]: {
-          ...sourceWeekShifts,
-          __names: sourceWeekNames,
-        },
+        [targetWeekKey]: copiedWeek.schedule,
       };
       try {
         localStorage.setItem(STORAGE_WEEKS_KEY, JSON.stringify(updated));
@@ -834,6 +849,24 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
       return updated;
     });
 
+    setHasUnsavedChanges(true);
+    triggerToast(`📋 Pasted the complete week, including names, into week ${targetWeekKey}!`);
+  };
+
+  // Preserve the existing one-click copy-to-next-week action.
+  const handleCopyWeekToTarget = (sourceWeekKey, targetWeekKey) => {
+    handleCopyWeek(sourceWeekKey);
+    if (!sourceWeekKey || !targetWeekKey) return;
+    const schedule = getWeekSnapshot(sourceWeekKey);
+    setWeeksStore((prev) => {
+      const updated = { ...prev, [targetWeekKey]: schedule };
+      try {
+        localStorage.setItem(STORAGE_WEEKS_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to cache copied week schedule:', e);
+      }
+      return updated;
+    });
     setHasUnsavedChanges(true);
     triggerToast(`📋 Copied the complete schedule, including names, to week ${targetWeekKey}!`);
   };
@@ -1678,6 +1711,23 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                   </span>
                 </div>
                 <div className="week-block-banner-right">
+                  <button
+                    type="button"
+                    className="btn-week-copy-pattern"
+                    onClick={() => handleCopyWeek(weekObj.weekKey)}
+                    title="Copy this complete week for pasting into another week"
+                  >
+                    <i className="bi bi-clipboard me-1"></i> Copy Week
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-week-copy-pattern"
+                    onClick={() => handlePasteWeek(weekObj.weekKey)}
+                    disabled={!copiedWeek || copiedWeek.sourceWeekKey === weekObj.weekKey}
+                    title={copiedWeek ? `Paste copied week ${copiedWeek.sourceWeekKey} here` : 'Copy a week first'}
+                  >
+                    <i className="bi bi-clipboard-check me-1"></i> Paste Week
+                  </button>
                   {idx < monthWeeks.length - 1 && (
                     <button
                       type="button"

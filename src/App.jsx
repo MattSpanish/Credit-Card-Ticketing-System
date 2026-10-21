@@ -112,26 +112,26 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-21-v2269",
-    version: "v2.26.9",
+    id: "rel-2026-10-21-v2270",
+    version: "v2.27.0",
     date: "October 21 2026",
     isLatest: true,
-    badge: "COMPLETE WEEK COPYING",
-    title: "Copy Week Includes Names",
-    summary: "Copying a weekly schedule now includes both shift assignments and week-specific employee names.",
+    badge: "COPY & PASTE WEEKS",
+    title: "Copy and Paste Complete Weeks",
+    summary: "Added separate Copy Week and Paste Week controls so a complete schedule can be moved between any weekly blocks.",
     items: [
       {
         type: "fix",
         icon: "bi-check2-circle",
-        title: "Complete Week Duplication",
-        desc: "The Copy to Week action now copies all shift cells and the name assignments shown in the source week.",
+        title: "Two-Step Week Clipboard",
+        desc: "Copy a source week once, then paste its shifts and week-specific names into another week.",
         tag: "Schedule"
       },
       {
         type: "fix",
         icon: "bi-window-stack",
-        title: "Destination Week Updates Only",
-        desc: "Only the selected destination week is replaced; other weekly blocks remain unchanged.",
+        title: "Safe Destination Updates",
+        desc: "Only the week receiving Paste Week is replaced; the copied source week and other weeks remain unchanged.",
         tag: "Control"
       },
       {
