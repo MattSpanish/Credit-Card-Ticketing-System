@@ -296,6 +296,16 @@ function buildWeeksForPeriod(groups, startMonthIndex, endMonthIndex, year) {
   return periodWeeks;
 }
 
+function getShiftColorClass(shift, fallbackClass) {
+  if (!shift || shift.type !== 'shift') return fallbackClass;
+
+  const shiftText = `${shift.in || ''} ${shift.out || ''} ${shift.label || ''}`.toLowerCase();
+  if (shiftText.includes('9:00 pm') || shiftText.includes('night')) return 'shift-group-night';
+  if (shiftText.includes('5:00 am') || shiftText.includes('morning')) return 'shift-group-morning';
+  if (shiftText.includes('2:00 pm') || shiftText.includes('afternoon')) return 'shift-group-afternoon';
+  return fallbackClass;
+}
+
 export default function SchedulePlottingPage({ onBackToDashboard, currentUserName = '' }) {
   // Month & Year state: default to October 2026 (matching user's uploaded spreadsheet)
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(9); // October
@@ -364,7 +374,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
   // { memberId, memberName, dayId, dayName, currentShift, groupHours, defaultIn, defaultOut, groupId, weekKey }
   const [popoverInTime, setPopoverInTime] = useState('');
   const [popoverOutTime, setPopoverOutTime] = useState('');
-  const [syncSameDayShifts, setSyncSameDayShifts] = useState(true);
+  const [syncSameDayShifts, setSyncSameDayShifts] = useState(false);
 
   // Rename Agent state
   const [renamingMember, setRenamingMember] = useState(null); // { id, currentName }
@@ -386,7 +396,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
       const s = activeCellPopover.currentShift || {};
       setPopoverInTime(s.in || activeCellPopover.defaultIn || '9:00 PM');
       setPopoverOutTime(s.out || activeCellPopover.defaultOut || '6:00 AM');
-      setSyncSameDayShifts(true);
+      setSyncSameDayShifts(false);
     }
   }, [activeCellPopover]);
 
@@ -504,8 +514,8 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
   };
 
   /**
-   * Update shift and keep same-day times consistent across working agents in that shift group.
-   * Modifies only the target day of that specific week.
+   * Update one agent's shift for one day in one week.
+   * Same-day group synchronization is opt-in from the custom time form.
    */
   const updateMemberShiftConsistent = ({
     memberId,
@@ -1123,12 +1133,13 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                           {days.map((day) => {
                             const shiftInfo = getMemberShift(member, day.id, weekKey);
                             const isDayHighlighted = highlightedDay === day.id;
+                            const shiftColorClass = getShiftColorClass(shiftInfo, group.colorClass);
 
                             if (shiftInfo.type === 'shift') {
                               return (
                                 <React.Fragment key={`cell-${member.id}-${day.id}-${weekKey}`}>
                                   <td
-                                    className={`cell-shift-time cell-in cell-quick-clickable ${group.colorClass} ${isDayHighlighted ? 'col-highlighted' : ''}`}
+                                    className={`cell-shift-time cell-in cell-quick-clickable ${shiftColorClass} ${isDayHighlighted ? 'col-highlighted' : ''}`}
                                     onClick={() => setActiveCellPopover({
                                       memberId: member.id,
                                       memberName: member.name,
@@ -1148,7 +1159,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                     <i className="bi bi-chevron-down cell-tap-icon"></i>
                                   </td>
                                   <td
-                                    className={`cell-shift-time cell-out cell-quick-clickable ${group.colorClass} ${isDayHighlighted ? 'col-highlighted' : ''}`}
+                                    className={`cell-shift-time cell-out cell-quick-clickable ${shiftColorClass} ${isDayHighlighted ? 'col-highlighted' : ''}`}
                                     onClick={() => setActiveCellPopover({
                                       memberId: member.id,
                                       memberName: member.name,
@@ -1762,7 +1773,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
             {/* Same-Day Consistent Time Form */}
             <form onSubmit={handleApplyCustomTimesForm} className="palette-custom-time-form">
               <div className="palette-time-header">
-                <i className="bi bi-clock-history me-1 text-accent"></i> Custom Shift Times (Consistent for this Day)
+                <i className="bi bi-clock-history me-1 text-accent"></i> Custom Shift Times (Selected Agent / Day)
               </div>
               <div className="palette-time-inputs-row">
                 <div className="time-input-wrap">
@@ -1800,7 +1811,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                     onChange={(e) => setSyncSameDayShifts(e.target.checked)}
                   />
                   <span>
-                    Keep <strong>{activeCellPopover.dayName}</strong> working hours consistent across agents in this shift
+                    Also apply these hours to other agents working on <strong>{activeCellPopover.dayName}</strong>
                   </span>
                 </label>
               </div>

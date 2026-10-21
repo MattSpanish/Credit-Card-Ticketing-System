@@ -112,27 +112,27 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-21-v2265",
-    version: "v2.26.5",
+    id: "rel-2026-10-21-v2267",
+    version: "v2.26.7",
     date: "October 21 2026",
     isLatest: true,
-    badge: "SCHEDULE UI CLEANUP",
-    title: "Schedule Planner Controls Simplified",
-    summary: "The schedule picker now renders through a viewport-level overlay that stays visible while the page is scrolled.",
+    badge: "SINGLE-DAY SHIFT EDITING",
+    title: "Shift Changes Apply to One Day",
+    summary: "Changing a schedule now updates only the selected agent and day by default instead of changing other agents in the same group.",
     items: [
       {
         type: "fix",
         icon: "bi-check2-circle",
-        title: "Automatic Schedule Plotting Retained",
-        desc: "New schedules continue to receive the October–December 2026 roster pattern automatically.",
+        title: "Single-Agent, Single-Day Updates",
+        desc: "Preset and custom shift changes are isolated to the selected schedule cell by default.",
         tag: "Schedule"
       },
       {
         type: "fix",
         icon: "bi-window-stack",
-        title: "Manual Plot Button Removed",
-        desc: "The extra manual plotting control was removed from beside Refresh Cloud to keep the schedule toolbar simpler.",
-        tag: "UI/UX"
+        title: "Optional Same-Day Sync",
+        desc: "Custom time edits still provide an opt-in checkbox when hours should be shared with other agents on that day.",
+        tag: "Control"
       },
       {
         type: "improvement",
