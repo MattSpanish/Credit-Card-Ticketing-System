@@ -802,14 +802,16 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
     }
   };
 
-  // Duplicate one week's pattern into another
+  // Duplicate one week's complete pattern, including its week-specific names.
   const handleCopyWeekToTarget = (sourceWeekKey, targetWeekKey) => {
     if (!sourceWeekKey || !targetWeekKey) return;
 
     const sourceWeekShifts = {};
+    const sourceWeekNames = {};
     rosterGroups.forEach((g) => {
       (g.members || []).forEach((m) => {
         sourceWeekShifts[m.id] = {};
+        sourceWeekNames[m.id] = getMemberName(m, sourceWeekKey);
         ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].forEach((dayId) => {
           sourceWeekShifts[m.id][dayId] = { ...getMemberShift(m, dayId, sourceWeekKey) };
         });
@@ -817,15 +819,23 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
     });
 
     setWeeksStore((prev) => {
-      const updated = { ...prev, [targetWeekKey]: sourceWeekShifts };
+      const updated = {
+        ...prev,
+        [targetWeekKey]: {
+          ...sourceWeekShifts,
+          __names: sourceWeekNames,
+        },
+      };
       try {
         localStorage.setItem(STORAGE_WEEKS_KEY, JSON.stringify(updated));
-      } catch {}
+      } catch (e) {
+        console.error('Failed to cache copied week schedule:', e);
+      }
       return updated;
     });
 
     setHasUnsavedChanges(true);
-    triggerToast(`📋 Copied schedule pattern to week ${targetWeekKey}!`);
+    triggerToast(`📋 Copied the complete schedule, including names, to week ${targetWeekKey}!`);
   };
 
   // Cloud Save Action

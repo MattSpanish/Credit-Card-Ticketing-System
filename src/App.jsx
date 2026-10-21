@@ -112,26 +112,26 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-21-v2268",
-    version: "v2.26.8",
+    id: "rel-2026-10-21-v2269",
+    version: "v2.26.9",
     date: "October 21 2026",
     isLatest: true,
-    badge: "WEEK-SPECIFIC NAME SWAPS",
-    title: "Name Swaps Stay Within One Week",
-    summary: "Swapping employee names in one weekly schedule block no longer changes names in the other weeks.",
+    badge: "COMPLETE WEEK COPYING",
+    title: "Copy Week Includes Names",
+    summary: "Copying a weekly schedule now includes both shift assignments and week-specific employee names.",
     items: [
       {
         type: "fix",
         icon: "bi-check2-circle",
-        title: "Week-Specific Name Assignments",
-        desc: "Name swaps are stored with the selected week while the master roster remains unchanged.",
+        title: "Complete Week Duplication",
+        desc: "The Copy to Week action now copies all shift cells and the name assignments shown in the source week.",
         tag: "Schedule"
       },
       {
         type: "fix",
         icon: "bi-window-stack",
-        title: "Other Weeks Stay Unchanged",
-        desc: "Weekly blocks continue to show their own name assignments after a swap is made.",
+        title: "Destination Week Updates Only",
+        desc: "Only the selected destination week is replaced; other weekly blocks remain unchanged.",
         tag: "Control"
       },
       {
