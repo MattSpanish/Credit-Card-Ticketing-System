@@ -112,10 +112,74 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-21-v2265",
+    version: "v2.26.5",
+    date: "October 21 2026",
+    isLatest: true,
+    badge: "SCHEDULE UI CLEANUP",
+    title: "Schedule Planner Controls Simplified",
+    summary: "The schedule picker now renders through a viewport-level overlay that stays visible while the page is scrolled.",
+    items: [
+      {
+        type: "fix",
+        icon: "bi-check2-circle",
+        title: "Automatic Schedule Plotting Retained",
+        desc: "New schedules continue to receive the October–December 2026 roster pattern automatically.",
+        tag: "Schedule"
+      },
+      {
+        type: "fix",
+        icon: "bi-window-stack",
+        title: "Manual Plot Button Removed",
+        desc: "The extra manual plotting control was removed from beside Refresh Cloud to keep the schedule toolbar simpler.",
+        tag: "UI/UX"
+      },
+      {
+        type: "improvement",
+        icon: "bi-moon-stars",
+        title: "Cloud Publishing",
+        desc: "Use Save Schedule to publish the automatically plotted period to the shared team schedule.",
+        tag: "Cloud Sync"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-18-v2260",
+    version: "v2.26.1",
+    date: "October 18 2026",
+    isLatest: false,
+    badge: "WHOLE MONTH VIEW & CLOUD SYNC",
+    title: "Whole Month Shift Planner & Global Cloud Save",
+    summary: "Introduced a full-month stacked spreadsheet view for schedule plotting, matching the monthly operational roster layout. Added real-time Cloud Save so shifts and employee schedules can be published and synced live for everyone across the team.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-calendar3-range",
+        title: "Full Month Stacked Schedule Layout",
+        desc: "View all consecutive weekly shift rosters for the entire selected month at a glance with one-click month tabs (Jan–Dec).",
+        tag: "Schedule"
+      },
+      {
+        type: "feature",
+        icon: "bi-cloud-arrow-up-fill",
+        title: "Save Schedule to Cloud for Everyone",
+        desc: "Prominent cloud save button instantly publishes schedule updates so all users across the organization see live changes.",
+        tag: "Cloud Sync"
+      },
+      {
+        type: "improvement",
+        icon: "bi-diagram-3",
+        title: "Updated Roster & Shift Groups",
+        desc: "Organized team into distinct Night, Morning, and Afternoon shift groups with color coding and merged Day-Off columns.",
+        tag: "Roster"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-18-v2253",
     version: "v2.25.3",
     date: "October 18 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "SYNTAX RESOLUTION",
     title: "Schedule Plotting JSX Syntax Fix",
     summary: "Fixed an unclosed table row tag in SchedulePlottingPage.jsx to ensure clean, instant build transforms with zero oxc parse errors.",
@@ -4326,11 +4390,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.25.3">
+          <div className="logo" title="PH Portal v2.26.5">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.25.3</span>
+              <span className="logo-version">v2.26.5</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -6702,7 +6766,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.25.3';
+      const currentVersion = latestAnnouncement?.version || 'v2.26.5';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6718,7 +6782,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.25.3';
+      const currentVersion = latestAnnouncement?.version || 'v2.26.5';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
