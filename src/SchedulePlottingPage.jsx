@@ -513,6 +513,10 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
     return { type: 'shift', in: group?.inTime || '9:00 PM', out: group?.outTime || '6:00 AM' };
   };
 
+  const getMemberName = (member, targetWeekKey = currentWeekKey) => {
+    return weeksStore[targetWeekKey]?.__names?.[member.id] || member.name;
+  };
+
   /**
    * Update one agent's shift for one day in one week.
    * Same-day group synchronization is opt-in from the custom time form.
@@ -641,52 +645,35 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
       return;
     }
 
-    setRosterGroups((prevGroups) => {
-      let sourceMember = null;
-      let targetMember = null;
+    const sourceMember = rosterGroups
+      .flatMap((group) => group.members || [])
+      .find((member) => member.id === draggedMember.id);
+    const targetMember = rosterGroups
+      .flatMap((group) => group.members || [])
+      .find((member) => member.id === targetMemberId);
+    if (!sourceMember || !targetMember) return;
 
-      for (const group of prevGroups) {
-        for (const m of (group.members || [])) {
-          if (m.id === draggedMember.id) sourceMember = m;
-          if (m.id === targetMemberId) targetMember = m;
-        }
-      }
+    const targetWeekKey = draggedMember.weekKey || currentWeekKey;
+    const weekData = { ...(weeksStore[targetWeekKey] || {}) };
+    const names = { ...(weekData.__names || {}) };
+    const sourceName = names[sourceMember.id] || sourceMember.name;
+    const targetName = names[targetMember.id] || targetMember.name;
+    names[sourceMember.id] = targetName;
+    names[targetMember.id] = sourceName;
+    weekData.__names = names;
 
-      if (!sourceMember || !targetMember) return prevGroups;
-
-      const sourceName = sourceMember.name;
-      const targetName = targetMember.name;
-
-      // Swap ONLY the employee names between the two schedule slots
-      const updatedGroups = prevGroups.map((group) => {
-        return {
-          ...group,
-          members: (group.members || []).map((m) => {
-            if (m.id === sourceMember.id) {
-              return { ...m, name: targetName };
-            }
-            if (m.id === targetMember.id) {
-              return { ...m, name: sourceName };
-            }
-            return m;
-          }),
-        };
-      });
-
+    setWeeksStore((prevWeeks) => {
+      const updatedWeeks = { ...prevWeeks, [targetWeekKey]: weekData };
       try {
-        localStorage.setItem(STORAGE_ROSTER_KEY, JSON.stringify(updatedGroups));
-      } catch {}
-
-      return updatedGroups;
+        localStorage.setItem(STORAGE_WEEKS_KEY, JSON.stringify(updatedWeeks));
+      } catch (e) {
+        console.error('Failed to cache week-specific name swap:', e);
+      }
+      return updatedWeeks;
     });
 
     setHasUnsavedChanges(true);
 
-    const targetMemberObj = rosterGroups
-      .flatMap((g) => g.members || [])
-      .find((m) => m.id === targetMemberId);
-
-    const targetName = targetMemberObj?.name || 'slot';
     triggerToast(`🔄 Swapped name "${draggedMember.name}" with "${targetName}"! (Schedule details stayed in place)`);
 
     setDraggedMember(null);
@@ -1044,7 +1031,8 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
 
                     {/* Member Rows with Name-Only Drag & Drop */}
                     {group.members.map((member) => {
-                      const isMe = myAgentName && member.name.toUpperCase() === myAgentName.toUpperCase();
+                      const displayName = getMemberName(member, weekKey);
+                      const isMe = myAgentName && displayName.toUpperCase() === myAgentName.toUpperCase();
                       const isBeingDragged = draggedMember?.id === member.id;
                       const isDragOverTarget = dragOverMemberId === member.id && draggedMember?.id !== member.id;
 
@@ -1076,7 +1064,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                 className={`draggable-name-badge ${isBeingDragged ? 'is-dragging-name' : ''} ${isDragOverTarget ? 'name-badge-target' : ''}`}
                                 draggable={true}
                                 onDragStart={(e) => {
-                                  setDraggedMember({ id: member.id, name: member.name, sourceGroupId: group.id, weekKey });
+                                  setDraggedMember({ id: member.id, name: displayName, sourceGroupId: group.id, weekKey });
                                   e.dataTransfer.setData('text/plain', member.id);
                                   e.dataTransfer.effectAllowed = 'move';
                                   if (e.currentTarget) {
@@ -1088,13 +1076,13 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                   setDragOverMemberId(null);
                                   setDragOverGroupId(null);
                                 }}
-                                title={`Drag ${member.name}'s name to move or swap names between schedule slots`}
+                                title={`Drag ${displayName}'s name to move or swap names between schedule slots`}
                               >
                                 <span className="drag-grip-handle" aria-hidden="true">
                                   <i className="bi bi-grip-vertical"></i>
                                 </span>
-                                <span className="member-avatar">{member.name.charAt(0)}</span>
-                                <span className="member-name-text">{member.name}</span>
+                                <span className="member-avatar">{displayName.charAt(0)}</span>
+                                <span className="member-name-text">{displayName}</span>
                                 {isMe && <span className="my-row-badge" title="You">YOU</span>}
                               </div>
 
@@ -1108,10 +1096,10 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                 type="button"
                                 className="btn-rename-member"
                                 onClick={() => {
-                                  setRenamingMember({ id: member.id, currentName: member.name });
-                                  setRenameInput(member.name);
+                                  setRenamingMember({ id: member.id, currentName: displayName });
+                                  setRenameInput(displayName);
                                 }}
-                                title={`Rename ${member.name}`}
+                                title={`Rename ${displayName}`}
                               >
                                 <i className="bi bi-pencil"></i>
                               </button>
@@ -1120,8 +1108,8 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                 <button
                                   type="button"
                                   className="btn-remove-member-row"
-                                  onClick={() => handleRemoveAgent(group.id, member.id, member.name)}
-                                  title={`Remove ${member.name} from schedule`}
+                                  onClick={() => handleRemoveAgent(group.id, member.id, displayName)}
+                                  title={`Remove ${displayName} from schedule`}
                                 >
                                   <i className="bi bi-trash3"></i>
                                 </button>
@@ -1142,7 +1130,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                     className={`cell-shift-time cell-in cell-quick-clickable ${shiftColorClass} ${isDayHighlighted ? 'col-highlighted' : ''}`}
                                     onClick={() => setActiveCellPopover({
                                       memberId: member.id,
-                                      memberName: member.name,
+                                      memberName: displayName,
                                       dayId: day.id,
                                       dayName: day.dayName,
                                       currentShift: shiftInfo,
@@ -1153,7 +1141,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                       groupName: group.name,
                                       weekKey,
                                     })}
-                                    title={`Click to change shift for ${member.name} on ${day.dayName}`}
+                                    title={`Click to change shift for ${displayName} on ${day.dayName}`}
                                   >
                                     <span className="time-badge">{shiftInfo.in}</span>
                                     <i className="bi bi-chevron-down cell-tap-icon"></i>
@@ -1162,7 +1150,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                     className={`cell-shift-time cell-out cell-quick-clickable ${shiftColorClass} ${isDayHighlighted ? 'col-highlighted' : ''}`}
                                     onClick={() => setActiveCellPopover({
                                       memberId: member.id,
-                                      memberName: member.name,
+                                      memberName: displayName,
                                       dayId: day.id,
                                       dayName: day.dayName,
                                       currentShift: shiftInfo,
@@ -1173,7 +1161,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                       groupName: group.name,
                                       weekKey,
                                     })}
-                                    title={`Click to change shift for ${member.name} on ${day.dayName}`}
+                                    title={`Click to change shift for ${displayName} on ${day.dayName}`}
                                   >
                                     <span className="time-badge">{shiftInfo.out}</span>
                                     <i className="bi bi-chevron-down cell-tap-icon"></i>
@@ -1190,7 +1178,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                   className={`cell-status cell-day-off cell-quick-clickable ${isDayHighlighted ? 'col-highlighted' : ''}`}
                                   onClick={() => setActiveCellPopover({
                                     memberId: member.id,
-                                    memberName: member.name,
+                                    memberName: displayName,
                                     dayId: day.id,
                                     dayName: day.dayName,
                                     currentShift: shiftInfo,
@@ -1201,7 +1189,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                     groupName: group.name,
                                     weekKey,
                                   })}
-                                  title={`Click to change shift for ${member.name} (${day.dayName} - DAY-OFF)`}
+                                  title={`Click to change shift for ${displayName} (${day.dayName} - DAY-OFF)`}
                                 >
                                   <span className="status-pill status-pill-dayoff">{shiftInfo.label || 'DAY-OFF'}</span>
                                   <i className="bi bi-chevron-down cell-tap-icon"></i>
@@ -1217,7 +1205,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                   className={`cell-status cell-holiday cell-quick-clickable ${isDayHighlighted ? 'col-highlighted' : ''}`}
                                   onClick={() => setActiveCellPopover({
                                     memberId: member.id,
-                                    memberName: member.name,
+                                    memberName: displayName,
                                     dayId: day.id,
                                     dayName: day.dayName,
                                     currentShift: shiftInfo,
@@ -1228,7 +1216,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                     groupName: group.name,
                                     weekKey,
                                   })}
-                                  title={`Click to change shift for ${member.name} (${day.dayName} - HOLIDAY)`}
+                                  title={`Click to change shift for ${displayName} (${day.dayName} - HOLIDAY)`}
                                 >
                                   <span className="status-pill status-pill-holiday">{shiftInfo.label || 'HOLIDAY'}</span>
                                   <i className="bi bi-chevron-down cell-tap-icon"></i>
@@ -1244,7 +1232,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                   className={`cell-status cell-ot-rd cell-quick-clickable ${isDayHighlighted ? 'col-highlighted' : ''}`}
                                   onClick={() => setActiveCellPopover({
                                     memberId: member.id,
-                                    memberName: member.name,
+                                    memberName: displayName,
                                     dayId: day.id,
                                     dayName: day.dayName,
                                     currentShift: shiftInfo,
@@ -1255,7 +1243,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                     groupName: group.name,
                                     weekKey,
                                   })}
-                                  title={`Click to change shift for ${member.name} (${day.dayName} - OT/RD)`}
+                                  title={`Click to change shift for ${displayName} (${day.dayName} - OT/RD)`}
                                 >
                                   <span className="status-pill status-pill-otrd">{shiftInfo.label || 'OT/RD'}</span>
                                   <i className="bi bi-chevron-down cell-tap-icon"></i>
@@ -1270,7 +1258,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                 className={`cell-status cell-quick-clickable ${isDayHighlighted ? 'col-highlighted' : ''}`}
                                 onClick={() => setActiveCellPopover({
                                   memberId: member.id,
-                                  memberName: member.name,
+                                  memberName: displayName,
                                   dayId: day.id,
                                   dayName: day.dayName,
                                   currentShift: shiftInfo,
@@ -1281,7 +1269,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                   groupName: group.name,
                                   weekKey,
                                 })}
-                                title={`Click to change shift for ${member.name} (${day.dayName})`}
+                                title={`Click to change shift for ${displayName} (${day.dayName})`}
                               >
                                 <span className="status-pill status-pill-custom">{shiftInfo.label || 'CUSTOM'}</span>
                                 <i className="bi bi-chevron-down cell-tap-icon"></i>

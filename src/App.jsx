@@ -112,26 +112,26 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
-    id: "rel-2026-10-21-v2267",
-    version: "v2.26.7",
+    id: "rel-2026-10-21-v2268",
+    version: "v2.26.8",
     date: "October 21 2026",
     isLatest: true,
-    badge: "SINGLE-DAY SHIFT EDITING",
-    title: "Shift Changes Apply to One Day",
-    summary: "Changing a schedule now updates only the selected agent and day by default instead of changing other agents in the same group.",
+    badge: "WEEK-SPECIFIC NAME SWAPS",
+    title: "Name Swaps Stay Within One Week",
+    summary: "Swapping employee names in one weekly schedule block no longer changes names in the other weeks.",
     items: [
       {
         type: "fix",
         icon: "bi-check2-circle",
-        title: "Single-Agent, Single-Day Updates",
-        desc: "Preset and custom shift changes are isolated to the selected schedule cell by default.",
+        title: "Week-Specific Name Assignments",
+        desc: "Name swaps are stored with the selected week while the master roster remains unchanged.",
         tag: "Schedule"
       },
       {
         type: "fix",
         icon: "bi-window-stack",
-        title: "Optional Same-Day Sync",
-        desc: "Custom time edits still provide an opt-in checkbox when hours should be shared with other agents on that day.",
+        title: "Other Weeks Stay Unchanged",
+        desc: "Weekly blocks continue to show their own name assignments after a swap is made.",
         tag: "Control"
       },
       {
