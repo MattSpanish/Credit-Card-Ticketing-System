@@ -112,10 +112,53 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-10-22-v2272",
+    version: "v2.27.2",
+    date: "October 22 2026",
+    isLatest: true,
+    badge: "CANCEL EDITING",
+    title: "Cancel Roster Editing",
+    summary: "Roster editing now includes a Cancel button to restore the schedule from before editing began.",
+    items: [
+      {
+        type: "improvement",
+        icon: "bi-arrow-counterclockwise",
+        title: "Restore Previous Schedule",
+        desc: "Cancel Editing discards roster and schedule changes made during the current edit session.",
+        tag: "Schedule"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-10-22-v2271",
+    version: "v2.27.1",
+    date: "October 22 2026",
+    isLatest: false,
+    badge: "ROSTER EDIT MODE",
+    title: "Edit Schedule Through Roster Mode",
+    summary: "Schedule changes are now grouped under Edit Roster so the normal schedule view stays read-only.",
+    items: [
+      {
+        type: "improvement",
+        icon: "bi-pencil-square",
+        title: "Single Editing Entry Point",
+        desc: "Enter Edit Roster to change shift cells, names, agents, and weekly schedule copies.",
+        tag: "Schedule"
+      },
+      {
+        type: "fix",
+        icon: "bi-eye",
+        title: "Read-only Schedule View",
+        desc: "Viewing the schedule no longer opens editing controls accidentally.",
+        tag: "Control"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-21-v2270",
     version: "v2.27.0",
     date: "October 21 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "COPY & PASTE WEEKS",
     title: "Copy and Paste Complete Weeks",
     summary: "Added separate Copy Week and Paste Week controls so a complete schedule can be moved between any weekly blocks.",
@@ -4390,11 +4433,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.26.5">
+          <div className="logo" title="PH Portal v2.27.2">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.26.5</span>
+              <span className="logo-version">v2.27.2</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -6766,7 +6809,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.26.5';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.2';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6782,7 +6825,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.26.5';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.2';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

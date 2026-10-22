@@ -363,6 +363,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
   });
   const [toastMsg, setToastMsg] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
+  const [editSnapshot, setEditSnapshot] = useState(null);
 
   // Drag and Drop state (ONLY name moves)
   const [draggedMember, setDraggedMember] = useState(null); // { id, name, sourceGroupId, weekKey }
@@ -389,6 +390,52 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 4000);
+  };
+
+  const handleToggleEditMode = () => {
+    setIsEditMode((prev) => {
+      const next = !prev;
+      if (next) {
+        setEditSnapshot({
+          rosterGroups: JSON.parse(JSON.stringify(rosterGroups)),
+          weeksStore: JSON.parse(JSON.stringify(weeksStore)),
+          hasUnsavedChanges,
+        });
+      } else {
+        setActiveCellPopover(null);
+        setRenamingMember(null);
+        setDraggedMember(null);
+        setDragOverMemberId(null);
+        setDragOverGroupId(null);
+        setIsAddModalOpen(false);
+        setEditSnapshot(null);
+      }
+      return next;
+    });
+  };
+
+  const handleCancelEditing = () => {
+    if (!isEditMode || !editSnapshot) return;
+
+    setRosterGroups(editSnapshot.rosterGroups);
+    setWeeksStore(editSnapshot.weeksStore);
+    setHasUnsavedChanges(editSnapshot.hasUnsavedChanges);
+    try {
+      localStorage.setItem(STORAGE_ROSTER_KEY, JSON.stringify(editSnapshot.rosterGroups));
+      localStorage.setItem(STORAGE_WEEKS_KEY, JSON.stringify(editSnapshot.weeksStore));
+    } catch (e) {
+      console.error('Failed to restore schedule after cancelling edits:', e);
+    }
+
+    setActiveCellPopover(null);
+    setRenamingMember(null);
+    setDraggedMember(null);
+    setDragOverMemberId(null);
+    setDragOverGroupId(null);
+    setIsAddModalOpen(false);
+    setEditSnapshot(null);
+    setIsEditMode(false);
+    triggerToast('↩️ Editing cancelled. Your previous roster and schedule were restored.');
   };
 
   // Synchronize popover inputs whenever active cell changes
@@ -587,6 +634,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
 
   // Quick 1-click preset select
   const handleQuickShiftSelect = (type, customIn, customOut, label) => {
+    if (!isEditMode) return;
     if (!activeCellPopover) return;
     const { memberId, dayId, defaultIn, defaultOut, weekKey } = activeCellPopover;
 
@@ -618,6 +666,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
   // Apply custom in/out times from form inside palette
   const handleApplyCustomTimesForm = (e) => {
     if (e) e.preventDefault();
+    if (!isEditMode) return;
     if (!activeCellPopover) return;
     const { memberId, dayId, defaultIn, defaultOut, weekKey } = activeCellPopover;
 
@@ -639,6 +688,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
 
   // Drop an employee name on another employee slot (swap names only, keep all schedule details intact)
   const handleDropOnMember = (targetMemberId, targetGroupId) => {
+    if (!isEditMode) return;
     if (!draggedMember || draggedMember.id === targetMemberId) {
       setDraggedMember(null);
       setDragOverMemberId(null);
@@ -684,6 +734,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
 
   // Drop employee into a Shift Group Header (swaps with the first slot in that shift group)
   const handleDropOnGroupHeader = (targetGroupId) => {
+    if (!isEditMode) return;
     if (!draggedMember || draggedMember.sourceGroupId === targetGroupId) {
       setDraggedMember(null);
       setDragOverMemberId(null);
@@ -706,6 +757,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
   // Rename agent
   const handleSaveRename = (e) => {
     if (e) e.preventDefault();
+    if (!isEditMode) return;
     if (!renamingMember) return;
     const clean = renameInput.trim().toUpperCase();
     if (!clean) {
@@ -741,6 +793,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
   // Add agent
   const handleAddAgent = (e) => {
     if (e) e.preventDefault();
+    if (!isEditMode) return;
     const clean = newAgentName.trim().toUpperCase();
     if (!clean) {
       triggerToast('⚠️ Please enter an agent name.');
@@ -784,6 +837,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
 
   // Remove agent
   const handleRemoveAgent = (groupId, memberId, memberName) => {
+    if (!isEditMode) return;
     if (window.confirm(`Are you sure you want to remove ${memberName} from the schedule?`)) {
       setRosterGroups((prev) => {
         const updated = prev.map((g) => {
@@ -824,6 +878,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
 
   // Copy a complete week into the in-app clipboard, including week-specific names.
   const handleCopyWeek = (sourceWeekKey) => {
+    if (!isEditMode) return;
     if (!sourceWeekKey) return;
     setCopiedWeek({
       sourceWeekKey,
@@ -834,6 +889,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
 
   // Paste the copied complete week into one destination week.
   const handlePasteWeek = (targetWeekKey) => {
+    if (!isEditMode) return;
     if (!copiedWeek?.schedule || !targetWeekKey) return;
 
     setWeeksStore((prev) => {
@@ -855,6 +911,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
 
   // Preserve the existing one-click copy-to-next-week action.
   const handleCopyWeekToTarget = (sourceWeekKey, targetWeekKey) => {
+    if (!isEditMode) return;
     handleCopyWeek(sourceWeekKey);
     if (!sourceWeekKey || !targetWeekKey) return;
     const schedule = getWeekSnapshot(sourceWeekKey);
@@ -920,6 +977,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
 
   // Reset to Factory Default
   const handleResetToMasterRoster = () => {
+    if (!isEditMode) return;
     if (window.confirm('Reset the entire schedule back to default template?')) {
       try {
         localStorage.removeItem(STORAGE_ROSTER_KEY);
@@ -1030,6 +1088,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                     <tr
                       className={`shift-group-header-row ${group.colorClass} ${isGroupDropTarget ? 'group-drop-active' : ''}`}
                       onDragOver={(e) => {
+                        if (!isEditMode) return;
                         e.preventDefault();
                         e.dataTransfer.dropEffect = 'move';
                         if (dragOverGroupId !== group.id) setDragOverGroupId(group.id);
@@ -1038,6 +1097,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                         if (dragOverGroupId === group.id) setDragOverGroupId(null);
                       }}
                       onDrop={(e) => {
+                        if (!isEditMode) return;
                         e.preventDefault();
                         handleDropOnGroupHeader(group.id);
                       }}
@@ -1059,9 +1119,11 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                               type="button"
                               className="btn-group-add-member"
                               onClick={() => {
+                                if (!isEditMode) return;
                                 setNewAgentGroupId(group.id);
                                 setIsAddModalOpen(true);
                               }}
+                              disabled={!isEditMode}
                               title={`Add agent to ${group.name}`}
                             >
                               <i className="bi bi-plus-circle me-1"></i> Add Agent
@@ -1084,6 +1146,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                           key={`row-${member.id}-${weekKey}`}
                           className={`schedule-row ${group.colorClass} ${isMe ? 'is-my-row' : ''}`}
                           onDragOver={(e) => {
+                            if (!isEditMode) return;
                             if (draggedMember && draggedMember.id !== member.id) {
                               e.preventDefault();
                               e.dataTransfer.dropEffect = 'move';
@@ -1096,6 +1159,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                             }
                           }}
                           onDrop={(e) => {
+                            if (!isEditMode) return;
                             e.preventDefault();
                             handleDropOnMember(member.id, group.id);
                           }}
@@ -1105,8 +1169,9 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                             <div className="member-name-wrap">
                               <div
                                 className={`draggable-name-badge ${isBeingDragged ? 'is-dragging-name' : ''} ${isDragOverTarget ? 'name-badge-target' : ''}`}
-                                draggable={true}
+                                draggable={isEditMode}
                                 onDragStart={(e) => {
+                                  if (!isEditMode) return;
                                   setDraggedMember({ id: member.id, name: displayName, sourceGroupId: group.id, weekKey });
                                   e.dataTransfer.setData('text/plain', member.id);
                                   e.dataTransfer.effectAllowed = 'move';
@@ -1138,7 +1203,9 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                               <button
                                 type="button"
                                 className="btn-rename-member"
+                                disabled={!isEditMode}
                                 onClick={() => {
+                                  if (!isEditMode) return;
                                   setRenamingMember({ id: member.id, currentName: displayName });
                                   setRenameInput(displayName);
                                 }}
@@ -1171,7 +1238,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                 <React.Fragment key={`cell-${member.id}-${day.id}-${weekKey}`}>
                                   <td
                                     className={`cell-shift-time cell-in cell-quick-clickable ${shiftColorClass} ${isDayHighlighted ? 'col-highlighted' : ''}`}
-                                    onClick={() => setActiveCellPopover({
+                                    onClick={() => isEditMode && setActiveCellPopover({
                                       memberId: member.id,
                                       memberName: displayName,
                                       dayId: day.id,
@@ -1191,7 +1258,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                   </td>
                                   <td
                                     className={`cell-shift-time cell-out cell-quick-clickable ${shiftColorClass} ${isDayHighlighted ? 'col-highlighted' : ''}`}
-                                    onClick={() => setActiveCellPopover({
+                                    onClick={() => isEditMode && setActiveCellPopover({
                                       memberId: member.id,
                                       memberName: displayName,
                                       dayId: day.id,
@@ -1219,7 +1286,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                   key={`cell-${member.id}-${day.id}-${weekKey}`}
                                   colSpan="2"
                                   className={`cell-status cell-day-off cell-quick-clickable ${isDayHighlighted ? 'col-highlighted' : ''}`}
-                                  onClick={() => setActiveCellPopover({
+                                  onClick={() => isEditMode && setActiveCellPopover({
                                     memberId: member.id,
                                     memberName: displayName,
                                     dayId: day.id,
@@ -1246,7 +1313,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                   key={`cell-${member.id}-${day.id}-${weekKey}`}
                                   colSpan="2"
                                   className={`cell-status cell-holiday cell-quick-clickable ${isDayHighlighted ? 'col-highlighted' : ''}`}
-                                  onClick={() => setActiveCellPopover({
+                                  onClick={() => isEditMode && setActiveCellPopover({
                                     memberId: member.id,
                                     memberName: displayName,
                                     dayId: day.id,
@@ -1273,7 +1340,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                   key={`cell-${member.id}-${day.id}-${weekKey}`}
                                   colSpan="2"
                                   className={`cell-status cell-ot-rd cell-quick-clickable ${isDayHighlighted ? 'col-highlighted' : ''}`}
-                                  onClick={() => setActiveCellPopover({
+                                  onClick={() => isEditMode && setActiveCellPopover({
                                     memberId: member.id,
                                     memberName: displayName,
                                     dayId: day.id,
@@ -1299,7 +1366,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                                 key={`cell-${member.id}-${day.id}-${weekKey}`}
                                 colSpan="2"
                                 className={`cell-status cell-quick-clickable ${isDayHighlighted ? 'col-highlighted' : ''}`}
-                                onClick={() => setActiveCellPopover({
+                                onClick={() => isEditMode && setActiveCellPopover({
                                   memberId: member.id,
                                   memberName: displayName,
                                   dayId: day.id,
@@ -1359,7 +1426,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
           <button
             type="button"
             className={`btn-schedule-action ${isEditMode ? 'active' : ''}`}
-            onClick={() => setIsEditMode((prev) => !prev)}
+            onClick={handleToggleEditMode}
             title="Toggle Roster Editing Mode"
           >
             <i className={`bi ${isEditMode ? 'bi-check2-circle' : 'bi-pencil-square'} me-1`}></i>
@@ -1370,6 +1437,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
             type="button"
             className="btn-schedule-action"
             onClick={handleResetToMasterRoster}
+            disabled={!isEditMode}
             title="Reset to default template"
           >
             <i className="bi bi-arrow-counterclockwise me-1"></i> Reset
@@ -1521,7 +1589,10 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
         <div className="drag-notice-content">
           <i className="bi bi-arrows-move me-2 text-accent"></i>
           <span>
-            <strong>Drag-and-Drop Active:</strong> Drag an employee's name to swap names between slots. All shift hours, days off, and schedule details stay firmly in their slots.
+            <strong>{isEditMode ? 'Editing Active:' : 'Read-only View:'}</strong>{' '}
+            {isEditMode
+              ? "Drag an employee's name to swap names between slots. Click shift cells to edit hours and statuses."
+              : 'Click Edit Roster to change names, shifts, days off, or weekly schedules.'}
           </span>
         </div>
         <span className="drag-notice-hint">
@@ -1549,9 +1620,16 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
             <button
               type="button"
               className="btn-done-editing"
-              onClick={() => setIsEditMode(false)}
+              onClick={handleToggleEditMode}
             >
               Finish Editing
+            </button>
+            <button
+              type="button"
+              className="btn-cancel-editing"
+              onClick={handleCancelEditing}
+            >
+              Cancel
             </button>
           </div>
         </div>
@@ -1715,6 +1793,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                     type="button"
                     className="btn-week-copy-pattern"
                     onClick={() => handleCopyWeek(weekObj.weekKey)}
+                    disabled={!isEditMode}
                     title="Copy this complete week for pasting into another week"
                   >
                     <i className="bi bi-clipboard me-1"></i> Copy Week
@@ -1723,7 +1802,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                     type="button"
                     className="btn-week-copy-pattern"
                     onClick={() => handlePasteWeek(weekObj.weekKey)}
-                    disabled={!copiedWeek || copiedWeek.sourceWeekKey === weekObj.weekKey}
+                    disabled={!isEditMode || !copiedWeek || copiedWeek.sourceWeekKey === weekObj.weekKey}
                     title={copiedWeek ? `Paste copied week ${copiedWeek.sourceWeekKey} here` : 'Copy a week first'}
                   >
                     <i className="bi bi-clipboard-check me-1"></i> Paste Week
@@ -1733,6 +1812,7 @@ export default function SchedulePlottingPage({ onBackToDashboard, currentUserNam
                       type="button"
                       className="btn-week-copy-pattern"
                       onClick={() => handleCopyWeekToTarget(weekObj.weekKey, monthWeeks[idx + 1].weekKey)}
+                      disabled={!isEditMode}
                       title={`Copy Week ${idx + 1} schedule to Week ${idx + 2}`}
                     >
                       <i className="bi bi-copy me-1"></i> Copy to Week {idx + 2}

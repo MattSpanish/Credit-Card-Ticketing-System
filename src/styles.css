@@ -11051,6 +11051,32 @@ body.dark-mode .btn-add-agent-banner:hover {
   background: #0369a1;
 }
 
+.btn-cancel-editing {
+  background: transparent;
+  color: #be123c;
+  border: 1px solid #fda4af;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-cancel-editing:hover {
+  background: #fff1f2;
+  border-color: #fb7185;
+}
+
+body.dark-mode .btn-cancel-editing {
+  color: #fda4af;
+  border-color: #be123c;
+}
+
+body.dark-mode .btn-cancel-editing:hover {
+  background: rgba(190, 18, 60, 0.2);
+}
+
 /* Group header add member button */
 .btn-group-add-member {
   background: rgba(255, 255, 255, 0.25);
