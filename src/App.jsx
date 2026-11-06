@@ -113,10 +113,28 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-11-06-v2277",
+    version: "v2.27.7",
+    date: "November 6 2026",
+    isLatest: true,
+    badge: "BANNER ALIGNMENT",
+    title: "Birthday Banner Alignment Fix",
+    summary: "Adjusted Nicholle's birthday banner sizing to 100% 100% edge-to-edge alignment so no text or portraits are clipped.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-aspect-ratio",
+        title: "Full-Frame Alignment",
+        desc: "Aligned birthday banner edge-to-edge across the header slideshow container to prevent cropping of text and portrait.",
+        tag: "Visual"
+      }
+    ]
+  },
+  {
     id: "rel-2026-11-06-v2276",
     version: "v2.27.6",
     date: "November 6 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "BIRTHDAY BANNER",
     title: "Happy Birthday Nicholle Banner Added",
     summary: "Added the new widescreen birthday celebration banner for Nicholle to the header slideshow.",
@@ -4506,11 +4524,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.27.6">
+          <div className="logo" title="PH Portal v2.27.7">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.27.6</span>
+              <span className="logo-version">v2.27.7</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5525,7 +5543,8 @@ function AppBanner() {
       id: 'birthday-nicholle',
       src: nicholleBanner,
       alt: 'Happy Birthday Nicholle',
-      position: 'center center'
+      position: 'center center',
+      size: '100% 100%'
     },
     {
       id: 'group',
@@ -6901,7 +6920,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.6';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.7';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6917,7 +6936,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.6';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.7';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
