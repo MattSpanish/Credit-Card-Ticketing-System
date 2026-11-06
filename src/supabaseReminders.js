@@ -141,6 +141,14 @@ export function stripCreatorFromHtml(html) {
 // Normalize row from Supabase (handles snake_case vs camelCase and createdBy)
 export function normalizeReminderFromDb(row) {
   if (!row) return null;
+  // Ignore internal team schedule configuration records
+  if (
+    String(row.id || '').startsWith('team_schedule_') ||
+    String(row.subject || '').startsWith('[TEAM_SCHEDULE_') ||
+    String(row.subject || '') === '[TEAM_SCHEDULE_CONFIG]'
+  ) {
+    return null;
+  }
   const rawDesc = row.description || '';
   const creatorFromHtml = extractCreatedByFromHtml(rawDesc);
   const createdBy = (row.created_by || row.createdBy || creatorFromHtml || '').trim();

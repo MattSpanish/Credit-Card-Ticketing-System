@@ -3,6 +3,7 @@ import { initCreditcardApp } from './creditcardController';
 import hierarchyImg from './hierarchy.png';
 import teamBanner from './groupcc.jpeg';
 import tatiBanner from './tati2.png';
+import nicholleBanner from './nicholle-birthday.jpg';
 import appLogo from './logo2.png';
 import ShiftReportPage from './ShiftReportPage';
 import ToolsPage from './ToolsPage';
@@ -112,10 +113,82 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-11-06-v2276",
+    version: "v2.27.6",
+    date: "November 6 2026",
+    isLatest: true,
+    badge: "BIRTHDAY BANNER",
+    title: "Happy Birthday Nicholle Banner Added",
+    summary: "Added the new widescreen birthday celebration banner for Nicholle to the header slideshow.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-cake2-fill",
+        title: "Nicholle's Birthday Banner",
+        desc: "Featured the new high-resolution celebration banner for Nicholle in the header slideshow.",
+        tag: "Visual"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-11-06-v2275",
+    version: "v2.27.5",
+    date: "November 6 2026",
+    isLatest: false,
+    badge: "HEADER BANNER",
+    title: "Header Slideshow Reset",
+    summary: "Removed previous birthday banner slide pending updated picture from the team.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-images",
+        title: "Header Slideshow Update",
+        desc: "Reset slideshow to team and coworker appreciation slides while awaiting the updated birthday picture.",
+        tag: "Visual"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-11-06-v2274",
+    version: "v2.27.4",
+    date: "November 6 2026",
+    isLatest: false,
+    badge: "BANNER LAYOUT",
+    title: "Full-Width Birthday Banner Stretch",
+    summary: "Updated Nicholle's birthday banner in the header slideshow to stretch edge-to-edge across the entire container.",
+    items: [
+      {
+        type: "ui",
+        icon: "bi-arrows-angle-expand",
+        title: "Edge-to-Edge Banner Stretch",
+        desc: "Stretched the celebration banner to span 100% width and height of the dashboard header slideshow.",
+        tag: "Visual"
+      }
+    ]
+  },
+  {
+    id: "rel-2026-11-06-v2273",
+    version: "v2.27.3",
+    date: "November 6 2026",
+    isLatest: false,
+    badge: "BIRTHDAY BANNER",
+    title: "Happy Birthday Nicholle Banner",
+    summary: "Added a celebration banner for Nicholle to the dashboard header slideshow.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-cake2-fill",
+        title: "Nicholle's Birthday Banner",
+        desc: "Added Happy Birthday celebration banner for Nicholle to the top header slideshow with ambient blur backdrop.",
+        tag: "Visual"
+      }
+    ]
+  },
+  {
     id: "rel-2026-10-22-v2272",
     version: "v2.27.2",
     date: "October 22 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "CANCEL EDITING",
     title: "Cancel Roster Editing",
     summary: "Roster editing now includes a Cancel button to restore the schedule from before editing began.",
@@ -4433,11 +4506,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.27.2">
+          <div className="logo" title="PH Portal v2.27.6">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.27.2</span>
+              <span className="logo-version">v2.27.6</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5449,6 +5522,12 @@ function TeamPhotoModal({ onClose }) {
 function AppBanner() {
   const slides = [
     {
+      id: 'birthday-nicholle',
+      src: nicholleBanner,
+      alt: 'Happy Birthday Nicholle',
+      position: 'center center'
+    },
+    {
       id: 'group',
       src: teamBanner,
       alt: 'Credit Card support team',
@@ -5485,14 +5564,27 @@ function AppBanner() {
         <div
           key={slide.id}
           className={`app-banner-slide ${index === currentIndex ? 'active' : ''}`}
-          style={{
-            backgroundImage: `url(${slide.src})`,
-            backgroundPosition: slide.position
-          }}
           role="img"
           aria-label={slide.alt}
           aria-hidden={index !== currentIndex}
-        />
+        >
+          {slide.backdrop && (
+            <div
+              className="app-banner-backdrop"
+              style={{
+                backgroundImage: `url(${slide.src})`
+              }}
+            />
+          )}
+          <div
+            className="app-banner-foreground"
+            style={{
+              backgroundImage: `url(${slide.src})`,
+              backgroundPosition: slide.position || 'center top',
+              backgroundSize: slide.size || 'cover'
+            }}
+          />
+        </div>
       ))}
 
       {/* Slide Navigation Indicators */}
@@ -6809,7 +6901,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.6';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6825,7 +6917,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.2';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.6';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

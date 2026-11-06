@@ -300,6 +300,28 @@ button, a, [role="button"], input, select, textarea,
     transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
     z-index: 1;
+    overflow: hidden;
+}
+
+.app-banner-foreground {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat;
+    z-index: 1;
+}
+
+.app-banner-backdrop {
+    position: absolute;
+    inset: -30px;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    filter: blur(28px) brightness(0.95);
+    transform: scale(1.15);
+    z-index: 0;
+    pointer-events: none;
 }
 
 .app-banner-slide.active {
