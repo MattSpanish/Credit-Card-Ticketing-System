@@ -113,10 +113,28 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-11-07-v2278",
+    version: "v2.27.8",
+    date: "November 7 2026",
+    isLatest: true,
+    badge: "TEAM ROSTER",
+    title: "Added Anthony to Support Roster",
+    summary: "Added Anthony to the Support Name ticket dropdown, break schedule selection, and shift report author list.",
+    items: [
+      {
+        type: "feature",
+        icon: "bi-person-plus-fill",
+        title: "Anthony Added to Support",
+        desc: "Anthony is now available as a selectable support member in ticket creation and team shift tools.",
+        tag: "Support"
+      }
+    ]
+  },
+  {
     id: "rel-2026-11-06-v2277",
     version: "v2.27.7",
     date: "November 6 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "BANNER ALIGNMENT",
     title: "Birthday Banner Alignment Fix",
     summary: "Adjusted Nicholle's birthday banner sizing to 100% 100% edge-to-edge alignment so no text or portraits are clipped.",
@@ -4387,6 +4405,7 @@ function SidebarBreakCard() {
           <option value="REGS">REGS</option>
           <option value="NICHOLLE">NICHOLLE</option>
           <option value="EJ">EJ</option>
+          <option value="ANTHONY">ANTHONY</option>
         </select>
       </div>
       <div className="sidebar-break-date">
@@ -4524,11 +4543,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.27.7">
+          <div className="logo" title="PH Portal v2.27.8">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.27.7</span>
+              <span className="logo-version">v2.27.8</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5222,6 +5241,8 @@ function LeftPanel() {
                 <option value="ERNEST">ERNEST</option>
                 <option value="REGS">REGS</option>
                 <option value="NICHOLLE">NICHOLLE</option>
+                <option value="EJ">EJ</option>
+                <option value="ANTHONY">ANTHONY</option>
               </select>
             </td>
           </tr>
@@ -6920,7 +6941,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.7';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.8';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6936,7 +6957,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.7';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.8';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

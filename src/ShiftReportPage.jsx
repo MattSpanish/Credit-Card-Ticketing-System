@@ -15,7 +15,7 @@ import {
   detectShiftFromContent,
 } from './supabaseShiftReports';
 
-const SUPPORT_NAMES = ['HANZ', 'CHARLES', 'KENNETH', 'ADI', 'TATI', 'RONIE', 'SEAN'];
+const SUPPORT_NAMES = ['HANZ', 'CHARLES', 'KENNETH', 'ADI', 'TATI', 'RONIE', 'SEAN', 'ANTHONY'];
 const STANDARD_SHIFTS = [
   '09:00PM TO 06:00AM',
   '05:00AM TO 02:00PM',
