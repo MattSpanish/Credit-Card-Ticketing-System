@@ -3452,6 +3452,17 @@ body.dark-mode .ai-mode-panel .text-grammar { color: var(--accent); }
 .bulk-bar .status-filter-btn[data-status="RESOLVED"].active { background: var(--status-resolved); color: white; border-color: var(--status-resolved); }
 .bulk-bar .status-filter-btn[data-status="PENDING"].active  { background: var(--status-pending);  color: white; border-color: var(--status-pending); }
 .bulk-bar .status-filter-btn[data-status="OTHER TASK"].active { background: var(--status-other); color: white; border-color: var(--status-other); }
+.bulk-bar .clean-storage-btn {
+    background: transparent;
+    color: var(--accent);
+    border-color: var(--accent-soft);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.bulk-bar .clean-storage-btn:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+}
 .bulk-bar .clear-all-btn {
     background: transparent;
     color: var(--danger);
@@ -3603,6 +3614,13 @@ body.dark-mode .ai-mode-panel .text-grammar { color: var(--accent); }
 #entryTable tbody tr[data-status="PENDING"] td:first-child  { border-left-color: var(--status-pending); }
 #entryTable tbody tr[data-status="OTHER TASK"] td:first-child { border-left-color: var(--status-other); }
 #entryTable tbody tr.is-selected td { background: var(--accent-soft); }
+#entryTable tbody tr.is-new-entry td {
+    animation: highlightNewEntry 2.5s ease-out;
+}
+@keyframes highlightNewEntry {
+    0% { background: rgba(59, 130, 246, 0.25); }
+    100% { background: transparent; }
+}
 
 /* Date cell layout */
 .cell-date {

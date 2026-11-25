@@ -113,10 +113,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-11-25-v2279",
+    version: "v2.27.9",
+    date: "November 25 2026",
+    isLatest: true,
+    badge: "STORAGE & FIX",
+    title: "Storage Cache Optimizer & Entry Table Visibility Fix",
+    summary: "Fixed ticket entries not appearing below upon adding, added automatic browser cache optimization, and eliminated draft storage leaks.",
+    items: [
+      {
+        type: "improvement",
+        icon: "bi-database-check",
+        title: "Auto Storage Cache Cleanup",
+        desc: "Implemented automatic purging of orphaned draft tabs, deleted entries, and safe quota management to prevent localStorage overflow.",
+        tag: "Storage"
+      },
+      {
+        type: "fix",
+        icon: "bi-table",
+        title: "Guaranteed Table Display",
+        desc: "Fixed newly added tickets immediately rendering below the form by resetting blocking status filters and aligning the active date view.",
+        tag: "Tickets"
+      }
+    ]
+  },
+  {
     id: "rel-2026-11-07-v2278",
     version: "v2.27.8",
     date: "November 7 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "TEAM ROSTER",
     title: "Added Anthony to Support Roster",
     summary: "Added Anthony to the Support Name ticket dropdown, break schedule selection, and shift report author list.",
@@ -4543,11 +4568,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.27.8">
+          <div className="logo" title="PH Portal v2.27.9">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.27.8</span>
+              <span className="logo-version">v2.27.9</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5473,6 +5498,7 @@ function BulkBar() {
       <button className="counter-badge status-filter-btn" data-status="RESOLVED" onClick={() => window.filterByStatus && window.filterByStatus('RESOLVED')}><i className="bi bi-check-circle-fill" aria-hidden="true"></i> Resolved: <span id="counterResolved">0</span></button>
       <button className="counter-badge status-filter-btn" data-status="PENDING" onClick={() => window.filterByStatus && window.filterByStatus('PENDING')}><i className="bi bi-hourglass-split" aria-hidden="true"></i> Pending: <span id="counterPending">0</span></button>
       <button className="counter-badge status-filter-btn" data-status="OTHER TASK" onClick={() => window.filterByStatus && window.filterByStatus('OTHER TASK')}><i className="bi bi-card-list" aria-hidden="true"></i> Other task: <span id="counterOther">0</span></button>
+      <button id="cleanStorageBtn" className="clean-storage-btn" onClick={() => window.cleanStorageCache && window.cleanStorageCache(true)} title="Clean orphaned drafts & optimize browser storage cache"><i className="bi bi-stars" aria-hidden="true"></i> Clean cache</button>
       <button id="clearAllBtn" className="clear-all-btn">Clear all</button>
     </div>
   );
@@ -6941,7 +6967,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.8';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.9';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -6957,7 +6983,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.8';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.9';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

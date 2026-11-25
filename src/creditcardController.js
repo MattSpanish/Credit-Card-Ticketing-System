@@ -618,17 +618,98 @@ export function initCreditcardApp() {
       });
     }
 
+    // ─── STORAGE QUOTA & CACHE OPTIMIZATION ───
+    function isQuotaExceeded(e) {
+      return (
+        e instanceof DOMException &&
+        (e.code === 22 ||
+          e.code === 1014 ||
+          e.name === 'QuotaExceededError' ||
+          e.name === 'NS_ERROR_DOM_QUOTA_REACHED')
+      );
+    }
+
+    function optimizeAndCleanStorage(notifyUser = false) {
+      let cleanedDraftCount = 0;
+      let purgedDeletedCount = 0;
+      try {
+        // 1. Gather all active draft IDs from DRAFT_TABS_KEY
+        let activeTabIds = [];
+        try {
+          const savedTabs = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
+          if (Array.isArray(savedTabs)) {
+            activeTabIds = savedTabs.map(t => t && t.id).filter(Boolean);
+          }
+        } catch (e) {}
+
+        // 2. Scan all localStorage keys and remove orphaned draftData_* and editDraft_*
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          if (key.startsWith('draftData_')) {
+            const draftId = key.replace('draftData_', '');
+            if (!activeTabIds.includes(draftId)) {
+              keysToRemove.push(key);
+            }
+          } else if (key.startsWith('editDraft_')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(k => {
+          try {
+            localStorage.removeItem(k);
+            cleanedDraftCount++;
+          } catch (e) {}
+        });
+
+        // 3. Purge soft-deleted entries from allEntries
+        const origLen = allEntries.length;
+        allEntries = allEntries.filter(entry => !entry.deleted);
+        purgedDeletedCount = origLen - allEntries.length;
+
+        // 4. Strip any giant base64 image strings embedded in remarks
+        allEntries.forEach(entry => {
+          if (entry.remarks && entry.remarks.length > 50000 && entry.remarks.includes('data:image/')) {
+            entry.remarks = entry.remarks.replace(/<img[^>]+src=["']data:image\/[^"']+["'][^>]*>/gi, '[Image Removed for Cache Optimization]');
+          }
+          if (entry.originalRemarks && entry.originalRemarks.length > 50000 && entry.originalRemarks.includes('data:image/')) {
+            entry.originalRemarks = entry.originalRemarks.replace(/<img[^>]+src=["']data:image\/[^"']+["'][^>]*>/gi, '[Image Removed for Cache Optimization]');
+          }
+        });
+
+        // Try writing back cleaned entries
+        try {
+          localStorage.setItem('unifiedEntries_creditcard', JSON.stringify(allEntries));
+        } catch (e) {}
+
+        if (notifyUser) {
+          showNotification(`Cache optimized! Cleared ${cleanedDraftCount} orphaned draft(s) and ${purgedDeletedCount} deleted item(s).`);
+        }
+      } catch (err) {
+        console.error('Error in optimizeAndCleanStorage:', err);
+      }
+      return { cleanedDraftCount, purgedDeletedCount };
+    }
+    window.cleanStorageCache = optimizeAndCleanStorage;
+
     // ─── FORM DATA ───
     function saveFormData(prefix) {
-      const fields = {
-        creditcard: ['ticketNumber', 'shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'remarks', 'resolution', 'date']
-      };
-      const formData = {};
-      fields[prefix].forEach(id => {
-        const el = document.getElementById(`${prefix}-${id}`);
-        if (el) formData[id] = el.value;
-      });
-      localStorage.setItem(`${prefix}FormData_creditcard`, JSON.stringify(formData));
+      try {
+        const fields = {
+          creditcard: ['ticketNumber', 'shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'remarks', 'resolution', 'date']
+        };
+        const formData = {};
+        fields[prefix].forEach(id => {
+          const el = document.getElementById(`${prefix}-${id}`);
+          if (el) formData[id] = el.value;
+        });
+        localStorage.setItem(`${prefix}FormData_creditcard`, JSON.stringify(formData));
+      } catch (e) {
+        if (isQuotaExceeded(e)) {
+          optimizeAndCleanStorage(false);
+        }
+      }
     }
 
     function loadFormData(prefix) {
@@ -650,8 +731,33 @@ export function initCreditcardApp() {
 
     // ─── ENTRIES ───
     function saveAllEntries() {
-      localStorage.setItem('unifiedEntries_creditcard', JSON.stringify(allEntries));
-      updateStatusCounters();
+      try {
+        localStorage.setItem('unifiedEntries_creditcard', JSON.stringify(allEntries));
+      } catch (e) {
+        if (isQuotaExceeded(e)) {
+          console.warn('Storage quota exceeded on saveAllEntries. Running cache optimizer...');
+          optimizeAndCleanStorage(false);
+          try {
+            localStorage.setItem('unifiedEntries_creditcard', JSON.stringify(allEntries));
+          } catch (retryErr) {
+            console.warn('Storage still full after basic cleanup, pruning older soft caches...');
+            if (allEntries.length > 1000) {
+              allEntries = allEntries.slice(0, 1000);
+            }
+            try {
+              localStorage.setItem('unifiedEntries_creditcard', JSON.stringify(allEntries));
+            } catch (finalErr) {
+              console.error('Critical: unable to persist to localStorage:', finalErr);
+              showNotification('Notice: Browser cache full. Older drafts were cleaned up.', 'warning');
+            }
+          }
+        } else {
+          console.error('Failed to save unifiedEntries_creditcard:', e);
+        }
+      }
+      try {
+        updateStatusCounters();
+      } catch (e) {}
     }
 
     function loadAllEntries() {
@@ -757,9 +863,13 @@ export function initCreditcardApp() {
       if (status.toUpperCase() !== 'OTHER TASK') {
         if (aiActionMode !== 'none') {
           showNotification(`Generating AI ${aiActionMode === 'grammar' ? 'Grammar Fix' : 'Summary'}...`);
-          const aiResultHtml = await generateRemarksSummary(issue, rawRemarksHtml, aiActionMode);
-          if (aiResultHtml) {
-            remarksHtmlToSave = aiResultHtml; 
+          try {
+            const aiResultHtml = await generateRemarksSummary(issue, rawRemarksHtml, aiActionMode);
+            if (aiResultHtml) {
+              remarksHtmlToSave = aiResultHtml; 
+            }
+          } catch (aiErr) {
+            console.warn('AI summary generation error, proceeding with raw notes:', aiErr);
           }
         } else {
           remarksHtmlToSave = '';
@@ -792,9 +902,11 @@ export function initCreditcardApp() {
         if (index !== -1) {
           allEntries[index] = { ...allEntries[index], ...newEntry, id: editId };
           showNotification('Credit Card entry updated!');
-          localStorage.removeItem(EDIT_DRAFT_KEY + editId);
-          editId = null;
-          localStorage.removeItem(EDIT_STORAGE_KEY);
+          try {
+            localStorage.removeItem(EDIT_DRAFT_KEY + editId);
+            editId = null;
+            localStorage.removeItem(EDIT_STORAGE_KEY);
+          } catch (e) {}
           const addBtn = document.querySelector('#tab-creditcard .add');
           if (addBtn) {
             addBtn.textContent = 'ADD ENTRY';
@@ -806,17 +918,70 @@ export function initCreditcardApp() {
         showNotification('Credit Card entry added!');
       }
 
+      // Close the submitted draft tab so it doesn't leave orphaned data in localStorage cache
+      const submittedDraftId = currentDraftId;
+      if (submittedDraftId && !editId) {
+        try {
+          const btn = document.getElementById(`ticketTab-${submittedDraftId}`);
+          if (btn) btn.remove();
+          localStorage.removeItem(`draftData_${submittedDraftId}`);
+          const savedTabs = JSON.parse(localStorage.getItem(DRAFT_TABS_KEY) || '[]');
+          const remainingTabs = savedTabs.filter(s => s.id !== submittedDraftId);
+          localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(remainingTabs));
+        } catch (e) {}
+        currentDraftId = null;
+        try { localStorage.removeItem('activeDraftId_creditcard'); } catch (e) {}
+      }
       clearFormFields(prefix);
+
       if (!editId) {
-        window.createNewTicket();
+        try {
+          window.createNewTicket();
+        } catch (e) {
+          console.warn('Error creating next draft ticket tab:', e);
+        }
+      }
+
+      // ─── ENSURE ADDED TICKET IS VISIBLE BELOW IN TABLE ───
+      // 1. Reset status filter if it would hide this ticket
+      if (currentStatusFilter && (newEntry.status || '').toUpperCase().trim() !== currentStatusFilter) {
+        currentStatusFilter = null;
+        document.querySelectorAll('.counter-badge.status-filter-btn').forEach(b => b.classList.remove('active'));
+      }
+      // 2. Clear global search if active so newly added entry is not hidden by old search query
+      if (currentSearchQuery && !ticketMatchesSearch(newEntry, currentSearchQuery)) {
+        currentSearchQuery = '';
+        const searchBox = document.getElementById('globalSearchInput');
+        if (searchBox) searchBox.value = '';
+        if (window.clearGlobalSearch) window.clearGlobalSearch();
+      }
+      // 3. Align date filter with new entry date so it's in the active table view
+      const dateEl = document.getElementById('creditcard-date');
+      if (dateEl && dateStr && dateEl.value !== dateStr) {
+        dateEl.value = dateStr;
       }
 
       saveAllEntries();
-      updateStatusCounters();
-      renderTable();
-      renderSidebar();
-      creditcardUpdatePreview();
-      syncPreviewHeight();
+
+      try {
+        updateStatusCounters();
+        renderTable();
+        renderSidebar();
+        creditcardUpdatePreview();
+        syncPreviewHeight();
+
+        // Highlight newly added row in the table below
+        setTimeout(() => {
+          const row = document.querySelector(`#entryTable tbody tr[data-id="${newEntry.id}"]`);
+          if (row) {
+            row.classList.add('is-new-entry');
+            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            setTimeout(() => row.classList.remove('is-new-entry'), 2500);
+          }
+        }, 80);
+      } catch (renderErr) {
+        console.error('Error rendering table after addEntry:', renderErr);
+      }
     };
 
     function clearFormFields(prefix) {
@@ -2078,15 +2243,31 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
 
     function saveDraftData(draftId) {
       if (!draftId) return;
-      const fields = ['ticketNumber', 'shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'date', 'support'];
-      const data = {};
-      fields.forEach(id => {
-        const el = document.getElementById(`creditcard-${id}`);
-        if (el) data[id] = el.value;
-      });
-      if (quillEditor) data.remarks = document.getElementById('creditcard-remarks').value;
-      localStorage.setItem(`draftData_${draftId}`, JSON.stringify(data));
-      updateTabLabelFromDraft(draftId, data);
+      try {
+        const fields = ['ticketNumber', 'shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'date', 'support'];
+        const data = {};
+        fields.forEach(id => {
+          const el = document.getElementById(`creditcard-${id}`);
+          if (el) data[id] = el.value;
+        });
+        if (quillEditor) data.remarks = document.getElementById('creditcard-remarks').value;
+        localStorage.setItem(`draftData_${draftId}`, JSON.stringify(data));
+        updateTabLabelFromDraft(draftId, data);
+      } catch (e) {
+        if (isQuotaExceeded(e)) {
+          optimizeAndCleanStorage(false);
+          try {
+            const data = {};
+            ['ticketNumber', 'shift', 'mid', 'store', 'merchant', 'contactNumber', 'issue', 'escalated', 'status', 'resolution', 'date', 'support'].forEach(id => {
+              const el = document.getElementById(`creditcard-${id}`);
+              if (el) data[id] = el.value;
+            });
+            if (quillEditor) data.remarks = document.getElementById('creditcard-remarks').value;
+            localStorage.setItem(`draftData_${draftId}`, JSON.stringify(data));
+            updateTabLabelFromDraft(draftId, data);
+          } catch (retryErr) {}
+        }
+      }
     }
 
     function loadDraftData(draftId) {
@@ -2356,6 +2537,9 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       });
 
       document.getElementById('creditcard-date').value = getLocalTodayString();
+      try {
+        optimizeAndCleanStorage(false);
+      } catch (e) {}
       loadFormData('creditcard');
       loadAllEntries();
       attachGeminiKeyControls();
