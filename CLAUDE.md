@@ -71,6 +71,7 @@ Run the test suite with `node --test src/draftStorage.test.js` from the project 
 - **JS, not TypeScript** — `.jsx` for components, `.js` for the controller and helpers. No type annotations anywhere.
 - **Inline data, not JSON files** — schedule, templates, statuses, and status options are inline constants. Adding a new TID template = adding a key to `TID_TEMPLATES` (in `App.jsx`).
 - **localStorage keys are namespaced** — suffix `_creditcard` (e.g. `editingEntryId_creditcard`, `ticketDraftTabs_creditcard`, `lastClearDate_creditcard`). Keep the suffix when adding new keys.
+- **Submitted tickets** are written to `unifiedEntries_creditcard` before clearing the form or starting AI processing. Other tabs reload history on storage events. Browser lifecycle handlers save drafts only. The legacy backup is read for recovery and retired after a successful write.
 - **DOM IDs are prefixed** — form fields are `creditcard-<name>` (e.g. `creditcard-mid`, `creditcard-issue`, `creditcard-remarks-editor`). The Quill editor targets `#creditcard-remarks-editor` and mirrors its HTML into the hidden `#creditcard-remarks` input on every `text-change`.
 - **Persistence on every input** — most form inputs call `saveFormData('creditcard')` and, if a draft is active, `saveDraftData(currentDraftId)` on each change. `beforeunload` re-saves the form and active draft.
 - **EST for date math** — `getESTDateString()` controls the daily auto-clear / date-roll logic; display uses `getLocalTodayString()`.

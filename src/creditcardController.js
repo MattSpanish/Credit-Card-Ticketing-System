@@ -21,6 +21,8 @@ export function initCreditcardApp() {
     const EDIT_STORAGE_KEY = 'editingEntryId_creditcard';
     const EDIT_DRAFT_KEY = 'editingDraft_creditcard_';
     const DRAFT_TABS_KEY = 'ticketDraftTabs_creditcard';
+    const ENTRIES_KEY = 'unifiedEntries_creditcard';
+    const ENTRIES_BACKUP_KEY = 'unifiedEntries_creditcard_backup';
     const collapseState = { months: {}, dates: {} };
     const STATUS_OPTIONS = ['RESOLVED', 'PENDING', 'OTHER TASK'];
 
@@ -721,8 +723,7 @@ export function initCreditcardApp() {
         alert('Tickets data must be an array of ticket objects.');
         return;
       }
-      allEntries = list;
-      saveAllEntries();
+      if (!saveAllEntries(list)) return;
       renderTable();
       renderSidebar();
       alert(`Success! Restored ${allEntries.length} tickets to your table.`);
@@ -761,15 +762,16 @@ export function initCreditcardApp() {
         alert('No draft tickets found in storage to recover.');
         return 0;
       }
-      const existingIds = new Set(allEntries.map(e => String(e.id || e.ticketNumber)));
+      const entries = allEntries.slice();
+      const existingIds = new Set(entries.map(e => String(e.id || e.ticketNumber)));
       let added = 0;
       drafts.forEach(d => {
         if (!existingIds.has(String(d.id)) && (!d.ticketNumber || !existingIds.has(String(d.ticketNumber)))) {
-          allEntries.unshift(d);
+          entries.unshift(d);
           added++;
         }
       });
-      saveAllEntries();
+      if (!saveAllEntries(entries)) return;
       renderTable();
       renderSidebar();
       alert(`Recovered ${added} ticket(s) from drafts into your table!`);
@@ -813,62 +815,53 @@ export function initCreditcardApp() {
     }
 
     // ─── ENTRIES ───
-    function saveAllEntries() {
+    function readEntries(key) {
       try {
-        localStorage.setItem('unifiedEntries_creditcard', JSON.stringify(allEntries));
-        if (allEntries && allEntries.length > 0) {
-          try {
-            localStorage.setItem('unifiedEntries_creditcard_backup', JSON.stringify(allEntries));
-          } catch (e) {}
+        const entries = JSON.parse(localStorage.getItem(key));
+        if (Array.isArray(entries) && entries.every(entry => entry && typeof entry === 'object' && !Array.isArray(entry))) {
+          return entries;
         }
-      } catch (e) {
-        if (isQuotaExceeded(e)) {
-          console.warn('Storage quota exceeded on saveAllEntries. Cleaning orphaned closed draft cache...');
-          optimizeAndCleanStorage(false);
-          try {
-            localStorage.setItem('unifiedEntries_creditcard', JSON.stringify(allEntries));
-            if (allEntries && allEntries.length > 0) {
-              try {
-                localStorage.setItem('unifiedEntries_creditcard_backup', JSON.stringify(allEntries));
-              } catch (e) {}
-            }
-          } catch (retryErr) {
-            console.warn('Storage full after draft cleanup; all existing tickets are preserved safely in memory.');
-          }
-        } else {
-          console.error('Failed to save unifiedEntries_creditcard:', e);
-        }
-      }
-      try {
-        updateStatusCounters();
       } catch (e) {}
+      return null;
+    }
+
+    function readSavedEntries() {
+      const entries = readEntries(ENTRIES_KEY);
+      if (entries?.length) return entries;
+      return readEntries(ENTRIES_BACKUP_KEY) ?? entries;
+    }
+
+    function saveAllEntries(entries = allEntries, failureMessage = 'Ticket changes could not be saved. Check browser storage and try again.') {
+      try {
+        const data = JSON.stringify(entries);
+        try {
+          localStorage.setItem(ENTRIES_KEY, data);
+        } catch (error) {
+          // The legacy duplicate can use half the storage quota. Free it only when
+          // the primary history is still readable and will survive a failed retry.
+          if (!isQuotaExceeded(error) || !readEntries(ENTRIES_KEY)?.length) throw error;
+          localStorage.removeItem(ENTRIES_BACKUP_KEY);
+          localStorage.setItem(ENTRIES_KEY, data);
+        }
+      } catch (error) {
+        console.error('Failed to save ticket history:', error);
+        if (entries === allEntries) loadAllEntries();
+        showNotification(failureMessage);
+        return false;
+      }
+      allEntries = entries;
+      try {
+        localStorage.removeItem(ENTRIES_BACKUP_KEY);
+      } catch (e) {}
+      return true;
     }
 
     function loadAllEntries() {
-      let saved = localStorage.getItem('unifiedEntries_creditcard');
-      if (!saved || saved === '[]') {
-        const backup = localStorage.getItem('unifiedEntries_creditcard_backup');
-        if (backup && backup !== '[]') {
-          saved = backup;
-          try {
-            localStorage.setItem('unifiedEntries_creditcard', backup);
-          } catch (e) {}
-        }
-      }
-      if (saved) {
-        try {
-          allEntries = JSON.parse(saved);
-          allEntries.forEach(entry => {
-            if (entry.deleted === undefined) entry.deleted = false;
-            if (entry.imported === undefined) entry.imported = false;
-          });
-          if (allEntries && allEntries.length > 0) {
-            try {
-              localStorage.setItem('unifiedEntries_creditcard_backup', JSON.stringify(allEntries));
-            } catch (e) {}
-          }
-        } catch (e) {}
-      }
+      allEntries = readSavedEntries() ?? [];
+      allEntries.forEach(entry => {
+        if (entry.deleted === undefined) entry.deleted = false;
+        if (entry.imported === undefined) entry.imported = false;
+      });
       renderTable();
       renderSidebar();
     }
@@ -944,22 +937,25 @@ export function initCreditcardApp() {
       const resolution = document.getElementById('creditcard-resolution').value.trim();
       const remarksField = document.getElementById('creditcard-remarks');
       
-      let rawRemarksHtml = quillEditor ? quillEditor.root.innerHTML : (remarksField ? remarksField.value : '');
-      let remarksHtmlToSave = rawRemarksHtml;
-      
-      let originalRemarksHtml = rawRemarksHtml;
-
-      if (editId) {
-        const existing = allEntries.find(e => e.id === editId && e.source === 'creditcard');
-        if (existing && existing.originalRemarks) {
-          originalRemarksHtml = existing.originalRemarks;
-        }
+      const rawRemarksHtml = quillEditor ? quillEditor.root.innerHTML : (remarksField?.value || '');
+      const aiActionMode = document.querySelector('input[name="aiActionMode"]:checked')?.value || 'summarize';
+      const useAI = status.toUpperCase() !== 'OTHER TASK' && aiActionMode !== 'none';
+      const keepRawRemarks = status.toUpperCase() === 'OTHER TASK' || useAI;
+      const storedEntries = readSavedEntries() ?? allEntries;
+      const editingId = editId;
+      const index = editingId === null ? -1 : storedEntries.findIndex(e => e.id === editingId && e.source === 'creditcard');
+      if (editingId !== null && index === -1) {
+        showNotification('This ticket is no longer available. Your form is still open.');
+        return;
       }
 
-      // ─── IMMEDIATE PRE-SAVE (before async AI call) ───
-      // Save ticket right away with raw remarks so it's never lost on refresh/close
-      const entryId = Date.now();
+      let entryId = editingId ?? Date.now();
+      if (editingId === null) {
+        while (storedEntries.some(entry => entry.id === entryId)) entryId++;
+      }
+      const pendingAI = useAI ? `${Date.now()}-${Math.random()}` : false;
       const newEntry = {
+        ...storedEntries[index],
         id: entryId,
         ticketNumber,
         date: formattedDate,
@@ -972,67 +968,33 @@ export function initCreditcardApp() {
         issue,
         escalated,
         status,
-        remarks: rawRemarksHtml,
-        originalRemarks: originalRemarksHtml,
+        remarks: keepRawRemarks ? rawRemarksHtml : '',
+        originalRemarks: storedEntries[index]?.originalRemarks || rawRemarksHtml,
         resolution: resolution,
         source: 'creditcard',
         deleted: false,
         imported: false,
-        _pendingAI: true,
+        _pendingAI: pendingAI,
       };
 
-      if (editId) {
-        const index = allEntries.findIndex(e => e.id === editId && e.source === 'creditcard');
-        if (index !== -1) {
-          allEntries[index] = { ...allEntries[index], ...newEntry, id: editId, _pendingAI: true };
-        }
-      } else {
-        allEntries.unshift(newEntry);
-      }
-      // Persist immediately so refresh/close can't lose it
-      saveAllEntries();
+      const entries = storedEntries.slice();
+      if (index === -1) entries.unshift(newEntry);
+      else entries[index] = newEntry;
 
-      const aiActionMode = document.querySelector('input[name="aiActionMode"]:checked')?.value || 'summarize';
+      if (!saveAllEntries(entries, 'Ticket could not be saved. Your form is still open. Check browser storage and try again.')) return;
 
-      if (status.toUpperCase() !== 'OTHER TASK') {
-        if (aiActionMode !== 'none') {
-          showNotification(`Generating AI ${aiActionMode === 'grammar' ? 'Grammar Fix' : 'Summary'}...`);
-          try {
-            const aiResultHtml = await generateRemarksSummary(issue, rawRemarksHtml, aiActionMode);
-            if (aiResultHtml) {
-              remarksHtmlToSave = aiResultHtml;
-            }
-          } catch (aiErr) {
-            console.warn('AI summary generation error, proceeding with raw notes:', aiErr);
-          }
-        } else {
-          remarksHtmlToSave = '';
+      showNotification(editingId === null ? 'Credit Card entry added!' : 'Credit Card entry updated!');
+      if (editingId !== null) {
+        editId = null;
+        try {
+          localStorage.removeItem(EDIT_DRAFT_KEY + editingId);
+          localStorage.removeItem(EDIT_STORAGE_KEY);
+        } catch (e) {}
+        const addBtn = document.querySelector('#tab-creditcard .add');
+        if (addBtn) {
+          addBtn.textContent = 'ADD ENTRY';
+          addBtn.classList.remove('editing');
         }
-      }
-
-      // Update the entry with the AI result (or finalize without AI)
-      if (editId) {
-        const index = allEntries.findIndex(e => e.id === editId && e.source === 'creditcard');
-        if (index !== -1) {
-          allEntries[index] = { ...allEntries[index], remarks: remarksHtmlToSave, _pendingAI: false };
-          showNotification('Credit Card entry updated!');
-          try {
-            localStorage.removeItem(EDIT_DRAFT_KEY + editId);
-            editId = null;
-            localStorage.removeItem(EDIT_STORAGE_KEY);
-          } catch (e) {}
-          const addBtn = document.querySelector('#tab-creditcard .add');
-          if (addBtn) {
-            addBtn.textContent = 'ADD ENTRY';
-            addBtn.classList.remove('editing');
-          }
-        }
-      } else {
-        const idx = allEntries.findIndex(e => e.id === entryId);
-        if (idx !== -1) {
-          allEntries[idx] = { ...allEntries[idx], remarks: remarksHtmlToSave, _pendingAI: false };
-        }
-        showNotification('Credit Card entry added!');
       }
 
       // Close the submitted draft tab so it doesn't leave orphaned data in localStorage cache
@@ -1076,9 +1038,8 @@ export function initCreditcardApp() {
       const dateEl = document.getElementById('creditcard-date');
       if (dateEl && dateStr && dateEl.value !== dateStr) {
         dateEl.value = dateStr;
+        saveFormData(prefix);
       }
-
-      saveAllEntries();
 
       try {
         updateStatusCounters();
@@ -1098,6 +1059,26 @@ export function initCreditcardApp() {
         }, 80);
       } catch (renderErr) {
         console.error('Error rendering table after addEntry:', renderErr);
+      }
+
+      if (useAI) {
+        let summary;
+        try {
+          summary = await generateRemarksSummary(issue, rawRemarksHtml, aiActionMode);
+        } catch (error) {
+          console.warn('AI processing failed for saved ticket:', error);
+        }
+
+        // Read again after the request so a newer edit or another tab's ticket is preserved.
+        const latestEntries = readEntries(ENTRIES_KEY);
+        const savedEntry = latestEntries?.find(entry => entry.id === entryId && entry._pendingAI === pendingAI);
+        if (!savedEntry || savedEntry.deleted) return;
+        savedEntry.remarks = summary || rawRemarksHtml;
+        savedEntry._pendingAI = false;
+        if (saveAllEntries(latestEntries, 'Ticket saved with original remarks. The AI result could not be saved.')) {
+          renderTable();
+          renderSidebar();
+        }
       }
     };
 
@@ -1253,7 +1234,7 @@ export function initCreditcardApp() {
       const entry = allEntries.find(e => e.id == id);
       if (entry) {
         entry.deleted = true;
-        saveAllEntries();
+        if (!saveAllEntries()) return;
         renderTable();
         renderSidebar();
         showNotification('Entry removed from main table');
@@ -1267,7 +1248,7 @@ export function initCreditcardApp() {
         const index = allEntries.findIndex(e => e.id == entryId);
         if (index !== -1) {
           allEntries.splice(index, 1);
-          saveAllEntries();
+          if (!saveAllEntries()) return;
           renderTable();
           renderSidebar();
           showNotification('Entry permanently deleted.');
@@ -1279,7 +1260,7 @@ export function initCreditcardApp() {
       const entry = allEntries.find(e => e.id == entryId);
       if (!entry) return;
       entry.deleted = false;
-      saveAllEntries();
+      if (!saveAllEntries()) return;
       renderTable();
       renderSidebar();
       showNotification('Entry restored.');
@@ -1671,8 +1652,7 @@ export function initCreditcardApp() {
 
     function clearAllEntries() {
       if (!confirm('Delete ALL entries permanently? This cannot be undone.')) return;
-      allEntries = [];
-      saveAllEntries();
+      if (!saveAllEntries([])) return;
       renderTable();
       renderSidebar();
       showNotification('All entries cleared.');
@@ -1881,7 +1861,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
                 if (tInput) tInput.value = entry.ticketNumber;
                 creditcardUpdatePreview();
               }
-              saveAllEntries();
+              if (!saveAllEntries()) return;
               renderSidebar(); 
               showNotification('Ticket number saved!');
             }
@@ -2104,7 +2084,8 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         const entry = allEntries.find(e => e.id == id);
         if (entry) entry.deleted = true;
       });
-      saveAllEntries(); renderTable(); renderSidebar();
+      if (!saveAllEntries()) return;
+      renderTable(); renderSidebar();
     }
 
     // ✅ PURE DATE FORMAT PARA SA EXCEL (DD/MM/YYYY)
@@ -2837,7 +2818,6 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         if (localStorage.getItem('lastClearDate_creditcard') !== todayEST) {
           document.getElementById('creditcard-date').value = getLocalTodayString();
           resetDraftTabs(); // Fresh start: ticket tabs from previous day automatically disappear!
-          saveAllEntries();
           renderTable();
           renderSidebar();
           localStorage.setItem('lastClearDate_creditcard', todayEST);
@@ -2848,7 +2828,6 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
 
       window.addEventListener('beforeunload', () => {
         saveFormData('creditcard');
-        saveAllEntries();
         if (currentDraftId) saveDraftData(currentDraftId);
         if (editId) attachDraftAutoSave(editId);
       });
@@ -2856,14 +2835,17 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       // pagehide and visibilitychange catch tab close / browser minimize on Chrome/mobile
       // where beforeunload may not fire reliably
       window.addEventListener('pagehide', () => {
-        saveAllEntries();
         if (currentDraftId) saveDraftData(currentDraftId);
       });
 
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
-          saveAllEntries();
           if (currentDraftId) saveDraftData(currentDraftId);
+        }
+      });
+      window.addEventListener('storage', (event) => {
+        if (event.storageArea === localStorage && (event.key === ENTRIES_KEY || event.key === null)) {
+          loadAllEntries();
         }
       });
       creditcardUpdatePreview(); syncPreviewHeight();

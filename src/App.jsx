@@ -113,10 +113,28 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-11-26-v22712",
+    version: "v2.27.12",
+    date: "November 26 2026",
+    isLatest: true,
+    badge: "BUG FIX",
+    title: "Ticket Save and Reload Reliability",
+    summary: "The portal confirms ticket saves after browser storage accepts them and keeps the form open if a save fails.",
+    items: [
+      {
+        type: "fix",
+        icon: "bi-floppy-fill",
+        title: "Ticket History Stays Up to Date",
+        desc: "Tickets appear as soon as they are saved, while AI processing runs in the background. Closing or refreshing another tab preserves the latest saved history.",
+        tag: "Data Safety"
+      }
+    ]
+  },
+  {
     id: "rel-2026-11-26-v22711",
     version: "v2.27.11",
     date: "November 26 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "BUG FIX",
     title: "Tickets No Longer Lost on Refresh or Browser Close",
     summary: "Fixed tickets disappearing after page refresh or closing the browser tab. Tickets are now saved to localStorage immediately upon clicking ADD ENTRY — before any AI processing — so no data is ever lost.",
@@ -4268,7 +4286,7 @@ function AnnouncementPanel({ onOpenModal, hideHeader = false }) {
 }
 
 function AnnouncementPage({ onBackToDashboard }) {
-  const currentVersion = ANNOUNCEMENTS_DATA[0]?.version || 'v2.9.17';
+  const currentVersion = ANNOUNCEMENTS_DATA[0]?.version || 'v2.27.12';
 
   return (
     <div className="announcement-page">
@@ -4611,11 +4629,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.27.11">
+          <div className="logo" title="PH Portal v2.27.12">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.27.11</span>
+              <span className="logo-version">v2.27.12</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -7010,7 +7028,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.11';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.12';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -7026,7 +7044,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.11';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.12';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);
