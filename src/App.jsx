@@ -113,10 +113,35 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-11-26-v22711",
+    version: "v2.27.11",
+    date: "November 26 2026",
+    isLatest: true,
+    badge: "BUG FIX",
+    title: "Tickets No Longer Lost on Refresh or Browser Close",
+    summary: "Fixed tickets disappearing after page refresh or closing the browser tab. Tickets are now saved to localStorage immediately upon clicking ADD ENTRY — before any AI processing — so no data is ever lost.",
+    items: [
+      {
+        type: "fix",
+        icon: "bi-floppy-fill",
+        title: "Instant Save on Add Entry",
+        desc: "Tickets are now persisted to localStorage immediately when you click ADD ENTRY, before the AI summary is generated. Refreshing or closing the browser mid-process no longer loses the ticket.",
+        tag: "Data Safety"
+      },
+      {
+        type: "improvement",
+        icon: "bi-shield-lock-fill",
+        title: "Browser Close & Tab Switch Protection",
+        desc: "Added pagehide and visibilitychange event listeners so tickets and drafts are saved the moment you switch tabs, minimize the browser, or close the window.",
+        tag: "Reliability"
+      }
+    ]
+  },
+  {
     id: "rel-2026-11-25-v22710",
     version: "v2.27.10",
     date: "November 25 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "TICKET PROTECTION",
     title: "100% Ticket Preservation & Non-Destructive Cache Optimization",
     summary: "Guaranteed complete preservation of all existing tickets with non-destructive cache cleanup limited strictly to closed draft tabs.",
@@ -4586,11 +4611,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.27.10">
+          <div className="logo" title="PH Portal v2.27.11">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.27.10</span>
+              <span className="logo-version">v2.27.11</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -6985,7 +7010,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.10';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.11';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -7001,7 +7026,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.10';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.11';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

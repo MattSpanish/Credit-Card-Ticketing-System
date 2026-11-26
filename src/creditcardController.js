@@ -956,26 +956,11 @@ export function initCreditcardApp() {
         }
       }
 
-      const aiActionMode = document.querySelector('input[name="aiActionMode"]:checked')?.value || 'summarize';
-
-      if (status.toUpperCase() !== 'OTHER TASK') {
-        if (aiActionMode !== 'none') {
-          showNotification(`Generating AI ${aiActionMode === 'grammar' ? 'Grammar Fix' : 'Summary'}...`);
-          try {
-            const aiResultHtml = await generateRemarksSummary(issue, rawRemarksHtml, aiActionMode);
-            if (aiResultHtml) {
-              remarksHtmlToSave = aiResultHtml; 
-            }
-          } catch (aiErr) {
-            console.warn('AI summary generation error, proceeding with raw notes:', aiErr);
-          }
-        } else {
-          remarksHtmlToSave = '';
-        }
-      }
-
+      // ─── IMMEDIATE PRE-SAVE (before async AI call) ───
+      // Save ticket right away with raw remarks so it's never lost on refresh/close
+      const entryId = Date.now();
       const newEntry = {
-        id: Date.now(),
+        id: entryId,
         ticketNumber,
         date: formattedDate,
         shift,
@@ -987,18 +972,49 @@ export function initCreditcardApp() {
         issue,
         escalated,
         status,
-        remarks: remarksHtmlToSave,          
-        originalRemarks: originalRemarksHtml, 
-        resolution: resolution,              
+        remarks: rawRemarksHtml,
+        originalRemarks: originalRemarksHtml,
+        resolution: resolution,
         source: 'creditcard',
         deleted: false,
         imported: false,
+        _pendingAI: true,
       };
 
       if (editId) {
         const index = allEntries.findIndex(e => e.id === editId && e.source === 'creditcard');
         if (index !== -1) {
-          allEntries[index] = { ...allEntries[index], ...newEntry, id: editId };
+          allEntries[index] = { ...allEntries[index], ...newEntry, id: editId, _pendingAI: true };
+        }
+      } else {
+        allEntries.unshift(newEntry);
+      }
+      // Persist immediately so refresh/close can't lose it
+      saveAllEntries();
+
+      const aiActionMode = document.querySelector('input[name="aiActionMode"]:checked')?.value || 'summarize';
+
+      if (status.toUpperCase() !== 'OTHER TASK') {
+        if (aiActionMode !== 'none') {
+          showNotification(`Generating AI ${aiActionMode === 'grammar' ? 'Grammar Fix' : 'Summary'}...`);
+          try {
+            const aiResultHtml = await generateRemarksSummary(issue, rawRemarksHtml, aiActionMode);
+            if (aiResultHtml) {
+              remarksHtmlToSave = aiResultHtml;
+            }
+          } catch (aiErr) {
+            console.warn('AI summary generation error, proceeding with raw notes:', aiErr);
+          }
+        } else {
+          remarksHtmlToSave = '';
+        }
+      }
+
+      // Update the entry with the AI result (or finalize without AI)
+      if (editId) {
+        const index = allEntries.findIndex(e => e.id === editId && e.source === 'creditcard');
+        if (index !== -1) {
+          allEntries[index] = { ...allEntries[index], remarks: remarksHtmlToSave, _pendingAI: false };
           showNotification('Credit Card entry updated!');
           try {
             localStorage.removeItem(EDIT_DRAFT_KEY + editId);
@@ -1010,9 +1026,12 @@ export function initCreditcardApp() {
             addBtn.textContent = 'ADD ENTRY';
             addBtn.classList.remove('editing');
           }
-        } 
+        }
       } else {
-        allEntries.unshift(newEntry);
+        const idx = allEntries.findIndex(e => e.id === entryId);
+        if (idx !== -1) {
+          allEntries[idx] = { ...allEntries[idx], remarks: remarksHtmlToSave, _pendingAI: false };
+        }
         showNotification('Credit Card entry added!');
       }
 
@@ -2829,8 +2848,23 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
 
       window.addEventListener('beforeunload', () => {
         saveFormData('creditcard');
+        saveAllEntries();
         if (currentDraftId) saveDraftData(currentDraftId);
         if (editId) attachDraftAutoSave(editId);
+      });
+
+      // pagehide and visibilitychange catch tab close / browser minimize on Chrome/mobile
+      // where beforeunload may not fire reliably
+      window.addEventListener('pagehide', () => {
+        saveAllEntries();
+        if (currentDraftId) saveDraftData(currentDraftId);
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          saveAllEntries();
+          if (currentDraftId) saveDraftData(currentDraftId);
+        }
       });
       creditcardUpdatePreview(); syncPreviewHeight();
     }
