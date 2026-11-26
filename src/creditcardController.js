@@ -1,4 +1,5 @@
 import { ensureDraftForSaving } from './draftStorage';
+import { readLegacyTickets, updateTicketHistory } from './ticketStorage';
 
 export function initCreditcardApp() {
   if (window.__creditcardAppInitialized) return;
@@ -9,6 +10,7 @@ export function initCreditcardApp() {
 
     // ─── STATE ───
     let allEntries = [];
+    let savingTicket = false;
     let editId = null;
     let currentStatusFilter = null;
     let currentSearchQuery = ''; 
@@ -21,8 +23,7 @@ export function initCreditcardApp() {
     const EDIT_STORAGE_KEY = 'editingEntryId_creditcard';
     const EDIT_DRAFT_KEY = 'editingDraft_creditcard_';
     const DRAFT_TABS_KEY = 'ticketDraftTabs_creditcard';
-    const ENTRIES_KEY = 'unifiedEntries_creditcard';
-    const ENTRIES_BACKUP_KEY = 'unifiedEntries_creditcard_backup';
+    const historyChannel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('creditcard-ticket-history') : null;
     const collapseState = { months: {}, dates: {} };
     const STATUS_OPTIONS = ['RESOLVED', 'PENDING', 'OTHER TASK'];
 
@@ -678,6 +679,7 @@ export function initCreditcardApp() {
     // ─── RECOVERY TOOLS ───
     window.scanForLostTickets = function() {
       const report = {
+        savedTicketsCount: allEntries.length,
         mainEntriesCount: 0,
         backupCount: 0,
         foundInDrafts: []
@@ -705,7 +707,7 @@ export function initCreditcardApp() {
       return report;
     };
 
-    window.restoreTickets = function(ticketsData) {
+    window.restoreTickets = async function(ticketsData) {
       if (!ticketsData) {
         alert('Please provide tickets array or JSON string.');
         return;
@@ -719,18 +721,18 @@ export function initCreditcardApp() {
           return;
         }
       }
-      if (!Array.isArray(list)) {
+      if (!Array.isArray(list) || list.some(entry => !entry || typeof entry !== 'object' || Array.isArray(entry))) {
         alert('Tickets data must be an array of ticket objects.');
         return;
       }
-      if (!saveAllEntries(list)) return;
+      if (!await saveAllEntries(() => list)) return;
       renderTable();
       renderSidebar();
       alert(`Success! Restored ${allEntries.length} tickets to your table.`);
       return allEntries.length;
     };
 
-    window.recoverTicketsFromDrafts = function() {
+    window.recoverTicketsFromDrafts = async function() {
       const drafts = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
@@ -762,16 +764,17 @@ export function initCreditcardApp() {
         alert('No draft tickets found in storage to recover.');
         return 0;
       }
-      const entries = allEntries.slice();
-      const existingIds = new Set(entries.map(e => String(e.id || e.ticketNumber)));
       let added = 0;
-      drafts.forEach(d => {
-        if (!existingIds.has(String(d.id)) && (!d.ticketNumber || !existingIds.has(String(d.ticketNumber)))) {
-          entries.unshift(d);
-          added++;
-        }
-      });
-      if (!saveAllEntries(entries)) return;
+      if (!await saveAllEntries(entries => {
+        const existingIds = new Set(entries.map(e => String(e.id || e.ticketNumber)));
+        drafts.forEach(d => {
+          if (!existingIds.has(String(d.id)) && (!d.ticketNumber || !existingIds.has(String(d.ticketNumber)))) {
+            entries.unshift(d);
+            added++;
+          }
+        });
+        return entries;
+      })) return;
       renderTable();
       renderSidebar();
       alert(`Recovered ${added} ticket(s) from drafts into your table!`);
@@ -815,55 +818,39 @@ export function initCreditcardApp() {
     }
 
     // ─── ENTRIES ───
-    function readEntries(key) {
+    async function saveAllEntries(change, failureMessage = 'Ticket changes could not be saved. Check that this site can save browser data and try again.') {
       try {
-        const entries = JSON.parse(localStorage.getItem(key));
-        if (Array.isArray(entries) && entries.every(entry => entry && typeof entry === 'object' && !Array.isArray(entry))) {
-          return entries;
-        }
-      } catch (e) {}
-      return null;
-    }
-
-    function readSavedEntries() {
-      const entries = readEntries(ENTRIES_KEY);
-      if (entries?.length) return entries;
-      return readEntries(ENTRIES_BACKUP_KEY) ?? entries;
-    }
-
-    function saveAllEntries(entries = allEntries, failureMessage = 'Ticket changes could not be saved. Check browser storage and try again.') {
-      try {
-        const data = JSON.stringify(entries);
-        try {
-          localStorage.setItem(ENTRIES_KEY, data);
-        } catch (error) {
-          // The legacy duplicate can use half the storage quota. Free it only when
-          // the primary history is still readable and will survive a failed retry.
-          if (!isQuotaExceeded(error) || !readEntries(ENTRIES_KEY)?.length) throw error;
-          localStorage.removeItem(ENTRIES_BACKUP_KEY);
-          localStorage.setItem(ENTRIES_KEY, data);
-        }
+        const { entries, changed } = await updateTicketHistory(change);
+        allEntries = entries;
+        if (changed) historyChannel?.postMessage('updated');
+        return changed;
       } catch (error) {
         console.error('Failed to save ticket history:', error);
-        if (entries === allEntries) loadAllEntries();
         showNotification(failureMessage);
         return false;
       }
-      allEntries = entries;
-      try {
-        localStorage.removeItem(ENTRIES_BACKUP_KEY);
-      } catch (e) {}
-      return true;
     }
 
-    function loadAllEntries() {
-      allEntries = readSavedEntries() ?? [];
-      allEntries.forEach(entry => {
-        if (entry.deleted === undefined) entry.deleted = false;
-        if (entry.imported === undefined) entry.imported = false;
-      });
+    async function loadAllEntries(useLegacyOnFailure = false) {
+      try {
+        const { entries } = await updateTicketHistory();
+        allEntries = entries;
+      } catch (error) {
+        console.error('Failed to open ticket history:', error);
+        if (useLegacyOnFailure) allEntries = readLegacyTickets();
+        showNotification('Ticket storage is unavailable. Check that this site can save browser data.');
+      }
       renderTable();
       renderSidebar();
+    }
+
+    function updateTicketFields(id, fields) {
+      return saveAllEntries(entries => {
+        const entry = entries.find(ticket => String(ticket.id) === String(id));
+        if (!entry) return;
+        Object.assign(entry, fields);
+        return entries;
+      });
     }
 
     // ─── PREVIEW ───
@@ -893,7 +880,7 @@ export function initCreditcardApp() {
 
    // ─── ADD / EDIT / DELETE ───
     window.addEntry = async function(prefix) {
-      if (prefix !== 'creditcard') return;
+      if (prefix !== 'creditcard' || savingTicket) return;
 
       const midEl = document.getElementById('creditcard-mid');
       const storeEl = document.getElementById('creditcard-store');
@@ -941,22 +928,10 @@ export function initCreditcardApp() {
       const aiActionMode = document.querySelector('input[name="aiActionMode"]:checked')?.value || 'summarize';
       const useAI = status.toUpperCase() !== 'OTHER TASK' && aiActionMode !== 'none';
       const keepRawRemarks = status.toUpperCase() === 'OTHER TASK' || useAI;
-      const storedEntries = readSavedEntries() ?? allEntries;
       const editingId = editId;
-      const index = editingId === null ? -1 : storedEntries.findIndex(e => e.id === editingId && e.source === 'creditcard');
-      if (editingId !== null && index === -1) {
-        showNotification('This ticket is no longer available. Your form is still open.');
-        return;
-      }
-
       let entryId = editingId ?? Date.now();
-      if (editingId === null) {
-        while (storedEntries.some(entry => entry.id === entryId)) entryId++;
-      }
       const pendingAI = useAI ? `${Date.now()}-${Math.random()}` : false;
-      const newEntry = {
-        ...storedEntries[index],
-        id: entryId,
+      const ticket = {
         ticketNumber,
         date: formattedDate,
         shift,
@@ -969,7 +944,6 @@ export function initCreditcardApp() {
         escalated,
         status,
         remarks: keepRawRemarks ? rawRemarksHtml : '',
-        originalRemarks: storedEntries[index]?.originalRemarks || rawRemarksHtml,
         resolution: resolution,
         source: 'creditcard',
         deleted: false,
@@ -977,11 +951,43 @@ export function initCreditcardApp() {
         _pendingAI: pendingAI,
       };
 
-      const entries = storedEntries.slice();
-      if (index === -1) entries.unshift(newEntry);
-      else entries[index] = newEntry;
-
-      if (!saveAllEntries(entries, 'Ticket could not be saved. Your form is still open. Check browser storage and try again.')) return;
+      const form = document.getElementById('tab-creditcard');
+      const tabs = document.querySelector('.top-tabs');
+      let newEntry;
+      let entryMissing = false;
+      let saved;
+      savingTicket = true;
+      if (form) form.inert = true;
+      if (tabs) tabs.inert = true;
+      try {
+        saved = await saveAllEntries(entries => {
+          const index = editingId === null ? -1 : entries.findIndex(e => e.id === editingId && e.source === 'creditcard');
+          if (editingId !== null && index === -1) {
+            entryMissing = true;
+            return;
+          }
+          if (editingId === null) {
+            while (entries.some(entry => entry.id === entryId)) entryId++;
+          }
+          newEntry = {
+            ...entries[index],
+            ...ticket,
+            id: entryId,
+            originalRemarks: entries[index]?.originalRemarks || rawRemarksHtml,
+          };
+          if (index === -1) entries.unshift(newEntry);
+          else entries[index] = newEntry;
+          return entries;
+        }, 'Ticket could not be saved. Your form is still open. Check device space and browser storage permissions, then retry.');
+      } finally {
+        savingTicket = false;
+        if (form) form.inert = false;
+        if (tabs) tabs.inert = false;
+      }
+      if (!saved) {
+        if (entryMissing) showNotification('This ticket is no longer available. Your form is still open.');
+        return;
+      }
 
       showNotification(editingId === null ? 'Credit Card entry added!' : 'Credit Card entry updated!');
       if (editingId !== null) {
@@ -1069,13 +1075,13 @@ export function initCreditcardApp() {
           console.warn('AI processing failed for saved ticket:', error);
         }
 
-        // Read again after the request so a newer edit or another tab's ticket is preserved.
-        const latestEntries = readEntries(ENTRIES_KEY);
-        const savedEntry = latestEntries?.find(entry => entry.id === entryId && entry._pendingAI === pendingAI);
-        if (!savedEntry || savedEntry.deleted) return;
-        savedEntry.remarks = summary || rawRemarksHtml;
-        savedEntry._pendingAI = false;
-        if (saveAllEntries(latestEntries, 'Ticket saved with original remarks. The AI result could not be saved.')) {
+        if (await saveAllEntries(entries => {
+          const savedEntry = entries.find(entry => entry.id === entryId && entry._pendingAI === pendingAI);
+          if (!savedEntry || savedEntry.deleted) return;
+          savedEntry.remarks = summary || rawRemarksHtml;
+          savedEntry._pendingAI = false;
+          return entries;
+        }, 'Ticket saved with original remarks. The AI result could not be saved.')) {
           renderTable();
           renderSidebar();
         }
@@ -1187,6 +1193,7 @@ export function initCreditcardApp() {
     }
 
     window.editEntry = function(buttonOrId) {
+      if (savingTicket) return;
       let entryId, entry;
       if (typeof buttonOrId === 'object' && buttonOrId !== null) {
         const id = buttonOrId.closest ? buttonOrId.closest('tr')?.dataset.id || buttonOrId.dataset.id : buttonOrId.dataset.id;
@@ -1219,8 +1226,7 @@ export function initCreditcardApp() {
       }
 
       if (entry.imported) {
-        entry.imported = false;
-        saveAllEntries();
+        void updateTicketFields(entry.id, { imported: false });
       }
 
       attachDraftAutoSave(editId);
@@ -1228,27 +1234,21 @@ export function initCreditcardApp() {
       syncPreviewHeight();
     };
 
-    window.softDeleteEntry = function(button) {
+    window.softDeleteEntry = async function(button) {
       const row = button.closest('tr');
       const id = row.dataset.id;
-      const entry = allEntries.find(e => e.id == id);
-      if (entry) {
-        entry.deleted = true;
-        if (!saveAllEntries()) return;
+      if (await updateTicketFields(id, { deleted: true })) {
         renderTable();
         renderSidebar();
         showNotification('Entry removed from main table');
       }
     };
 
-    function hardDeleteEntry(entryId) {
+    async function hardDeleteEntry(entryId) {
       const entry = allEntries.find(e => e.id == entryId);
       if (!entry) return;
       if (confirm('Delete this entry permanently?')) {
-        const index = allEntries.findIndex(e => e.id == entryId);
-        if (index !== -1) {
-          allEntries.splice(index, 1);
-          if (!saveAllEntries()) return;
+        if (await saveAllEntries(entries => entries.filter(e => String(e.id) !== String(entryId)))) {
           renderTable();
           renderSidebar();
           showNotification('Entry permanently deleted.');
@@ -1256,11 +1256,8 @@ export function initCreditcardApp() {
       }
     }
 
-    function restoreEntry(entryId) {
-      const entry = allEntries.find(e => e.id == entryId);
-      if (!entry) return;
-      entry.deleted = false;
-      if (!saveAllEntries()) return;
+    async function restoreEntry(entryId) {
+      if (!await updateTicketFields(entryId, { deleted: false })) return;
       renderTable();
       renderSidebar();
       showNotification('Entry restored.');
@@ -1650,9 +1647,9 @@ export function initCreditcardApp() {
 
     window.showNotification = showNotification;
 
-    function clearAllEntries() {
+    async function clearAllEntries() {
       if (!confirm('Delete ALL entries permanently? This cannot be undone.')) return;
-      if (!saveAllEntries([])) return;
+      if (!await saveAllEntries(() => [])) return;
       renderTable();
       renderSidebar();
       showNotification('All entries cleared.');
@@ -1847,7 +1844,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       });
 
       container.querySelectorAll('.add-ticket-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
           e.stopPropagation();
           const id = btn.dataset.id;
           const entry = allEntries.find(e => e.id == id);
@@ -1855,13 +1852,13 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
             const ticketNum = prompt('Enter Ticket Number:', entry.ticketNumber || '');
             
             if (ticketNum !== null) {
-              entry.ticketNumber = ticketNum.trim();
+              const ticketNumber = ticketNum.trim();
+              if (!await updateTicketFields(id, { ticketNumber })) return;
               if (editId && editId == entry.id) {
                 const tInput = document.getElementById('creditcard-ticketNumber');
-                if (tInput) tInput.value = entry.ticketNumber;
+                if (tInput) tInput.value = ticketNumber;
                 creditcardUpdatePreview();
               }
-              if (!saveAllEntries()) return;
               renderSidebar(); 
               showNotification('Ticket number saved!');
             }
@@ -1934,9 +1931,7 @@ PHONE NUMBER: ${escapeHtml(entry.contactNumber || '')}<br><br>
       const workloadDatePicker = document.getElementById('workload-date-picker');
       const mainDatePicker = document.getElementById('creditcard-date');
       
-      const entries = (allEntries && allEntries.length > 0) 
-        ? allEntries 
-        : (JSON.parse(localStorage.getItem('unifiedEntries_creditcard')) || []);
+      const entries = allEntries;
       
       if (entries.length === 0) {
         alert("No tickets found in the system.");
@@ -2076,15 +2071,17 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
     // ─── BULK OPERATIONS ───
     function getSelectedRowIds() { return Array.from(document.querySelectorAll('#entryTable tbody .row-checkbox:checked')).map(cb => cb.value); }
 
-    function bulkDelete() {
+    async function bulkDelete() {
       const ids = getSelectedRowIds();
       if (ids.length === 0) return;
       if (!confirm(`Remove ${ids.length} selected entries?`)) return;
-      ids.forEach(id => {
-        const entry = allEntries.find(e => e.id == id);
-        if (entry) entry.deleted = true;
-      });
-      if (!saveAllEntries()) return;
+      const selected = new Set(ids);
+      if (!await saveAllEntries(entries => {
+        entries.forEach(entry => {
+          if (selected.has(String(entry.id))) entry.deleted = true;
+        });
+        return entries;
+      })) return;
       renderTable(); renderSidebar();
     }
 
@@ -2611,7 +2608,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       }
     };
 
-    function init() {
+    async function init() {
       // ✅ TATAWAGIN NA ANG API PAGKABUKAS NG APP
       fetchMerchantDatabase();
       initStoreSearch(); // ✅ INITIATE SEARCH DROPDOWN
@@ -2636,7 +2633,7 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
 
       document.getElementById('creditcard-date').value = getLocalTodayString();
       loadFormData('creditcard');
-      loadAllEntries();
+      await loadAllEntries(true);
       attachGeminiKeyControls();
       initTheme();
 
@@ -2669,7 +2666,11 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
           }
         });
 
-        localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(validTodayTabs));
+        try {
+          localStorage.setItem(DRAFT_TABS_KEY, JSON.stringify(validTodayTabs));
+        } catch (error) {
+          console.warn('Could not update saved draft tabs:', error);
+        }
 
         const tabsContainer = document.querySelector('.top-tabs');
         if (tabsContainer) {
@@ -2695,8 +2696,12 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
         }
       }
 
-      localStorage.setItem('lastActiveDate_creditcard', todayEST);
-      localStorage.setItem('lastClearDate_creditcard', todayEST);
+      let activeDate = todayEST;
+      try {
+        localStorage.setItem('lastActiveDate_creditcard', activeDate);
+      } catch (error) {
+        console.warn('Could not save the active draft date:', error);
+      }
 
       document.getElementById('clearAllBtn').addEventListener('click', clearAllEntries);
       document.getElementById('bulkDeleteBtn').addEventListener('click', bulkDelete);
@@ -2814,14 +2819,19 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       }
 
       setInterval(() => {
+        if (savingTicket) return;
         const todayEST = getESTDateString();
-        if (localStorage.getItem('lastClearDate_creditcard') !== todayEST) {
+        if (activeDate !== todayEST) {
+          activeDate = todayEST;
           document.getElementById('creditcard-date').value = getLocalTodayString();
           resetDraftTabs(); // Fresh start: ticket tabs from previous day automatically disappear!
           renderTable();
           renderSidebar();
-          localStorage.setItem('lastClearDate_creditcard', todayEST);
-          localStorage.setItem('lastActiveDate_creditcard', todayEST);
+          try {
+            localStorage.setItem('lastActiveDate_creditcard', activeDate);
+          } catch (error) {
+            console.warn('Could not save the active draft date:', error);
+          }
           showNotification('New day started: Ticket tabs reset for today.');
         }
       }, 30000);
@@ -2841,16 +2851,18 @@ TICKET IN HRMS [${footerStatus}] OF ${footerType}`;
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
           if (currentDraftId) saveDraftData(currentDraftId);
+        } else if (!historyChannel) {
+          void loadAllEntries();
         }
       });
-      window.addEventListener('storage', (event) => {
-        if (event.storageArea === localStorage && (event.key === ENTRIES_KEY || event.key === null)) {
-          loadAllEntries();
-        }
-      });
+      historyChannel?.addEventListener('message', () => { void loadAllEntries(); });
       creditcardUpdatePreview(); syncPreviewHeight();
     }
 
-    init();
+    const initialForm = document.getElementById('tab-creditcard');
+    if (initialForm) initialForm.inert = true;
+    void init().catch(error => console.error('Failed to initialize ticket workspace:', error)).finally(() => {
+      if (initialForm) initialForm.inert = false;
+    });
   })();
 }

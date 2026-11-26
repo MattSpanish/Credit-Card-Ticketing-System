@@ -113,10 +113,28 @@ export function stripMonthDayComma(str) {
 
 const ANNOUNCEMENTS_DATA = [
   {
+    id: "rel-2026-11-26-v22713",
+    version: "v2.27.13",
+    date: "November 26 2026",
+    isLatest: true,
+    badge: "BUG FIX",
+    title: "More Room for Saved Tickets",
+    summary: "Ticket history moves to IndexedDB so a full localStorage quota no longer blocks ticket submission.",
+    items: [
+      {
+        type: "fix",
+        icon: "bi-floppy-fill",
+        title: "Ticket Storage Upgrade",
+        desc: "The portal automatically migrates tickets already saved in this browser. Add Entry confirms the save after the new storage commits it.",
+        tag: "Data Safety"
+      }
+    ]
+  },
+  {
     id: "rel-2026-11-26-v22712",
     version: "v2.27.12",
     date: "November 26 2026",
-    isLatest: true,
+    isLatest: false,
     badge: "BUG FIX",
     title: "Ticket Save and Reload Reliability",
     summary: "The portal confirms ticket saves after browser storage accepts them and keeps the form open if a save fails.",
@@ -4286,7 +4304,7 @@ function AnnouncementPanel({ onOpenModal, hideHeader = false }) {
 }
 
 function AnnouncementPage({ onBackToDashboard }) {
-  const currentVersion = ANNOUNCEMENTS_DATA[0]?.version || 'v2.27.12';
+  const currentVersion = ANNOUNCEMENTS_DATA[0]?.version || 'v2.27.13';
 
   return (
     <div className="announcement-page">
@@ -4629,11 +4647,11 @@ function Sidebar({
 
       <div className="sidebar-inner">
         <div className="sidebar-top">
-          <div className="logo" title="PH Portal v2.27.12">
+          <div className="logo" title="PH Portal v2.27.13">
             <img src={appLogo} alt="Logo" className="sidebar-logo-img" />
             <div className="logo-content">
               <span className="logo-text">PH Portal</span>
-              <span className="logo-version">v2.27.12</span>
+              <span className="logo-version">v2.27.13</span>
             </div>
           </div>
           <div className="sidebar-actions">
@@ -5036,25 +5054,7 @@ function DashboardGrid() {
   const hoverTimeoutRef = useRef(null);
 
   const loadPendingTickets = () => {
-    let list = [];
-    if (typeof window !== 'undefined' && window.getPendingTickets) {
-      list = window.getPendingTickets();
-    } else {
-      try {
-        const raw = localStorage.getItem('unifiedEntries_creditcard');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          list = parsed.filter(e => {
-            if (e.deleted || e.source !== 'creditcard') return false;
-            const status = (e.status || '').toUpperCase().trim();
-            return status !== 'RESOLVED' && status !== 'OTHER TASK';
-          });
-        }
-      } catch (err) {
-        list = [];
-      }
-    }
-    setPendingList(list);
+    setPendingList(window.getPendingTickets?.() ?? []);
   };
 
   const handlePendingMouseEnter = () => {
@@ -7028,7 +7028,7 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(() => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.12';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.13';
 
       // Check if user already acknowledged or dismissed this version update
       const isDismissed = localStorage.getItem(`dismissed_update_pop_${currentVersion}`) === 'true';
@@ -7044,7 +7044,7 @@ export default function App() {
   const handleConfirmUpdateModal = (doNotShowAgain) => {
     try {
       const latestAnnouncement = ANNOUNCEMENTS_DATA[0];
-      const currentVersion = latestAnnouncement?.version || 'v2.27.12';
+      const currentVersion = latestAnnouncement?.version || 'v2.27.13';
 
       // Mark this update version as seen and acknowledged so it never pops up again until a new update
       localStorage.setItem('last_seen_update_version', currentVersion);

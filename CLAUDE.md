@@ -9,7 +9,7 @@ A React-based internal ticketing / case-management web app for a credit-card sup
 - **React 18.3.1** + **ReactDOM 18.3.1** (no router, no Redux — single `App` component with local state)
 - **Vite 8** (`@vitejs/plugin-react`) as build tool / dev server
 - **No bundler-time CSS framework** — Bootstrap 5.3.8 and Bootstrap Icons are loaded from `cdn.jsdelivr.net`, plus `animate.css` and Quill 2.0.3 (`quill.snow`). Inter is loaded from Google Fonts.
-- **State persistence** — `localStorage` only (no backend). Merchant list is fetched once from a published Google Sheets CSV at startup.
+- **State persistence** — The ticket history uses browser-local IndexedDB. Ticket drafts use `localStorage`. Merchant list is fetched once from a published Google Sheets CSV at startup.
 - **Testing** — `node:test` + `node:assert/strict` (built-in Node test runner). No test framework.
 
 ---
@@ -70,8 +70,8 @@ Run the test suite with `node --test src/draftStorage.test.js` from the project 
 
 - **JS, not TypeScript** — `.jsx` for components, `.js` for the controller and helpers. No type annotations anywhere.
 - **Inline data, not JSON files** — schedule, templates, statuses, and status options are inline constants. Adding a new TID template = adding a key to `TID_TEMPLATES` (in `App.jsx`).
-- **localStorage keys are namespaced** — suffix `_creditcard` (e.g. `editingEntryId_creditcard`, `ticketDraftTabs_creditcard`, `lastClearDate_creditcard`). Keep the suffix when adding new keys.
-- **Submitted tickets** are written to `unifiedEntries_creditcard` before clearing the form or starting AI processing. Other tabs reload history on storage events. Browser lifecycle handlers save drafts only. The legacy backup is read for recovery and retired after a successful write.
+- **localStorage keys are namespaced** — suffix `_creditcard` (e.g. `editingEntryId_creditcard`, `ticketDraftTabs_creditcard`, `lastActiveDate_creditcard`). Keep the suffix when adding new keys.
+- **Submitted tickets** are committed to IndexedDB by `ticketStorage.js` before clearing the form or starting AI processing. Ticket updates read and write within one transaction. Other tabs reload after a broadcast. The first transaction migrates the legacy `unifiedEntries_creditcard` history and releases the old data only after commit.
 - **DOM IDs are prefixed** — form fields are `creditcard-<name>` (e.g. `creditcard-mid`, `creditcard-issue`, `creditcard-remarks-editor`). The Quill editor targets `#creditcard-remarks-editor` and mirrors its HTML into the hidden `#creditcard-remarks` input on every `text-change`.
 - **Persistence on every input** — most form inputs call `saveFormData('creditcard')` and, if a draft is active, `saveDraftData(currentDraftId)` on each change. `beforeunload` re-saves the form and active draft.
 - **EST for date math** — `getESTDateString()` controls the daily auto-clear / date-roll logic; display uses `getLocalTodayString()`.
